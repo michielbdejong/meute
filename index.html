@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h1>sockethub test app</h1>
+    <textarea id="msg"></textarea><br>
+    platform: <input id="platform" value="facebook" /><br>
+    verb: <input id="verb" value="post" /><br>
+    target: <input id="target" value="me" /><br>
+    <input id="send" type="submit" value="send" onclick="send();" disabled />
+    <h1>Contacts</h1>
+    <ul id="contacts">
+    </ul>
+  </body>
+  <script src="config.js"></script>
+  <script src="contacts.js"></script>
+  <script src="sockethub-client.js"></script>
+  <script>
+    var elt, i;
+    for(i in contacts) {
+      elt = document.createElement('li');
+      elt.innerHTML = '<a onclick="contact(\''+i+'\');">'+i+'</a>';
+      $('contacts').appendChild(elt);
+    }
+    function contact(i) {
+      $('platform').value = contacts[i].platform;
+      $('verb').value = contacts[i].verb;
+      $('target').value = contacts[i].target;
+    }
+    function $(id) {
+      return document.getElementById(id);
+    }
+    function send() {
+      console.log();
+      sockethubClient.sendObject({
+        platform: $('platform').value,
+        verb: $('verb').value,
+        actor: { address: 'me' },
+        target: [{ address: $('target').value }],
+        object: {
+          text: $('msg').value
+        }
+      }).then(function (response) {
+        console.log('post sucessful, heres the response: ', response);
+      }, function (err) {
+        console.log('oh no! ', err.message);
+      });
+    }
+    var sockethubClient = SockethubClient.connect(config.connect);
+
+    sockethubClient.on('registered', function() {
+      console.log('setting credentials for facebook account,');
+      sockethubClient.set('facebook', {
+        credentials: {
+          me: config.facebook
+        }
+      }).then(function () {
+        console.log('setting credentials for twitter account,');
+        return sockethubClient.set('twitter', {
+          credentials: {
+            me: config.twitter
+          }
+        });
+      }).then(function () {
+        console.log('setting credentials for email account,');
+        return sockethubClient.set('email', {
+          credentials: {
+            me: config.email
+          }
+        });
+      }).then(function () {
+        // done!
+        // you can start calling verbs now, such as...
+        console.log('ping,');
+        return sockethubClient.ping();
+      }).then(function() {
+        console.log('pong - all set!');
+        $('send').removeAttribute('disabled');
+      }, function (err) {
+        console.log('error! ', err.message);
+      });
+    });
+    sockethubClient.on('failed', function() {
+      console.error("Connection to sockethub failed!");
+    });
+
+    sockethubClient.on('disconnected', function() {
+      console.error("Sockethub got disconnected!");
+    });
+  </script>
+</html>
