@@ -9,9 +9,13 @@
     platform: <input id="platform" value="facebook" /><br>
     verb: <input id="verb" value="post" /><br>
     target: <input id="target" value="me" /><br>
+    <input id="fetch" type="submit" value="fetch" onclick="fetch();" disabled />
     <input id="send" type="submit" value="send" onclick="send();" disabled />
     <h1>Contacts</h1>
     <ul id="contacts">
+    </ul>
+    <h1>History</h1>
+    <ul id="history">
     </ul>
   </body>
   <script src="config.js"></script>
@@ -32,8 +36,40 @@
     function $(id) {
       return document.getElementById(id);
     }
+    function fetch() {
+      console.log('fetching from facebook,');
+      sockethubClient.sendObject({
+//        platform: 'facebook',
+//        verb: 'fetch',
+//        actor: { address: 'me' },
+//        object: { },
+//        target: [{address: 'me'}]
+//      }).then(function (response) {
+//        console.log('fetching from twitter,');
+//        return sockethubClient.sendObject({
+//          platform: 'twitter',
+//          verb: 'fetch',
+//          actor: { address: 'me' },
+//          object: { },
+//          target: [{address: 'me'}]
+//        });
+//      }).then(function (response) {
+//        console.log('fetching from email,');
+//        return sockethubClient.sendObject({
+          platform: 'email',
+          verb: 'fetch',
+          actor: { address: 'me' },
+          object: { },
+          target:[{address: 'me'}]
+/////////////////////////////////////
+      }).then(function (response) {
+        console.log('fetched from email,');
+//        });
+      }, function (err) {
+        console.log('oh no! ', err.message);
+      });
+    }
     function send() {
-      console.log();
       sockethubClient.sendObject({
         platform: $('platform').value,
         verb: $('verb').value,
@@ -77,11 +113,18 @@
         return sockethubClient.ping();
       }).then(function() {
         console.log('pong - all set!');
+        $('fetch').removeAttribute('disabled');
         $('send').removeAttribute('disabled');
       }, function (err) {
         console.log('error! ', err.message);
       });
     });
+    sockethubClient.on('message', function(msg) {
+      var li = document.createElement('li');
+      li.innerHTML = JSON.stringify(msg);
+      $('history').appendChild(li);
+    });
+
     sockethubClient.on('failed', function() {
       console.error("Connection to sockethub failed!");
     });
