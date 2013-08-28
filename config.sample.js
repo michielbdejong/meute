@@ -1,30 +1,25 @@
 var config = {
-  connect: {
-    host: 'localhost',
-    ssl: true,
-    register: {
-      secret: ''
-    }
-  },
-  facebook: {
-    access_token: ''
-  },
-  twitter: {
-    consumer_key: '',
-    consumer_secret: '',
-    access_token: '',
-    access_token_secret: ''
-  },
-  email: {
-    smtp: {
-      username: 'user@example.com',
-      password: '',
-      host: 'smtp.example.com'
-    },
-    imap: {
-      username: 'user@example.com',
-      password: '',
-      host: 'imap.example.com'
-    }
-  }
+  sockethub: 'wss://localhost:4273/sock/websocket',
+  token: '...'
 };
+var contacts = [
+  'smtp:michiel@unhosted.org',
+  'irc:#unhosted',
+  'twitter:@michielbdejong'
+];
+var history = {
+  'smtp:michiel@unhosted.org': [
+    {
+      actor: 'me',
+      timestamp: 1377621234199,
+      text: 'yo dawg'
+    }
+  ],
+  'twitter:@michielbdejong': [
+    {
+      actor: 'me',
+      timestamp: 1377621230199,
+      text: '@noone_notmany testing out Meute'
+    }
+  ]
+}; 

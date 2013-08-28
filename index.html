@@ -1,136 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8" />
+    <style>
+      nav { width:20em; float:left }
+      article { width:40em; float:left }
+      article textarea { width: 40em; height: 20em }
+    </style>
   </head>
   <body>
-    <h1>sockethub test app</h1>
-    <textarea id="msg"></textarea><br>
-    platform: <input id="platform" value="facebook" /><br>
-    verb: <input id="verb" value="post" /><br>
-    target: <input id="target" value="me" /><br>
-    <input id="fetch" type="submit" value="fetch" onclick="fetch();" disabled />
-    <input id="send" type="submit" value="send" onclick="send();" disabled />
-    <h1>Contacts</h1>
-    <ul id="contacts">
-    </ul>
-    <h1>History</h1>
-    <ul id="history">
-    </ul>
+    <nav>
+      <h1>Hello Meute!</h1>
+      <ul id="target"></ul>
+    </nav>
+    <article>
+      <textarea id="text"></textarea>
+      <p>
+        <input type="submit" value="Send" onclick="sendMessage();" />
+      </p>
+      <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
+    </article>
   </body>
-  <script src="config.js"></script>
-  <script src="contacts.js"></script>
-  <script src="sockethub-client.js"></script>
+  <script src="config.js"> </script>
   <script>
-    var elt, i;
-    for(i in contacts) {
-      elt = document.createElement('li');
-      elt.innerHTML = '<a onclick="contact(\''+i+'\');">'+i+'</a>';
-      $('contacts').appendChild(elt);
+    //parse parameters from URL hash:
+    var paramPairs = location.hash.substring(1).split('&'), i, params = {};
+    for(i=0; i<paramPairs.length; i++) {
+      var keyAndValue=paramPairs[i].split('=');
+      params[keyAndValue[0]] = keyAndValue[1];
     }
-    function contact(i) {
-      $('platform').value = contacts[i].platform;
-      $('verb').value = contacts[i].verb;
-      $('target').value = contacts[i].target;
+    
+    //add contacts to nav and history to table:
+    var i, li, tr;
+    for(i=0; i<contacts.length; i++) {
+      li = document.createElement('li');
+      li.innerHTML = '<a href="#target='+contacts[i]+'&welten='+params.welten+'&token='+params.token+'"'
+        +' onclick="params.target=\''+contacts[i]+'\';">'+contacts[i]+'</a>';
+      document.getElementById('target').appendChild(li);
     }
-    function $(id) {
-      return document.getElementById(id);
+    if(history[params.target]) {
+      for(i=0; i<history[params.target].length; i++) {
+        tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+history[params.target][i].timestamp
+          +'</td><td>'+history[params.target][i].actor
+          +'</td><td>'+history[params.target][i].text
+          +'</td>';
+        document.getElementById('history').appendChild(tr);
+      }
     }
-    function fetch() {
-      console.log('fetching from facebook,');
-      sockethubClient.sendObject({
-//        platform: 'facebook',
-//        verb: 'fetch',
-//        actor: { address: 'me' },
-//        object: { },
-//        target: [{address: 'me'}]
-//      }).then(function (response) {
-//        console.log('fetching from twitter,');
-//        return sockethubClient.sendObject({
-//          platform: 'twitter',
-//          verb: 'fetch',
-//          actor: { address: 'me' },
-//          object: { },
-//          target: [{address: 'me'}]
-//        });
-//      }).then(function (response) {
-//        console.log('fetching from email,');
-//        return sockethubClient.sendObject({
-          platform: 'email',
-          verb: 'fetch',
-          actor: { address: 'me' },
-          object: { },
-          target:[{address: 'me'}]
-/////////////////////////////////////
-      }).then(function (response) {
-        console.log('fetched from email,');
-//        });
-      }, function (err) {
-        console.log('oh no! ', err.message);
-      });
-    }
-    function send() {
-      sockethubClient.sendObject({
-        platform: $('platform').value,
-        verb: $('verb').value,
-        actor: { address: 'me' },
-        target: [{ address: $('target').value }],
-        object: {
-          text: $('msg').value
-        }
-      }).then(function (response) {
-        console.log('post sucessful, heres the response: ', response);
-      }, function (err) {
-        console.log('oh no! ', err.message);
-      });
-    }
-    var sockethubClient = SockethubClient.connect(config.connect);
 
-    sockethubClient.on('registered', function() {
-      console.log('setting credentials for facebook account,');
-      sockethubClient.set('facebook', {
-        credentials: {
-          me: config.facebook
-        }
-      }).then(function () {
-        console.log('setting credentials for twitter account,');
-        return sockethubClient.set('twitter', {
-          credentials: {
-            me: config.twitter
-          }
-        });
-      }).then(function () {
-        console.log('setting credentials for email account,');
-        return sockethubClient.set('email', {
-          credentials: {
-            me: config.email
-          }
-        });
-      }).then(function () {
-        // done!
-        // you can start calling verbs now, such as...
-        console.log('ping,');
-        return sockethubClient.ping();
-      }).then(function() {
-        console.log('pong - all set!');
-        $('fetch').removeAttribute('disabled');
-        $('send').removeAttribute('disabled');
-      }, function (err) {
-        console.log('error! ', err.message);
-      });
-    });
-    sockethubClient.on('message', function(msg) {
-      var li = document.createElement('li');
-      li.innerHTML = JSON.stringify(msg);
-      $('history').appendChild(li);
-    });
+    //connect with the user's Welten instance:
+    var sock = new WebSocket(config.sockethub);
+    sock.onopen = function() { console.log('open'); };
+    sock.onmessage = function(e) { console.log(e.data); };
+    sock.onclose = function() { console.log('closed'); };
 
-    sockethubClient.on('failed', function() {
-      console.error("Connection to sockethub failed!");
-    });
+    //send:
+    function sendMessage() {
+      var obj = {
+        verb: 'send',
+        target: params.target,
+        object: document.getElementById('text').value,
+        token: config.token
+      };
+      console.log('sending', obj);
+      sock.send(JSON.stringify(obj));
+    }
 
-    sockethubClient.on('disconnected', function() {
-      console.error("Sockethub got disconnected!");
-    });
+    //receive:
+    //...
   </script>
 </html>
