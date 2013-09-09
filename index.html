@@ -14,6 +14,13 @@
       <ul id="target"></ul>
     </nav>
     <article>
+      <div id="searchWidget" style="display:block">
+        <input onkeyup="key();" id="in">  
+        <span id="spinner" style="display:none"><h3>hmmmmmm...</h3></span>
+        <ul id="results"></ul>
+      </div>
+    <article>
+    </article>
       <textarea id="text"></textarea>
       <p>
         <input type="submit" value="Send" onclick="sendMessage();" />
@@ -21,6 +28,7 @@
       <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
     </article>
   </body>
+  <script src="sockjs-0.3.min.js"> </script>
   <script src="config.js"> </script>
   <script>
     //parse parameters from URL hash:
@@ -49,7 +57,7 @@
       }
     }
 
-    //connect with the user's Welten instance:
+    //connect with the user''s Welten instance:
     var sock = new WebSocket(config.sockethub);
     sock.onopen = function() { console.log('open'); };
     sock.onmessage = function(e) { console.log(e.data); };
@@ -68,6 +76,98 @@
     }
 
     //receive:
-    //...
+    function receive(platform) {
+      var obj = {
+        verb: 'fetchHeaders',
+        target: platform+':'+'50',
+        object: '50',
+        token: config.token
+      };
+      console.log('sending', obj);
+      sock.send(JSON.stringify(obj));
+    }
+    
+    //useraddress
+    var rows={};
+    var sock = new SockJS('http://useraddress.net:12380/q');
+    sock.onopen = function() {
+      console.log('open');
+    };
+    sock.onmessage = function(e) {
+      console.log('message', e.data);
+      var e = JSON.parse(e.data);
+      if(e.type == 'row') {
+        addRow(e);
+        show();
+      } else if(e.type == 'status') {
+        showStatus(e.status);
+      }
+    };
+    sock.onclose = function() {
+      console.log('close');
+    };
+    function key() {
+      sock.send(document.getElementById('in').value);
+      show();
+    }
+    function addRow(data) {
+      rows[data.userAddress] = data;
+    }
+    function matches(row, str) {
+      if(str.length < 3) {
+        return;
+      }
+      if(row.userAddress.indexOf(str)!=-1) {
+        return row.textFields.fullName;
+      }
+      var words = [];
+      if(row.textFields.fullName) {
+        words = row.textFields.fullName.split(' ');
+      }
+      if(row.textFields.nick) {
+        words.push(row.textFields.nick);
+      }
+      for(var i=0; i<words.length; i++) {
+        if(words[i].toLowerCase().indexOf(str)!=-1) {
+          return words.slice(0, i).join(' ')+'<strong>'+words[i].substring(words[i].toLowerCase().indexOf(str), str.length)+'</strong>'+words[i].substring(str.length)+' '+words.slice(i+1).join(' ');
+        }
+      }  
+    }
+    function showStatus(status) {
+      document.getElementById('spinner').style.display = (status == 'busy' ? 'inline' : 'none');
+    }
+    function show() {
+      var str = '';
+      for(var i in rows) {
+        var nameMatch = matches(rows[i], document.getElementById('in').value);
+        if(nameMatch) {
+          str += '<li>'+(rows[i].images.avatar?'<img src="'+rows[i].images.avatar+'" style="width:64px;height:64px"> ':'')
+            +nameMatch+' &lt;'+rows[i].userAddress+'&gt; [';
+          var toolsAvailable={
+            U: false,//this contact is a user
+            R: false,//read this contact's page (profile, blog, ...)
+            S: false,//follow this contact's updates feed
+            C: false,//write a public comment on this contact's page (wall, blog comments, ...)
+            M: false,//send a message to this contact
+          };
+          for(var j in rows[i].tools) {
+            for(var k=0; k<rows[i].tools[j].length; k++) {
+              toolsAvailable[rows[i].tools[j][k]]=true;
+            }
+          }
+          toolsAvailable.U=(rows[i].textFields.type=='user');
+          toolsAvailable.T=(rows[i].textFields.type=='topic');
+          for(var l in toolsAvailable) {
+            if(toolsAvailable[l]==true) {
+              str+=' <strong>'+l+'</strong>';
+            } else {
+              str+=' <strike>'+l+'</strike>';
+            }
+          }
+          str+=' ]</li>';
+        }
+      }
+      document.getElementById('results').innerHTML = str;
+    }
   </script>
 </html>
