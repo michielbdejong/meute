@@ -28,9 +28,16 @@
       <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
     </article>
   </body>
+  <script src="remotestorage.js"> </script>
+  <script src="contacts.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
   <script src="config.js"> </script>
   <script>
+    //contacts:
+    remoteStorage.access.claim('contacts', 'rw');
+    remoteStorage.displayWidget();
+    remoteStorage.contacts.getAll().then(function(contacts) { console.log(contacts); });
+
     //parse parameters from URL hash:
     var paramPairs = location.hash.substring(1).split('&'), i, params = {};
     for(i=0; i<paramPairs.length; i++) {
