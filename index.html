@@ -9,6 +9,8 @@
     </style>
   </head>
   <body>
+<a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">allow</a>
+
     <nav>
       <h1>Hello Meute!</h1>
       <ul id="target"></ul>
@@ -96,11 +98,11 @@
     
     //useraddress
     var rows={};
-    var sock = new SockJS('http://useraddress.net:12380/q');
-    sock.onopen = function() {
+    var sock2 = new SockJS('http://useraddress.net:12380/q');
+    sock2.onopen = function() {
       console.log('open');
     };
-    sock.onmessage = function(e) {
+    sock2.onmessage = function(e) {
       console.log('message', e.data);
       var e = JSON.parse(e.data);
       if(e.type == 'row') {
@@ -110,11 +112,11 @@
         showStatus(e.status);
       }
     };
-    sock.onclose = function() {
+    sock2.onclose = function() {
       console.log('close');
     };
     function key() {
-      sock.send(document.getElementById('in').value);
+      sock2.send(document.getElementById('in').value);
       show();
     }
     function addRow(data) {
