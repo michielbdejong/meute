@@ -9,24 +9,23 @@
     </style>
   </head>
   <body>
-<a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">allow</a>
-
     <nav>
-      <h1>Hello Meute!</h1>
-      <ul id="target"></ul>
-    </nav>
-    <article>
+      <h1>Contacts:</h1>
       <div id="searchWidget" style="display:block">
-        <input onkeyup="key();" id="in">  
+        Search: <input onkeyup="key();" id="in">  
         <span id="spinner" style="display:none"><h3>hmmmmmm...</h3></span>
         <ul id="results"></ul>
       </div>
+      <ul id="target"></ul>
+      <a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">import from Google</a>
+    </nav>
     <article>
-    </article>
+      <h2>Compose:</h2>
       <textarea id="text"></textarea>
       <p>
-        <input type="submit" value="Send" onclick="sendMessage();" />
+        <input type="submit" value="Send" onclick="sendEmail();" />
       </p>
+      <h2>History:</h2>
       <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
     </article>
   </body>
@@ -35,17 +34,17 @@
   <script src="sockjs-0.3.min.js"> </script>
   <script src="config.js"> </script>
   <script>
-    //contacts:
-    remoteStorage.access.claim('contacts', 'rw');
-    remoteStorage.displayWidget();
-    remoteStorage.contacts.getAll().then(function(contacts) { console.log(contacts); });
-
     //parse parameters from URL hash:
     var paramPairs = location.hash.substring(1).split('&'), i, params = {};
     for(i=0; i<paramPairs.length; i++) {
       var keyAndValue=paramPairs[i].split('=');
       params[keyAndValue[0]] = keyAndValue[1];
     }
+
+    //contacts:
+    remoteStorage.access.claim('contacts', 'rw');
+    remoteStorage.displayWidget();
+    remoteStorage.contacts.getAll().then(function(contacts) { console.log(contacts); });
     
     //add contacts to nav and history to table:
     var i, li, tr;
@@ -66,34 +65,82 @@
       }
     }
 
-    //connect with the user''s Welten instance:
-    var sock = new WebSocket(config.sockethub);
-    sock.onopen = function() { console.log('open'); };
-    sock.onmessage = function(e) { console.log(e.data); };
-    sock.onclose = function() { console.log('closed'); };
-
-    //send:
-    function sendMessage() {
-      var obj = {
-        verb: 'send',
-        target: params.target,
-        object: document.getElementById('text').value,
-        token: config.token
+    //sockethub client:
+    var sock, incoming=[];
+    function connect(str) {
+      sock = new WebSocket(str); 
+      sock.onopen = function() { console.log('open'); };
+      sock.onmessage = function(e) {
+        console.log(e.data);
+        try {
+          incoming.push(JSON.parse(e.data));
+        } catch(e) {}
       };
-      console.log('sending', obj);
+      sock.onclose = function() { console.log('closed'); };
+    }
+    connect(params['sockethub']);
+
+    function send(obj) {
+      obj.token = params['sockethub'];
       sock.send(JSON.stringify(obj));
     }
+    function save(filename) {
+      send({
+        verb: 'save',
+        object: document.getElementById('text').value,
+        target: 'file:'+filename
+      });
+    }
+    function retrieve(filename) {
+      send({
+        verb: 'retrieve',
+        object: '',
+        target: 'file:'+filename
+      });
+    }
+    function exec(str) {
+      send({
+        verb: 'execute',
+        object: str,
+        target: 'shell:'
+      });
+    }
+    function load() {
+      document.getElementById('text').value =
+          incoming[incoming.length-1].result;
+    }
 
-    //receive:
-    function receive(platform) {
-      var obj = {
-        verb: 'fetchHeaders',
-        target: platform+':'+'50',
-        object: '50',
-        token: config.token
-      };
-      console.log('sending', obj);
-      sock.send(JSON.stringify(obj));
+    function fetchLastEmail(numBack) {
+      send({
+        verb: 'fetch',
+        target: 'email:'+numBack
+      });
+    }
+
+    function sendEmail() {
+      var lines = document.getElementById('text').value.split('\n');
+      var subject=lines.shift;
+      var text = lines.join('\n');
+      send({
+        verb: 'send',
+        object: {
+          text: text,
+          subject: subject,
+        },
+        target: 'email:'+params.target
+      });
+    }
+
+    function replyEmail(to, subject, inReplyTo) {
+      send({
+        verb: 'send',
+        object: {
+          text: document.getElementById('text').value,
+          subject: subject,
+          inReplyTo: inReplyTo
+        },
+        target: 'email:'+to
+      });
     }
     
     //useraddress

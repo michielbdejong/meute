@@ -49,8 +49,37 @@
           incoming[incoming.length-1].result;
     }
 
+    function fetchLastEmail(numBack) {
+      send({
+        verb: 'fetch',
+        target: 'email:'+numBack
+      });
+    }
+
+    function sendEmail(to, subject) {
+      send({
+        verb: 'send',
+        object: {
+          text: document.getElementById('text').value,
+          subject: subject,
+        },
+        target: 'email:'+to
+      });
+    }
+
+    function replyEmail(to, subject, inReplyTo) {
+      send({
+        verb: 'send',
+        object: {
+          text: document.getElementById('text').value,
+          subject: subject,
+          inReplyTo: inReplyTo
+        },
+        target: 'email:'+to
+      });
+    }
     //...
-    token='a';
-    connect('ws://localhost:4231/sock/websocket');
+    token='979017699954424736691749471150921197243803576417391548246967125327967967206230039845';
+    connect('wss://localhost:4273/sock/websocket');
   </script>
 </html>
