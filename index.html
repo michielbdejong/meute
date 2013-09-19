@@ -10,26 +10,21 @@
   </head>
   <body>
     <nav style="display:none" >
-      <h1>Contacts:</h1>
-      <div id="searchWidget" style="display:block">
-        Search: <input onkeyup="key();" id="in">  
-        <span id="spinner" style="display:none"><h3>hmmmmmm...</h3></span>
-        <ul id="results"></ul>
-      </div>
-      <ul id="target"></ul>
       <a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">import from Google</a>
     </nav>
-    <article style="display:none" >
+    <article>
       <h2>Compose:</h2>
       <textarea id="text"></textarea>
       <p>
-        <input type="submit" value="Send" onclick="sendEmail();" />
+        To:<input id="to" onkeyup="searchTo();" /><a id="suggestion" href="#"></a><input type="submit" value="Send" onclick="sendEmail();" />
       </p>
       <h2>History:</h2>
     </article>
-    <h2 id="convHead"></h2>
-    <ul id="convList"></ul>
-    <table id="history" border="1" ></table>
+    <article>
+      <h2 id="convHead"></h2>
+      <ul id="convList"></ul>
+      <table id="history" border="1" ></table>
+    </article>
   </body>
   <script src="remotestorage.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
@@ -48,6 +43,15 @@
         }
       };
     });
+    function searchTo() {
+      var suggestion = search(document.getElementById('to').value);
+      if(suggestion) {
+        document.getElementById('suggestion').innerHTML=suggestion.name;
+        document.getElementById('suggestion').onclick=function() {
+          document.getElementById('to').value = suggestion.name+' <'+suggestion.address+'>';
+        };
+      }
+    }
   </script>
   <script src="app.js"> </script>
 </html>
