@@ -27,12 +27,26 @@
       </p>
       <h2>History:</h2>
     </article>
-    <table id="history" border="1" ><tr><td>actor</td><td>target</td><td>subject</td></tr></table>
+    <table id="history" border="1" ><tr><td>group</td><td>actor</td><td>subject</td></tr></table>
   </body>
   <script src="remotestorage.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
   <script>
     remoteStorage.displayWidget();
+    RemoteStorage.defineModule('contacts', function(privClient, pubClient) {
+      return {
+        exports: {
+          checkGroup: function(participants) {
+            console.log('checkContact', participants);
+            if(!Array.isArray(participants)) {
+              participants[0];
+            } else {
+              return participants;
+            }
+          }
+        }
+      };
+    });
     RemoteStorage.defineModule('inbox', function(privClient, pubClient) {
       privClient.cache('', true);
       function asyncTreeTrav(numLeft, stack, cb) {
@@ -64,34 +78,116 @@
           }
         });
       }
+      function extractParticipants(obj) {
+        var ret = [];
+        console.log('extractParticipants', obj);
+        if(typeof(obj)=='string') {
+          console.log('string - returning', [obj]);
+          return [obj];
+        } else if(Array.isArray(obj)) {
+          for(var i=0; i<obj.length; i++) {
+            ret.push(extractParticipants(obj[i]));
+          }
+          console.log('array - returning', ret);
+          return ret;
+        } else if(typeof(obj)=='object' && typeof(obj.address)=='string') {
+          console.log('object - returning', obj.address);
+          return [obj.address];
+        } else if((typeof(obj)=='object') && ((typeof(obj.to)=='object') || (typeof(obj.cc)=='object') || (typeof(obj.bcc)=='object'))) {
+          ret = extractParticipants(obj.to).concat(extractParticipants(obj.cc)).concat(extractParticipants(obj.bcc));
+          console.log('to/cc/bcc - returning', ret);
+          return ret;
+        } else {
+          console.log('returning nothing');
+          return [];
+        }
+      }
+      function determineGroup(obj) {
+        var memberships = {
+          'unhosted@googlegroups.com': {'anything@michielbdejong.com':true, 'nick@silverbucket.net':true}
+        };
+        var all = [];
+        if(typeof(obj.actor) != 'undefined') {
+          all = all.concat(extractParticipants(obj.actor));
+        }
+        if(typeof(obj.target) != 'undefined') {
+          all = all.concat(extractParticipants(obj.target));
+        }
+        console.log('all', all);
+        var groups = [];
+        for(var i=0; i<all.length; i++) {
+          if(memberships[all[i]]) {
+            groups.push(all[i]);
+          }
+        }
+        var filtered=[], alreadyInGroup;
+        for(var i=0; i<all.length; i++) {
+          alreadyInGroup=false;
+          for(var j=0; j<groups.length; j++) {
+            if(memberships[groups[j]][all[i]]) {
+              alreadyInGroup=true;
+              break;
+            }
+          }
+          if(!alreadyInGroup) {
+            filtered.push(all[i]);
+          }
+        }
+        return filtered
+          .sort()
+          .join(',');
+      }
       return {
         exports: {
           getLast: function(num, cb) {
             asyncTreeTrav(num, ['email/'], cb);
           },
+          getLastGrouped: function(num, cb) {
+            var groups = [], numDone = 0;
+            asyncTreeTrav(num, ['email/'], function(obj) {
+              try {
+                var group = determineGroup(obj);
+                console.log('group of ', obj, ' is ', group);
+                for(var i=0; i<groups.length; i++) {
+                  if(groups[i].group==group) {
+                    groups[i].messages.push(obj);
+                    numDone++;
+                    if(numDone==num) {
+                      cb(groups);
+                    }
+                    return;
+                  }
+                }//group is new:
+                groups.push({
+                  group: group,
+                  messages: [obj]
+                });
+                numDone++;
+                if(numDone==num) {
+                  cb(groups);
+                }
+              } catch(e) {
+                console.log('yo', e.message);
+              }
+            });
+          },
           getPrivClient: function() { return privClient; }
         }
       }
     });
+    function renderContact(contact) {
+      return contact.name;
+    }
+    function renderPost(obj) {
+      return obj.subject;
+    }
     remoteStorage.access.claim('inbox', 'rw');
-    remoteStorage.inbox.getLast(10, function(obj) {
-      if(typeof(obj)!='object') {
-        return;
+    remoteStorage.inbox.getLastGrouped(10, function(conversations) {
+      console.log(conversations);
+      var str = '';
+      for(var i=0; i<conversations.length;i++) {
+        str += '<tr><td>'+conversations[i].group.substring(0,50)+'</td><td>'+conversations[i].messages[0].actor[0].name.substring(0,50)+'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
       }
-      console.log(obj);
-      var str = '<tr><td>';
-      if(obj.actor && obj.actor[0] && obj.actor[0].name) {
-        str +=  '<a href="#contact='+obj.actor[0].address+'">'+obj.actor[0].name+'</a>';
-      }
-      str += '</td><td>';
-      if(obj.target && obj.target.to && obj.target.to[0] && obj.target.to[0].name) {
-        str +=  obj.target.to[0].name;
-      }
-      str += '</td><td>';
-      if(obj.object && obj.object.subject) {
-        str +=  '<a href="#contact='+obj.actor[0].address+'&timestamp='+obj.timestamp+'">'+obj.object.subject+'</a>';
-      }
-      str += '</td></tr>';
       document.getElementById('history').innerHTML += str;
     });
   </script>
