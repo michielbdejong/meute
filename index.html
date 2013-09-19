@@ -27,7 +27,9 @@
       </p>
       <h2>History:</h2>
     </article>
-    <table id="history" border="1" ><tr><td>group</td><td>actor</td><td>subject</td></tr></table>
+    <h2 id="convHead"></h2>
+    <ul id="convList"></ul>
+    <table id="history" border="1" ></table>
   </body>
   <script src="remotestorage.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
@@ -36,13 +38,11 @@
     RemoteStorage.defineModule('contacts', function(privClient, pubClient) {
       return {
         exports: {
-          checkGroup: function(participants) {
-            console.log('checkContact', participants);
-            if(!Array.isArray(participants)) {
-              participants[0];
-            } else {
-              return participants;
-            }
+          add: function(address, attributes) {
+            return privClient.storeObject('contact', address, JSON.stringify(attributes));
+          },
+          getList: function() {
+            return privClient.getAll('');
           }
         }
       };
@@ -92,6 +92,7 @@
           return ret;
         } else if(typeof(obj)=='object' && typeof(obj.address)=='string') {
           console.log('object - returning', obj.address);
+          remoteStorage.contacts.add(obj.address, obj);
           return [obj.address];
         } else if((typeof(obj)=='object') && ((typeof(obj.to)=='object') || (typeof(obj.cc)=='object') || (typeof(obj.bcc)=='object'))) {
           ret = extractParticipants(obj.to).concat(extractParticipants(obj.cc)).concat(extractParticipants(obj.bcc));
@@ -181,14 +182,55 @@
     function renderPost(obj) {
       return obj.subject;
     }
-    remoteStorage.access.claim('inbox', 'rw');
-    remoteStorage.inbox.getLastGrouped(10, function(conversations) {
-      console.log(conversations);
-      var str = '';
-      for(var i=0; i<conversations.length;i++) {
-        str += '<tr><td>'+conversations[i].group.substring(0,50)+'</td><td>'+conversations[i].messages[0].actor[0].name.substring(0,50)+'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
+
+    var contactSearch = [], currConv=0;
+    function displayConv(conv) {
+      document.getElementById('convHead').innerHTML=conv.group;
+      var str = ''
+      for(var i=0; i<conv.messages.length; i++) {
+        str += '<li>'+conv.messages[i].actor[0].name+': ['+conv.messages[i].object.subject+'] - '+conv.messages[i].object.text+'</li>';
       }
-      document.getElementById('history').innerHTML += str;
+      document.getElementById('convHead').innerHTML=conv.group;
+      document.getElementById('convList').innerHTML=str;
+    }
+    function setConv(i) {
+      currConv = i;
+      remoteStorage.inbox.getLastGrouped(10, function(conversations) {
+        console.log(conversations);
+        var str = '<tr><td>group</td><td>actor</td><td>subject</td></tr>';
+        for(var i=0; i<conversations.length;i++) {
+          if(currConv==i) {
+            str += '<tr style="background-color:blue"><td>'+conversations[i].group.substring(0,50)+'</td><td>'
+              +conversations[i].messages[0].actor[0].name.substring(0,50)
+              +'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
+            displayConv(conversations[i]);
+          } else {
+            str += '<tr onclick="setConv('+i+');"><td>'+conversations[i].group.substring(0,50)
+              +'</td><td>'+conversations[i].messages[0].actor[0].name.substring(0,50)
+              +'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
+          }
+        }
+        document.getElementById('history').innerHTML = str;
+      });
+    }
+    //..
+    remoteStorage.access.claim('inbox', 'rw');
+    setConv(0);
+    remoteStorage.contacts.getList().then(function(contacts) {
+      for(var i in contacts) {
+        try {
+          obj = JSON.parse(contacts[i]);
+          contactSearch.push(obj);
+        } catch(e) {
+        }
+      }     
     });
+    function search(prefix) {
+      for(var i=0; i<contactSearch.length; i++) {
+        if(contactSearch[i].name.substring(0, prefix.length)==prefix) {
+          return contactSearch[i];
+        }
+      }
+    }
   </script>
 </html>
