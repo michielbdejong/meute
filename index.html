@@ -9,7 +9,7 @@
     </style>
   </head>
   <body>
-    <nav>
+    <nav style="display:none" >
       <h1>Contacts:</h1>
       <div id="searchWidget" style="display:block">
         Search: <input onkeyup="key();" id="in">  
@@ -19,211 +19,80 @@
       <ul id="target"></ul>
       <a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">import from Google</a>
     </nav>
-    <article>
+    <article style="display:none" >
       <h2>Compose:</h2>
       <textarea id="text"></textarea>
       <p>
         <input type="submit" value="Send" onclick="sendEmail();" />
       </p>
       <h2>History:</h2>
-      <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
     </article>
+    <table id="history" border="1" ><tr><td>actor</td><td>target</td><td>subject</td></tr></table>
   </body>
   <script src="remotestorage.js"> </script>
-  <script src="contacts.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
-  <script src="config.js"> </script>
   <script>
-    //parse parameters from URL hash:
-    var paramPairs = location.hash.substring(1).split('&'), i, params = {};
-    for(i=0; i<paramPairs.length; i++) {
-      var keyAndValue=paramPairs[i].split('=');
-      params[keyAndValue[0]] = keyAndValue[1];
-    }
-
-    //contacts:
-    remoteStorage.access.claim('contacts', 'rw');
     remoteStorage.displayWidget();
-    remoteStorage.contacts.getAll().then(function(contacts) { console.log(contacts); });
-    
-    //add contacts to nav and history to table:
-    var i, li, tr;
-    for(i=0; i<contacts.length; i++) {
-      li = document.createElement('li');
-      li.innerHTML = '<a href="#target='+contacts[i]+'&welten='+params.welten+'&token='+params.token+'"'
-        +' onclick="params.target=\''+contacts[i]+'\';">'+contacts[i]+'</a>';
-      document.getElementById('target').appendChild(li);
-    }
-    if(history[params.target]) {
-      for(i=0; i<history[params.target].length; i++) {
-        tr = document.createElement('tr');
-        tr.innerHTML = '<td>'+history[params.target][i].timestamp
-          +'</td><td>'+history[params.target][i].actor
-          +'</td><td>'+history[params.target][i].text
-          +'</td>';
-        document.getElementById('history').appendChild(tr);
+    RemoteStorage.defineModule('inbox', function(privClient, pubClient) {
+      privClient.cache('', true);
+      function asyncTreeTrav(numLeft, stack, cb) {
+        var curr = stack.pop();
+        console.log('asyncTreeTrav', numLeft, stack, curr);
+        privClient.getListing(curr).then(function(list) {
+          list.sort(function(a, b) {
+            return parseInt(a)-parseInt(b);
+          });
+          for(var i=0; i<list.length; i++) {
+            if(list[i].substr(-1)=='/') {
+              stack.push(curr+list[i]);
+            } else {
+              if((numLeft--)>0) {
+                privClient.getFile(curr+list[i]).then(function(obj) {
+                  var msg;
+                  try {
+                    msg = JSON.parse(obj.data);
+                  } catch(e) {
+                    msg = e;
+                  }
+                  cb(msg);
+                });
+              }
+            }
+          }
+          if(numLeft>0) {
+            asyncTreeTrav(numLeft, stack, cb);
+          }
+        });
       }
-    }
-
-    //sockethub client:
-    var sock, incoming=[];
-    function connect(str) {
-      sock = new WebSocket(str); 
-      sock.onopen = function() { console.log('open'); };
-      sock.onmessage = function(e) {
-        console.log(e.data);
-        try {
-          incoming.push(JSON.parse(e.data));
-        } catch(e) {}
-      };
-      sock.onclose = function() { console.log('closed'); };
-    }
-    connect(params['sockethub']);
-
-    function send(obj) {
-      obj.token = params['sockethub'];
-      sock.send(JSON.stringify(obj));
-    }
-    function save(filename) {
-      send({
-        verb: 'save',
-        object: document.getElementById('text').value,
-        target: 'file:'+filename
-      });
-    }
-    function retrieve(filename) {
-      send({
-        verb: 'retrieve',
-        object: '',
-        target: 'file:'+filename
-      });
-    }
-    function exec(str) {
-      send({
-        verb: 'execute',
-        object: str,
-        target: 'shell:'
-      });
-    }
-    function load() {
-      document.getElementById('text').value =
-          incoming[incoming.length-1].result;
-    }
-
-    function fetchLastEmail(numBack) {
-      send({
-        verb: 'fetch',
-        target: 'email:'+numBack
-      });
-    }
-
-    function sendEmail() {
-      var lines = document.getElementById('text').value.split('\n');
-      var subject=lines.shift;
-      var text = lines.join('\n');
-      send({
-        verb: 'send',
-        object: {
-          text: text,
-          subject: subject,
-        },
-        target: 'email:'+params.target
-      });
-    }
-
-    function replyEmail(to, subject, inReplyTo) {
-      send({
-        verb: 'send',
-        object: {
-          text: document.getElementById('text').value,
-          subject: subject,
-          inReplyTo: inReplyTo
-        },
-        target: 'email:'+to
-      });
-    }
-    
-    //useraddress
-    var rows={};
-    var sock2 = new SockJS('http://useraddress.net:12380/q');
-    sock2.onopen = function() {
-      console.log('open');
-    };
-    sock2.onmessage = function(e) {
-      console.log('message', e.data);
-      var e = JSON.parse(e.data);
-      if(e.type == 'row') {
-        addRow(e);
-        show();
-      } else if(e.type == 'status') {
-        showStatus(e.status);
+      return {
+        exports: {
+          getLast: function(num, cb) {
+            asyncTreeTrav(num, ['email/'], cb);
+          },
+          getPrivClient: function() { return privClient; }
+        }
       }
-    };
-    sock2.onclose = function() {
-      console.log('close');
-    };
-    function key() {
-      sock2.send(document.getElementById('in').value);
-      show();
-    }
-    function addRow(data) {
-      rows[data.userAddress] = data;
-    }
-    function matches(row, str) {
-      if(str.length < 3) {
+    });
+    remoteStorage.access.claim('inbox', 'rw');
+    remoteStorage.inbox.getLast(10, function(obj) {
+      if(typeof(obj)!='object') {
         return;
       }
-      if(row.userAddress.indexOf(str)!=-1) {
-        return row.textFields.fullName;
+      console.log(obj);
+      var str = '<tr><td>';
+      if(obj.actor && obj.actor[0] && obj.actor[0].name) {
+        str +=  '<a href="#contact='+obj.actor[0].address+'">'+obj.actor[0].name+'</a>';
       }
-      var words = [];
-      if(row.textFields.fullName) {
-        words = row.textFields.fullName.split(' ');
+      str += '</td><td>';
+      if(obj.target && obj.target.to && obj.target.to[0] && obj.target.to[0].name) {
+        str +=  obj.target.to[0].name;
       }
-      if(row.textFields.nick) {
-        words.push(row.textFields.nick);
+      str += '</td><td>';
+      if(obj.object && obj.object.subject) {
+        str +=  '<a href="#contact='+obj.actor[0].address+'&timestamp='+obj.timestamp+'">'+obj.object.subject+'</a>';
       }
-      for(var i=0; i<words.length; i++) {
-        if(words[i].toLowerCase().indexOf(str)!=-1) {
-          return words.slice(0, i).join(' ')+'<strong>'+words[i].substring(words[i].toLowerCase().indexOf(str), str.length)+'</strong>'+words[i].substring(str.length)+' '+words.slice(i+1).join(' ');
-        }
-      }  
-    }
-    function showStatus(status) {
-      document.getElementById('spinner').style.display = (status == 'busy' ? 'inline' : 'none');
-    }
-    function show() {
-      var str = '';
-      for(var i in rows) {
-        var nameMatch = matches(rows[i], document.getElementById('in').value);
-        if(nameMatch) {
-          str += '<li>'+(rows[i].images.avatar?'<img src="'+rows[i].images.avatar+'" style="width:64px;height:64px"> ':'')
-            +nameMatch+' &lt;'+rows[i].userAddress+'&gt; [';
-          var toolsAvailable={
-            U: false,//this contact is a user
-            R: false,//read this contact's page (profile, blog, ...)
-            S: false,//follow this contact's updates feed
-            C: false,//write a public comment on this contact's page (wall, blog comments, ...)
-            M: false,//send a message to this contact
-          };
-          for(var j in rows[i].tools) {
-            for(var k=0; k<rows[i].tools[j].length; k++) {
-              toolsAvailable[rows[i].tools[j][k]]=true;
-            }
-          }
-          toolsAvailable.U=(rows[i].textFields.type=='user');
-          toolsAvailable.T=(rows[i].textFields.type=='topic');
-          for(var l in toolsAvailable) {
-            if(toolsAvailable[l]==true) {
-              str+=' <strong>'+l+'</strong>';
-            } else {
-              str+=' <strike>'+l+'</strike>';
-            }
-          }
-          str+=' ]</li>';
-        }
-      }
-      document.getElementById('results').innerHTML = str;
-    }
+      str += '</td></tr>';
+      document.getElementById('history').innerHTML += str;
+    });
   </script>
 </html>
