@@ -26,8 +26,8 @@
         <input type="submit" value="Send" onclick="sendEmail();" />
       </p>
       <h2>History:</h2>
-      <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
     </article>
+    <table id="history"><tr><td>timestamp</td><td>actor</td><td>text</td></tr></table>
   </body>
   <script src="remotestorage.js"> </script>
   <script src="sockjs-0.3.min.js"> </script>
@@ -46,7 +46,15 @@
               stack.push(curr+list[i]);
             } else {
               if(numLeft--) {
-                privClient.getFile(curr+list[i]).then(cb);
+                privClient.getFile(curr+list[i]).then(function(obj) {
+                  var msg;
+                  try {
+                    msg = JSON.parse(obj.data);
+                  } catch(e) {
+                    msg = e;
+                  }
+                  cb(msg);
+                });
               }
             }
           }
@@ -59,40 +67,19 @@
         exports: {
           getLast: function(num, cb) {
             asyncTreeTrav(num, ['email/'], cb);
-            //asynchronous tree traversal: numLeft, nodesLeft, cb
-            //take the last node
-            //- if it's a leaf, pop it, cb it, and numLeft-1.
-            //- if not, push its children
-            privClient.getListing('email/').then(function(Ms) {
-              var biggestMs = 0, thisMs;
-              for(var i=0; i<Ms.length; i++) {
-                thisMs = parseInt(Ms[i]);
-                if(thisMs > biggestMs) {
-                  biggestMs = thisMs;
-                } 
-              }
-              privClient.getListing('email/'+biggestMs+'/').then(function(ks) {
-                var biggestks = 0, thisks;
-                for(var i=0; i<ks.length; i++) {
-                  thisks = parseInt(ks[i]);
-                  if(thisks > biggestks) {
-                    biggestks = thisks;
-                  } 
-                }
-                privClient.getListing('email/'+biggestMs+'/'+biggestks+'/').then(function(list) {
-                  for(var i=0; i<list.length; i++) {
-                    privClient.getFile('email/'+biggestMs+'/'+biggestks+'/'+list[i]).then(function(obj) {
-                      cb(obj.data);
-                    });
-                  }
-                });
-              });
-            });
           },
           getPrivClient: function() { return privClient; }
         }
       }
     });
     remoteStorage.access.claim('inbox', 'rw');
+    remoteStorage.inbox.getLast(10, function(obj) {
+      try {
+        document.getElementById('history').innerHTML += '<tr><td>'+obj.timestamp+'</td></tr>';
+      } catch(e) {
+        console.log(e);
+      }
+      console.log(obj);
+    });
   </script>
 </html>
