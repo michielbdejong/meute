@@ -9,20 +9,24 @@
     </style>
   </head>
   <body>
-    <nav style="display:none" >
+    <nav style="float:left" >
+      <h2>Contacts:</h2>
       <a href="https://accounts.google.com/o/oauth2/auth?scope=https://www.google.com/m8/feeds&response_type=code&redirect_uri=http://localhost:8000/&approval_prompt=force&state=/profile&client_id=709507725318.apps.googleusercontent.com&hl=cs&from_login=1&as=-70afdc9022b91924&pli=1&authuser=0">import from Google</a>
+      <table id="contactsList"></table>
     </nav>
-    <article>
+    <article id="compose" style="display:none" >
       <h2>Compose:</h2>
       <textarea id="text"></textarea>
       <p>
         To:<input id="to" onkeyup="searchTo();" /><a id="suggestion" href="#"></a><input type="submit" value="Send" onclick="sendEmail();" />
       </p>
-      <h2>History:</h2>
     </article>
-    <article>
+    <article id="message" style="display:none" >
       <h2 id="convHead"></h2>
       <ul id="convList"></ul>
+    </article>
+    <article id="history" style="float:right" >
+      <h2>History:</h2>
       <table id="history" border="1" ></table>
     </article>
   </body>
