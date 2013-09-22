@@ -142,7 +142,9 @@
     showBoxes('mainscreen');
   </script>
   <script src="remotestorage.js"> </script>
+  <script src="inbox.js"> </script>
   <script>
     remoteStorage.displayWidget();
+    RemoteStorage.access.claim('inbox', 'r');
   </script>
 </html>

@@ -91,11 +91,11 @@
       return {
         exports: {
           getLast: function(num, cb) {
-            asyncTreeTrav(num, ['email/'], cb);
+            asyncTreeTrav(num, [''], cb);
           },
           getLastGrouped: function(num, cb) {
             var groups = [], numDone = 0;
-            asyncTreeTrav(num, ['email/'], function(obj) {
+            asyncTreeTrav(num, [''], function(obj) {
               try {
                 var group = determineGroup(obj);
                 console.log('group of ', obj, ' is ', group);
