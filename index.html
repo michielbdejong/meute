@@ -13,6 +13,7 @@
     </style>
   </head>
   <body>
+    <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load mock data" onclick="loadMockData();" />
     <nav>
       <div class="box mainscreen">
         <h2>Search:</h2>
@@ -138,7 +139,10 @@
     }
 
     //...
-    loadMockData();
     showBoxes('mainscreen');
+  </script>
+  <script src="remotestorage.js"> </script>
+  <script>
+    remoteStorage.displayWidget();
   </script>
 </html>
