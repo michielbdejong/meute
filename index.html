@@ -56,8 +56,8 @@
         <input type="submit" value="reply" onclick="showBoxes('composescreen');">
       </div>
       <div>
-        <pre id="readPre" style="width:100%">
-        </pre>
+        <p id="readp" style="width:100%;word-wrap:break-word">
+        </p>
       </div>
     </article>
   </body>
@@ -126,8 +126,9 @@
       document.getElementById(table).innerHTML=str;
     }
     function selectMessage(id) {
-      document.getElementById('readPre').innerHTML =
-        (messagesInMem[id]?messagesInMem[id].text:'(cannot display message text)');
+      document.getElementById('readp').innerHTML = (messagesInMem[id]?
+          messagesInMem[id].text.replace(/\n/g, '<br>')
+          :'(cannot display message text)');
       showContacts([messagesInMem[id]], 'fromTable');
     }
     function loadMockData() {
@@ -150,7 +151,7 @@
         1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', subject: 'Announcing Meute v0.1'},
         2: { name: 'A Skillz', avatar: 'mock/avatar3.png', subject: 'Re: The funky technician is back' }
       }, 'messagesTable');
-      document.getElementById('readPre').innerHTML='Il existe un domaine dans lequel je n\'ai pas d\'egal';
+      document.getElementById('readp').innerHTML='Il existe un domaine dans lequel je n\'ai pas d\'egal';
     }
 
     //...
