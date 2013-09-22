@@ -14,13 +14,13 @@
     <nav>
       <div>
         <h2>Search:</h2>
-        <input onkeyup="filterContacts(this.value);">
+        <input oninput="filterContacts(this.value);">
       </div>
       <div>
         <h2>Contacts:</h2>
         <table>
           <tr class="contactrow" data-search="Michiel Leenaars"><td><img src="avatar5.png" /></td><td>Michiel Leenaars</td></tr>
-          <tr class="contactrow" data-search="Michiel Leenaars"><td><img src="avatar1.png" /></td><td>Michiel de Jong</td></tr>
+          <tr class="contactrow" data-search="Michiel de Jong"><td><img src="avatar1.png" /></td><td>Michiel de Jong</td></tr>
           <tr class="contactrow" data-search="Dalai Lama"><td><img src="avatar2.png" /></td><td>Dalai Lama</td></tr>
           <tr class="contactrow" data-search="Krafty Kuts"><td><img src="avatar4.png" /></td><td>Krafty Kuts</td></tr>
           <tr class="contactrow" data-search="A Skillz"><td><img src="avatar3.png" /></td><td>A Skillz</td></tr>
@@ -48,19 +48,23 @@
           if(l>0) {
             matchThis=false;
             theseTerms = trs[i].getAttribute('data-search').split(' ');
-            for(var k=0; k<terms.length; k++) {
+            //console.log('matching '+matchTerms[j]+' against '+theseTerms.join(','));
+            for(var k=0; k<theseTerms.length; k++) {
               if(theseTerms[k].substring(0, l).toLowerCase()==matchTerms[j]) {
                 matchThis = true;
                 break;
               }
             }
             if(!matchThis) {
+              //console.log('no!');
               match = false;
               break;
             }
           }
         }
-        if(!match) {
+        if(match) {
+          trs[i].style.display='block';
+        } else {
           trs[i].style.display='none';
         }
       }
