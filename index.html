@@ -13,13 +13,13 @@
     </style>
   </head>
   <body>
-    <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load mock data" onclick="loadMockData();" />
+    <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load mock data" onmousedown="loadMockData();" />
     <nav>
       <div class="box mainscreen">
         <h2>Search:</h2>
         <input oninput="filterContacts(this.value);">
       </div>
-      <div class="box mainscreen" onclick="showBoxes('composescreen');">
+      <div class="box mainscreen" onmousedown="showBoxes('composescreen');">
         <h2>Contacts:</h2>
         <table id="contactsTable">
         </table>
@@ -35,14 +35,14 @@
         </table>
       </div>
     </nav>
-    <article class="box mainscreen" onclick="showBoxes('readscreen');">
+    <article class="box mainscreen" onmousedown="showBoxes('readscreen');">
       <h2>Messages:</h2>
       <table id="messagesTable" border="1">
       </table>
     </article>
     <article class="box composescreen">
       <div>
-        <input type="submit" value="back" onclick="showBoxes('mainscreen');">
+        <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
         <input type="submit" value="email (first line is subject)">
         <input type="submit" value="irc (hit enter to send)">
       </div>
@@ -52,8 +52,8 @@
     </article>
     <article class="box readscreen" style="width:40em">
       <div>
-        <input type="submit" value="back" onclick="showBoxes('mainscreen');">
-        <input type="submit" value="reply" onclick="showBoxes('composescreen');">
+        <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
+        <input type="submit" value="reply" onmousedown="showBoxes('composescreen');">
       </div>
       <div>
         <p id="readp" style="width:100%;word-wrap:break-word">
@@ -105,7 +105,7 @@
       return (typeof(str)=='string'?str.replace(/['"<]/g, ''):'*');
     }
     function showContacts(contacts, table) {
-      var str='';
+     console.log(contacts); var str='';
       for(var i=0; i<contacts.length; i++) {
         str+='<tr class="contactrow" data-search="'
             +escape(contacts[i].name)+'"><td><img src="'
@@ -114,22 +114,22 @@
       }
       document.getElementById(table).innerHTML=str;
     }
-    function showMessages(messages, table) {
+    function showMessages() {
       var str='';
-      for(i in messages) {
-        str+='<tr onclick="selectMessage(\''
+      for(i in messagesInMem) {
+        str+='<tr onmousedown="selectMessage(\''
             +escape(i)+'\'); showBoxes(\'readscreen\');" ><td><img src="'
-            +escape(messages[i].avatar)+'" /> '
-            +escape(messages[i].name)+'</td><td>'
-            +escape(messages[i].subject)+'</td></tr>';
+            +escape(messagesInMem[i].avatar)+'" /> '
+            +escape(messagesInMem[i].name)+'</td><td>'
+            +escape(messagesInMem[i].subject)+'</td></tr>';
       }
-      document.getElementById(table).innerHTML=str;
+      document.getElementById('messagesTable').innerHTML=str;
     }
     function selectMessage(id) {
       document.getElementById('readp').innerHTML = (messagesInMem[id]?
           messagesInMem[id].text.replace(/\n/g, '<br>')
           :'(cannot display message text)');
-      showContacts([messagesInMem[id]], 'fromTable');
+      console.log(id);showContacts([messagesInMem[id]], 'fromTable');
     }
     function loadMockData() {
       showContacts([
@@ -146,12 +146,12 @@
       showContacts([
         { name: 'A Skillz', avatar: 'mock/avatar3.png' }
       ], 'toTable');
-      showMessages({
-        0: { name: 'Dalai Lama', avatar: 'mock/avatar2.png', subject: 'Re: Announcing Meute v0.1' },
-        1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', subject: 'Announcing Meute v0.1'},
-        2: { name: 'A Skillz', avatar: 'mock/avatar3.png', subject: 'Re: The funky technician is back' }
-      }, 'messagesTable');
-      document.getElementById('readp').innerHTML='Il existe un domaine dans lequel je n\'ai pas d\'egal';
+      messagesInMem = {
+        0: { name: 'Dalai Lama', avatar: 'mock/avatar2.png', subject: 'Re: Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', subject: 'Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        2: { name: 'Krafty Kuts', avatar: 'mock/avatar4.png', subject: 'Re: The funky technician is back', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal' }
+      };
+      showMessages();
     }
 
     //...
@@ -170,7 +170,7 @@
         subject: msg.object.subject,
         text: msg.object.text
       };
-      showMessages(messagesInMem, 'messagesTable');
+      showMessages();
     });
   </script>
 </html>
