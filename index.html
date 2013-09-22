@@ -144,7 +144,18 @@
   <script src="remotestorage.js"> </script>
   <script src="inbox.js"> </script>
   <script>
+    var messagesInMem=[];
     remoteStorage.displayWidget();
-    RemoteStorage.access.claim('inbox', 'r');
+    remoteStorage.access.claim('inbox', 'r');
+    remoteStorage.inbox.getLast(10, function(msg) {
+      //remoteStorage.getContact(msg.actor[0]);
+      messagesInMem.push({
+        id: msg.messageId,
+        name: msg.actor[0].name,
+        subject: msg.object.subject,
+        text: msg.object.text
+      });
+      showMessages(messagesInMem, 'messagesTable');
+    });
   </script>
 </html>
