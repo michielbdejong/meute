@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Meute - an unhosted messages/contacts/search app</title>
+    <style>
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div>
+        <h2>Search:</h2>
+        <input onkeyup="filterContacts(this.value);">
+      </div>
+      <div>
+        <h2>Contacts:</h2>
+        <table>
+          <tr class="contactrow" data-search="Michiel Leenaars"><td><img src="avatar5.png" /></td><td>Michiel Leenaars</td></tr>
+          <tr class="contactrow" data-search="Michiel Leenaars"><td><img src="avatar1.png" /></td><td>Michiel de Jong</td></tr>
+          <tr class="contactrow" data-search="Dalai Lama"><td><img src="avatar2.png" /></td><td>Dalai Lama</td></tr>
+          <tr class="contactrow" data-search="Krafty Kuts"><td><img src="avatar4.png" /></td><td>Krafty Kuts</td></tr>
+          <tr class="contactrow" data-search="A Skillz"><td><img src="avatar3.png" /></td><td>A Skillz</td></tr>
+        </table>
+      </div>
+    </nav>
+    <article>
+      <h2>Messages:</h2>
+      <table border="1">
+        <tr><td><img src="avatar2.png" /> Dalai Lama</td><td>Re: Announcing Meute v0.1</td></tr>
+        <tr><td><img src="avatar1.png" /> Michiel de Jong</td><td>Announcing Meute v0.1</td></tr>
+        <tr><td><img src="avatar3.png" /> A Skillz</td><td>Re: The funky technician is back</td></tr>
+      </table>
+    </article>
+  </body>
+  <script>
+    function filterContacts(str) {
+      var l, match, matchThis, theseTerms,
+        matchTerms = str.trim().toLowerCase().split(' ');
+      trs = document.getElementsByClassName('contactrow');
+      for(var i=0; i<trs.length; i++) {
+        match = true;
+        for(var j=0; j<matchTerms.length; j++) {
+          l=matchTerms[j].length;
+          if(l>0) {
+            matchThis=false;
+            theseTerms = trs[i].getAttribute('data-search').split(' ');
+            for(var k=0; k<terms.length; k++) {
+              if(theseTerms[k].substring(0, l).toLowerCase()==matchTerms[j]) {
+                matchThis = true;
+                break;
+              }
+            }
+            if(!matchThis) {
+              match = false;
+              break;
+            }
+          }
+        }
+        if(!match) {
+          trs[i].style.display='none';
+        }
+      }
+    }
+  </script>
+</html>
