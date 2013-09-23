@@ -24,6 +24,11 @@
         <table id="contactsTable">
         </table>
       </div>
+      <div class="box mainscreen" onmousedown="showBoxes('composescreen');">
+        <h2>Suggestions:</h2>
+        <table id="suggestionsTable">
+        </table>
+      </div>
       <div class="box composescreen">
         <h2 style="display:inline">Message to:</h2>
         <table id="toTable">
@@ -62,6 +67,28 @@
     </article>
   </body>
   <script>
+    var userAddress = new WebSocket('wss://michielbdejong.com:12380/q/websocket'), suggestions={};
+    userAddress.onmessage=function(msg) {
+      try {
+        msg = JSON.parse(msg.data);
+      } catch(e) {
+        console.log('unparseable msg from userAddress', msg);
+        return;
+      }
+      if(msg.textFields && msg.tools) {
+        for(var i in msg.tools) {
+          if(i.substring(0, 'mailto:'.length)=='mailto:') {
+            suggestions[i.substring('mailto:'.length)]= {
+              address: i.substring('mailto:'.length),
+              name: msg.textFields.fullName,
+              avatar: (msg.images?msg.images.avatar:'')
+            };
+            showSuggestions();
+            break;
+          }
+        }
+      }
+    };
     function filterContacts(str) {
       var l, match, matchThis, theseTerms,
         matchTerms = str.trim().toLowerCase().split(' ');
@@ -93,6 +120,10 @@
           trs[i].style.display='none';
         }
       }
+      if(userAddress && userAddress.readyState==WebSocket.OPEN) {
+        suggestions={};
+        userAddress.send(str);
+      }
     }
     function showBoxes(screen) {
       var allBoxes = document.getElementsByClassName('box');
@@ -105,7 +136,16 @@
       return (typeof(str)=='string'?str.replace(/['"<]/g, ''):'*');
     }
     function showContacts(contacts, table) {
-     console.log(contacts); var str='';
+      if(!contacts) {
+        contacts=[];
+        for(var i in contactsInMem) {
+          contacts.push(contactsInMem[i]);
+        }
+      }
+      if(!table) {
+        table='contactsTable';
+      }
+      console.log(contacts); var str='';
       for(var i=0; i<contacts.length; i++) {
         str+='<tr class="contactrow" data-search="'
             +escape(contacts[i].name)+'"><td><img src="'
@@ -113,6 +153,13 @@
             +escape(contacts[i].name)+'</td></tr>';
       }
       document.getElementById(table).innerHTML=str;
+    }
+    function showSuggestions() {
+      var contacts=[];
+      for(var i in suggestions) {
+        contacts.push(suggestions[i]);
+      }
+      showContacts(contacts, 'suggestionsTable');
     }
     function showMessages() {
       var str='';
@@ -132,14 +179,15 @@
       console.log(id);showContacts([messagesInMem[id]], 'fromTable');
     }
     function loadMockData() {
-      showContacts([
+       contactsInMem = [
         { name: 'MC Solaar', avatar: 'mock/avatar6.png' },
         { name: 'Michiel de Jong', avatar: 'mock/avatar1.png' },
         { name: 'Michiel Leenaars', avatar: 'mock/avatar5.png' },
         { name: 'Dalai Lama', avatar: 'mock/avatar2.png' },
         { name: 'Krafty Kuts', avatar: 'mock/avatar4.png' },
         { name: 'A Skillz', avatar: 'mock/avatar3.png' }
-      ], 'contactsTable');
+      ];
+      showContacts();
       showContacts([
         { name: 'MC Solaar', avatar: 'mock/avatar6.png' },
       ], 'fromTable');
@@ -160,17 +208,32 @@
   <script src="remotestorage.js"> </script>
   <script src="inbox.js"> </script>
   <script>
-    var messagesInMem={};
+    remoteStorage.contacts = {
+      add: function(list) {
+        if(Array.isArray(list)) {
+          for(var i=0; i<list.length; i++) {
+            contactsInMem[list[i].address] = list[i];
+          }
+        }
+      }
+    };
+    var messagesInMem={}, contactsInMem={};
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
-    remoteStorage.inbox.getLast(100, function(msg) {
-      //remoteStorage.getContact(msg.actor[0]);
+    remoteStorage.inbox.getLast(5, function(msg) {
+      remoteStorage.contacts.add(msg.actor);
+      if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
+        remoteStorage.contacts.add(msg.target.to);
+        remoteStorage.contacts.add(msg.target.cc);
+        remoteStorage.contacts.add(msg.target.bcc);
+      }
       messagesInMem[msg.object.messageId] = {
         name: msg.actor[0].name,
         subject: msg.object.subject,
         text: msg.object.text
       };
       showMessages();
+      showContacts();
     });
   </script>
 </html>
