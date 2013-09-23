@@ -163,7 +163,7 @@
     var messagesInMem={};
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
-    remoteStorage.inbox.getLast(10, function(msg) {
+    remoteStorage.inbox.getLast(100, function(msg) {
       //remoteStorage.getContact(msg.actor[0]);
       messagesInMem[msg.object.messageId] = {
         name: msg.actor[0].name,
