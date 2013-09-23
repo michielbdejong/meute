@@ -151,7 +151,7 @@
     function sendMsg() {
       var text = document.getElementById('compose').value,
         enterPos = text.indexOf('\n');
-      console.log({
+      send({
         target: 'email:'+toAddress,
         object: {
           inReplyTo: inReplyTo,
