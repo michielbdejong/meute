@@ -1,4 +1,4 @@
-RemoteStorage.defineModule(function(privClient) {
+RemoteStorage.defineModule('sockethub-credentials', function(privClient) {
   return {
     exports: {
       getUrl: function() {

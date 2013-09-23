@@ -99,6 +99,20 @@
       showMessages();
       showContacts();
     });
-    
+    var sock, send = function() { console.log('not ready'); };
+    remoteStorage.sockethubCredentials.getUrl().then(function(url) {
+      sock = new WebSocket(url.data);
+      sock.onmessage=function(msg) { console.log('sock msg', msg.data); };
+      sock.onopen=function(msg) { console.log('sock open', msg); };
+      sock.onclose=function(msg) { console.log('sock closed', msg); };
+      sock.onerror=function(msg) { console.log('sock error', msg); };
+      remoteStorage.sockethubCredentials.getToken().then(function(token) {
+        send = function(obj) { 
+          obj.token = token.data.trim();
+          sock.send(JSON.stringify(obj));
+          console.log('sock sent', obj);
+        };
+      });
+    });
   </script>
 </html>
