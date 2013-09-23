@@ -1,56 +1,137 @@
-    function renderContact(contact) {
-      return contact.name;
-    }
-    function renderPost(obj) {
-      return obj.subject;
-    }
-
-    var contactSearch = [], currConv=0;
-    function displayConv(conv) {
-      document.getElementById('convHead').innerHTML=conv.group;
-      var str = ''
-      for(var i=0; i<conv.messages.length; i++) {
-        str += '<li>'+conv.messages[i].actor[0].name+': ['+conv.messages[i].object.subject+'] - '+conv.messages[i].object.text+'</li>';
+    var userAddress = new WebSocket('wss://michielbdejong.com:12380/q/websocket'), suggestions={};
+    userAddress.onmessage=function(msg) {
+      try {
+        msg = JSON.parse(msg.data);
+      } catch(e) {
+        console.log('unparseable msg from userAddress', msg);
+        return;
       }
-      document.getElementById('convHead').innerHTML=conv.group;
-      document.getElementById('convList').innerHTML=str;
-    }
-    function setConv(i) {
-      currConv = i;
-      remoteStorage.inbox.getLastGrouped(10, function(conversations) {
-        console.log(conversations);
-        var str = '<tr><td>group</td><td>actor</td><td>subject</td></tr>';
-        for(var i=0; i<conversations.length;i++) {
-          if(currConv==i) {
-            str += '<tr style="background-color:blue"><td>'+conversations[i].group.substring(0,50)+'</td><td>'
-              +conversations[i].messages[0].actor[0].name.substring(0,50)
-              +'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
-            displayConv(conversations[i]);
-          } else {
-            str += '<tr onclick="setConv('+i+');"><td>'+conversations[i].group.substring(0,50)
-              +'</td><td>'+conversations[i].messages[0].actor[0].name.substring(0,50)
-              +'</td><td>'+conversations[i].messages[0].object.subject.substring(0,50)+'</td></tr>';
+      if(msg.textFields && msg.tools) {
+        for(var i in msg.tools) {
+          if(i.substring(0, 'mailto:'.length)=='mailto:') {
+            suggestions[i.substring('mailto:'.length)]= {
+              address: i.substring('mailto:'.length),
+              name: msg.textFields.fullName,
+              avatar: (msg.images?msg.images.avatar:'')
+            };
+            showSuggestions();
+            break;
           }
         }
-        document.getElementById('history').innerHTML = str;
-      });
-    }
-    //..
-    remoteStorage.access.claim('inbox', 'rw');
-    setConv(0);
-    remoteStorage.contacts.getList().then(function(contacts) {
-      for(var i in contacts) {
-        try {
-          obj = JSON.parse(contacts[i]);
-          contactSearch.push(obj);
-        } catch(e) {
+      }
+    };
+    function filterContacts(str) {
+      var l, match, matchThis, theseTerms,
+        matchTerms = str.trim().toLowerCase().split(' ');
+      trs = document.getElementsByClassName('contactrow');
+      for(var i=0; i<trs.length; i++) {
+        match = true;
+        for(var j=0; j<matchTerms.length; j++) {
+          l=matchTerms[j].length;
+          if(l>0) {
+            matchThis=false;
+            theseTerms = trs[i].getAttribute('data-search').split(' ');
+            //console.log('matching '+matchTerms[j]+' against '+theseTerms.join(','));
+            for(var k=0; k<theseTerms.length; k++) {
+              if(theseTerms[k].substring(0, l).toLowerCase()==matchTerms[j]) {
+                matchThis = true;
+                break;
+              }
+            }
+            if(!matchThis) {
+              //console.log('no!');
+              match = false;
+              break;
+            }
+          }
         }
-      }     
-    });
-    function search(prefix) {
-      for(var i=0; i<contactSearch.length; i++) {
-        if(contactSearch[i].name.substring(0, prefix.length)==prefix) {
-          return contactSearch[i];
+        if(match) {
+          trs[i].style.display='block';
+        } else {
+          trs[i].style.display='none';
         }
       }
+      if(userAddress && userAddress.readyState==WebSocket.OPEN) {
+        suggestions={};
+        userAddress.send(str);
+      }
     }
+    function showBoxes(screen) {
+      var allBoxes = document.getElementsByClassName('box');
+      for(var i=0; i<allBoxes.length; i++) {
+        allBoxes[i].style.display=
+            (allBoxes[i].classList.contains(screen)?'block':'none');
+      }
+    }
+    function escape(str) {
+      return (typeof(str)=='string'?str.replace(/['"<]/g, ''):'*');
+    }
+    function showContacts(contacts, table) {
+      if(!contacts) {
+        contacts=[];
+        for(var i in contactsInMem) {
+          contacts.push(contactsInMem[i]);
+        }
+      }
+      if(!table) {
+        table='contactsTable';
+      }
+      console.log(contacts); var str='';
+      for(var i=0; i<contacts.length; i++) {
+        str+='<tr class="contactrow" data-search="'
+            +escape(contacts[i].name)+'"><td><img src="'
+            +escape(contacts[i].avatar)+'" /></td><td>'
+            +escape(contacts[i].name)+'</td></tr>';
+      }
+      document.getElementById(table).innerHTML=str;
+    }
+    function showSuggestions() {
+      var contacts=[];
+      for(var i in suggestions) {
+        contacts.push(suggestions[i]);
+      }
+      showContacts(contacts, 'suggestionsTable');
+    }
+    function showMessages() {
+      var str='';
+      for(i in messagesInMem) {
+        str+='<tr onmousedown="selectMessage(\''
+            +escape(i)+'\'); showBoxes(\'readscreen\');" ><td><img src="'
+            +escape(messagesInMem[i].avatar)+'" /> '
+            +escape(messagesInMem[i].name)+'</td><td>'
+            +escape(messagesInMem[i].subject)+'</td></tr>';
+      }
+      document.getElementById('messagesTable').innerHTML=str;
+    }
+    function selectMessage(id) {
+      document.getElementById('readp').innerHTML = (messagesInMem[id]?
+          messagesInMem[id].text.replace(/\n/g, '<br>')
+          :'(cannot display message text)');
+      console.log(id);showContacts([messagesInMem[id]], 'fromTable');
+    }
+    function loadMockData() {
+       contactsInMem = [
+        { name: 'MC Solaar', avatar: 'mock/avatar6.png' },
+        { name: 'Michiel de Jong', avatar: 'mock/avatar1.png' },
+        { name: 'Michiel Leenaars', avatar: 'mock/avatar5.png' },
+        { name: 'Dalai Lama', avatar: 'mock/avatar2.png' },
+        { name: 'Krafty Kuts', avatar: 'mock/avatar4.png' },
+        { name: 'A Skillz', avatar: 'mock/avatar3.png' }
+      ];
+      showContacts();
+      showContacts([
+        { name: 'MC Solaar', avatar: 'mock/avatar6.png' },
+      ], 'fromTable');
+      showContacts([
+        { name: 'A Skillz', avatar: 'mock/avatar3.png' }
+      ], 'toTable');
+      messagesInMem = {
+        0: { name: 'Dalai Lama', avatar: 'mock/avatar2.png', subject: 'Re: Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', subject: 'Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        2: { name: 'Krafty Kuts', avatar: 'mock/avatar4.png', subject: 'Re: The funky technician is back', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal' }
+      };
+      showMessages();
+    }
+
+    //...
+    showBoxes('mainscreen');
