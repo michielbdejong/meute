@@ -79,11 +79,24 @@
       console.log(contacts); var str='';
       for(var i=0; i<contacts.length; i++) {
         str+='<tr class="contactrow" data-search="'
-            +escape(contacts[i].name)+'"><td><img src="'
+            +escape(contacts[i].name)+'" onmousedown="setTo(\''
+            +escape(contacts[i].address)+'\', \''
+            +escape(contacts[i].name)+'\', \''
+            +escape(contacts[i].avatar)+'\'); '
+            +'showBoxes(\'composescreen\');"><td><img src="'
             +escape(contacts[i].avatar)+'" /></td><td>'
             +escape(contacts[i].name)+'</td></tr>';
       }
       document.getElementById(table).innerHTML=str;
+    }
+    function setTo(address, name, avatar) {
+      inReplyTo = undefined;
+      toAddress = address;
+      showContacts([{
+        address: address,
+        name: name,
+        avatar: avatar
+      }], 'toTable');
     }
     function showSuggestions() {
       var contacts=[];
@@ -107,7 +120,10 @@
       document.getElementById('readp').innerHTML = (messagesInMem[id]?
           messagesInMem[id].text.replace(/\n/g, '<br>')
           :'(cannot display message text)');
-      console.log(id);showContacts([messagesInMem[id]], 'fromTable');
+      showContacts([messagesInMem[id]], 'fromTable');
+      showContacts([messagesInMem[id]], 'toTable');
+      inReplyTo=id;
+      toAddress = messagesInMem[id].actor[0].address;
     }
     function loadMockData() {
        contactsInMem = [
@@ -131,6 +147,19 @@
         2: { name: 'Krafty Kuts', avatar: 'mock/avatar4.png', subject: 'Re: The funky technician is back', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal' }
       };
       showMessages();
+    }
+    function sendMsg() {
+      var text = document.getElementById('compose').value,
+        enterPos = text.indexOf('\n');
+      console.log({
+        target: 'email:'+toAddress,
+        object: {
+          inReplyTo: inReplyTo,
+          subject: text.substring(0, enterPos),
+          text: text.substring(enterPos+1)
+        },
+        verb: 'send'
+      });
     }
 
     //...
