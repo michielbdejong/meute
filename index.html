@@ -81,7 +81,7 @@
     };
     function displayLast(num) {
       var i=0;
-      remoteStorage.inbox.getLast(50, function(msg) {
+      remoteStorage.inbox.getLast(num, function(msg) {
         remoteStorage.contacts.add(msg.actor);
         if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
           remoteStorage.contacts.add(msg.target.to);
