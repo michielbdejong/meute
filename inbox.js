@@ -13,7 +13,7 @@
               stack.push(curr+list[i]);
             } else {
               numLeft--;
-              privClient.cache(curr+list[i], true);
+              privClient.cache(curr, true);
               privClient.getFile(curr+list[i]).then(function(obj) {
                 var msg;
                 try {
