@@ -90,10 +90,10 @@
         remoteStorage.contacts.add(msg.target.cc);
         remoteStorage.contacts.add(msg.target.bcc);
       }
-      messagesInMem[msg.object.messageId] = {
-        name: msg.actor[0].name,
-        subject: msg.object.subject,
-        text: msg.object.text
+      messagesInMem[(msg.object?msg.object.messageId:msg.timestamp)] = {
+        name: (msg.actor?msg.actor[0].name:''),
+        subject: (msg.object ? msg.object.subject:JSON.stringify(msg)),
+        text: (msg.object ? msg.object.text : '')
       };
       showMessages();
       showContacts();
