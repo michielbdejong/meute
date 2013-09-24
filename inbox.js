@@ -10,6 +10,7 @@
             if(list[i].substr(-1)=='/') {
               stack.push(curr+list[i]);
             } else {
+              numLeft--;
               privClient.getFile(curr+list[i]).then(function(obj) {
                 var msg;
                 try {
