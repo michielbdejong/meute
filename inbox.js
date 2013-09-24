@@ -2,14 +2,14 @@
       function asyncTreeTrav(numLeft, stack, cb) {
         var curr = stack.pop();
         console.log('asyncTreeTrav', numLeft, stack, curr);
-        privClient.cache(curr, true);
+        //privClient.cache(curr, true);
         privClient.getListing(curr).then(function(list) {
           list.sort(function(a, b) {
             return parseInt(a)-parseInt(b);
           });
           for(var i=0; i<list.length; i++) {
             if(list[i].substr(-1)=='/') {
-              privClient.cache(curr+list[i], false);//don't cache subdirs unless we descend into them
+              //privClient.cache(curr+list[i], false);//don't cache subdirs unless we descend into them
               stack.push(curr+list[i]);
             } else {
               numLeft--;
