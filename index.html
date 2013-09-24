@@ -79,25 +79,32 @@
         }
       }
     };
+    function displayLast(num) {
+      var i=0;
+      remoteStorage.inbox.getLast(50, function(msg) {
+        remoteStorage.contacts.add(msg.actor);
+        if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
+          remoteStorage.contacts.add(msg.target.to);
+          remoteStorage.contacts.add(msg.target.cc);
+          remoteStorage.contacts.add(msg.target.bcc);
+        }
+        messagesInMem[(msg.object?msg.object.messageId:msg.timestamp)] = {
+          name: (msg.actor?msg.actor[0].name:''),
+          subject: (msg.object ? msg.object.subject:JSON.stringify(msg)),
+          text: (msg.object ? msg.object.text : '')
+        };
+        i++;
+        if(i>=num) {
+          showMessages();
+          showContacts();
+        }
+      });
+    }
     var messagesInMem={}, contactsInMem={}, inReplyTo, toAddress;
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
-    remoteStorage.inbox.getLast(50, function(msg) {
-      remoteStorage.contacts.add(msg.actor);
-      if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
-        remoteStorage.contacts.add(msg.target.to);
-        remoteStorage.contacts.add(msg.target.cc);
-        remoteStorage.contacts.add(msg.target.bcc);
-      }
-      messagesInMem[(msg.object?msg.object.messageId:msg.timestamp)] = {
-        name: (msg.actor?msg.actor[0].name:''),
-        subject: (msg.object ? msg.object.subject:JSON.stringify(msg)),
-        text: (msg.object ? msg.object.text : '')
-      };
-      showMessages();
-      showContacts();
-    });
+    displayLast(50);
     var sock, send = function() { console.log('not ready'); };
     remoteStorage.sockethubCredentials.getUrl().then(function(url) {
       sock = new WebSocket(url.data);
