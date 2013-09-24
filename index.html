@@ -83,7 +83,7 @@
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
-    remoteStorage.inbox.getLast(5, function(msg) {
+    remoteStorage.inbox.getLast(50, function(msg) {
       remoteStorage.contacts.add(msg.actor);
       if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
         remoteStorage.contacts.add(msg.target.to);

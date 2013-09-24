@@ -10,17 +10,15 @@
             if(list[i].substr(-1)=='/') {
               stack.push(curr+list[i]);
             } else {
-              if((numLeft--)>0) {
-                privClient.getFile(curr+list[i]).then(function(obj) {
-                  var msg;
-                  try {
-                    msg = JSON.parse(obj.data);
-                  } catch(e) {
-                    msg = e;
-                  }
-                  cb(msg);
-                });
-              }
+              privClient.getFile(curr+list[i]).then(function(obj) {
+                var msg;
+                try {
+                  msg = JSON.parse(obj.data);
+                } catch(e) {
+                  msg = e;
+                }
+                cb(msg);
+              });
             }
           }
           if(numLeft>0) {
