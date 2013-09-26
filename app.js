@@ -123,7 +123,7 @@
       showContacts([messagesInMem[id]], 'fromTable');
       showContacts([messagesInMem[id]], 'toTable');
       inReplyTo=id;
-      recipients = {to: [messagesInMem[id].actor[0].address]};
+      recipients = {to: [messagesInMem[id].actor[0].address], cc: [], bcc: []};
     }
     function addRecipient(tableName) {
       recipientAddingTo = tableName;
@@ -202,7 +202,7 @@
     }
     var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
       to:[], cc:[], bcc:[]
-    }, recipientAddingTo='to';
+    }, recipientAddingTo='toTable';
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
