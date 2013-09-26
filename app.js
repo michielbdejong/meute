@@ -96,7 +96,7 @@
         name: name,
         avatar: avatar
       });
-      showContacts(recipients[recipientAddingTo], recipientAddingTo);
+      showContacts(recipients[recipientAddingTo], recipientAddingTo+'Table');
     }
     function showSuggestions() {
       var contacts=[];
@@ -125,8 +125,8 @@
       inReplyTo=id;
       recipients = {to: [messagesInMem[id].actor[0].address], cc: [], bcc: []};
     }
-    function addRecipient(tableName) {
-      recipientAddingTo = tableName;
+    function addRecipient(recipientType) {
+      recipientAddingTo = recipientType;
       showBoxes('addscreen');
     }
     function loadMockData() {
@@ -202,7 +202,7 @@
     }
     var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
       to:[], cc:[], bcc:[]
-    }, recipientAddingTo='toTable';
+    }, recipientAddingTo='to';
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
