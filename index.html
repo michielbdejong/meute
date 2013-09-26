@@ -65,60 +65,8 @@
       </div>
     </article>
   </body>
-  <script src="app.js"> </script>
   <script src="remotestorage.js"> </script>
   <script src="inbox.js"> </script>
   <script src="sockethub-credentials.js"> </script>
-  <script>
-    remoteStorage.contacts = {
-      add: function(list) {
-        if(Array.isArray(list)) {
-          for(var i=0; i<list.length; i++) {
-            contactsInMem[list[i].address] = list[i];
-          }
-        }
-      }
-    };
-    function displayLast(num) {
-      var i=0;
-      remoteStorage.inbox.getLast(num, function(msg) {
-        remoteStorage.contacts.add(msg.actor);
-        if(typeof(msg.target)=='object' && !Array.isArray(msg.target)) {
-          remoteStorage.contacts.add(msg.target.to);
-          remoteStorage.contacts.add(msg.target.cc);
-          remoteStorage.contacts.add(msg.target.bcc);
-        }
-        messagesInMem[(msg.object?msg.object.messageId:msg.timestamp)] = {
-          name: (msg.actor?msg.actor[0].name:''),
-          subject: (msg.object ? msg.object.subject:JSON.stringify(msg)),
-          text: (msg.object ? msg.object.text : '')
-        };
-        i++;
-        if(i>=num) {
-          showMessages();
-          showContacts();
-        }
-      });
-    }
-    var messagesInMem={}, contactsInMem={}, inReplyTo, toAddress;
-    remoteStorage.displayWidget();
-    remoteStorage.access.claim('inbox', 'r');
-    remoteStorage.access.claim('sockethub-credentials', 'r');
-    displayLast(50);
-    var sock, send = function() { console.log('not ready'); };
-    remoteStorage.sockethubCredentials.getUrl().then(function(url) {
-      sock = new WebSocket(url.data);
-      sock.onmessage=function(msg) { console.log('sock msg', msg.data); };
-      sock.onopen=function(msg) { console.log('sock open', msg); };
-      sock.onclose=function(msg) { console.log('sock closed', msg); };
-      sock.onerror=function(msg) { console.log('sock error', msg); };
-      remoteStorage.sockethubCredentials.getToken().then(function(token) {
-        send = function(obj) { 
-          obj.token = token.data.trim();
-          sock.send(JSON.stringify(obj));
-          console.log('sock sent', obj);
-        };
-      });
-    });
-  </script>
+  <script src="app.js"> </script>
 </html>
