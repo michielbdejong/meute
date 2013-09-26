@@ -79,7 +79,7 @@
       console.log(contacts); var str='';
       for(var i=0; i<contacts.length; i++) {
         str+='<tr class="contactrow" data-search="'
-            +escape(contacts[i].name)+'" onmousedown="setTo(\''
+            +escape(contacts[i].name)+'" onmousedown="doAddRecipient(\''
             +escape(contacts[i].address)+'\', \''
             +escape(contacts[i].name)+'\', \''
             +escape(contacts[i].avatar)+'\'); '
@@ -89,14 +89,14 @@
       }
       document.getElementById(table).innerHTML=str;
     }
-    function setTo(address, name, avatar) {
+    function doAddRecipient(address, name, avatar) {
       inReplyTo = undefined;
-      recipients = {to: [address]};
-      showContacts([{
+      recipients[recipientAddingTo].push({
         address: address,
         name: name,
         avatar: avatar
-      }], 'toTable');
+      });
+      showContacts(recipients[recipientAddingTo], recipientAddingTo);
     }
     function showSuggestions() {
       var contacts=[];
@@ -156,7 +156,9 @@
       var text = document.getElementById('compose').value,
         enterPos = text.indexOf('\n');
       send({
-        target: 'email:'+JSON.stringify(recipients),
+        target: {
+          email: recipients
+        },
         object: {
           inReplyTo: inReplyTo,
           subject: text.substring(0, enterPos),
@@ -198,7 +200,9 @@
         }
       });
     }
-    var messagesInMem={}, contactsInMem={}, inReplyTo, recipients, recipientAddingTo;
+    var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
+      to:[], cc:[], bcc:[]
+    }, recipientAddingTo='to';
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
