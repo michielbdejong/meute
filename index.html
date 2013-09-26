@@ -15,23 +15,36 @@
   <body>
     <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load mock data" onmousedown="loadMockData();" />
     <nav>
-      <div class="box mainscreen">
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message to:</h2>
+        <table id="toTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('toTable');" />
+      </div>
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message cc:</h2>
+        <table id="ccTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('ccTable');" />
+      </div>
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message bcc:</h2>
+        <table id="bccTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('bccTable');" />
+      </div>
+      <div class="box mainscreen addscreen">
         <h2>Search:</h2>
         <input oninput="filterContacts(this.value);">
       </div>
-      <div class="box mainscreen" >
+      <div class="box mainscreen addscreen" >
         <h2>Contacts:</h2>
         <table id="contactsTable">
         </table>
       </div>
-      <div class="box mainscreen" >
+      <div class="box mainscreen addscreen" >
         <h2>Suggestions:</h2>
         <table id="suggestionsTable">
-        </table>
-      </div>
-      <div class="box composescreen">
-        <h2 style="display:inline">Message to:</h2>
-        <table id="toTable">
         </table>
       </div>
       <div class="box readscreen">
@@ -45,7 +58,7 @@
       <table id="messagesTable" border="1">
       </table>
     </article>
-    <article class="box composescreen">
+    <article class="box composescreen addscreen">
       <div>
         <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
         <input type="submit" value="send" onmousedown="sendMsg();"> (first line is email subject)

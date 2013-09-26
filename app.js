@@ -91,7 +91,7 @@
     }
     function setTo(address, name, avatar) {
       inReplyTo = undefined;
-      toAddress = address;
+      recipients = {to: [address]};
       showContacts([{
         address: address,
         name: name,
@@ -123,7 +123,11 @@
       showContacts([messagesInMem[id]], 'fromTable');
       showContacts([messagesInMem[id]], 'toTable');
       inReplyTo=id;
-      toAddress = messagesInMem[id].actor[0].address;
+      recipients = {to: [messagesInMem[id].actor[0].address]};
+    }
+    function addRecipient(tableName) {
+      recipientAddingTo = tableName;
+      showBoxes('addscreen');
     }
     function loadMockData() {
        contactsInMem = [
@@ -152,7 +156,7 @@
       var text = document.getElementById('compose').value,
         enterPos = text.indexOf('\n');
       send({
-        target: 'email:'+toAddress,
+        target: 'email:'+JSON.stringify(recipients),
         object: {
           inReplyTo: inReplyTo,
           subject: text.substring(0, enterPos),
@@ -194,7 +198,7 @@
         }
       });
     }
-    var messagesInMem={}, contactsInMem={}, inReplyTo, toAddress;
+    var messagesInMem={}, contactsInMem={}, inReplyTo, recipients, recipientAddingTo;
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub-credentials', 'r');
