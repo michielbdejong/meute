@@ -106,13 +106,18 @@
       showContacts(contacts, 'suggestionsTable');
     }
     function showMessages() {
-      var str='';
+      var timestamps=[], str='', msg;
       for(i in messagesInMem) {
+        timestamps.push(i);
+      }
+      timestamps.sort();
+      for(var i=timestamps.length-1; i>=0; i--) {
+        msg = messagesInMem[timestamps[i]];
         str+='<tr onmousedown="selectMessage(\''
-            +escape(i)+'\'); showBoxes(\'readscreen\');" ><td><img src="'
-            +escape(messagesInMem[i].avatar)+'" /> '
-            +escape(messagesInMem[i].name)+'</td><td>'
-            +escape(messagesInMem[i].subject)+'</td></tr>';
+            +escape(timestamps[i])+'\'); showBoxes(\'readscreen\');" ><td><img src="'
+            +escape(msg.avatar)+'" /> '
+            +escape(msg.name)+'</td><td>'
+            +escape(msg.subject)+'</td></tr>';
       }
       document.getElementById('messagesTable').innerHTML=str;
     }
