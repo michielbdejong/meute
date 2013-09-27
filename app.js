@@ -111,13 +111,19 @@
         timestamps.push(i);
       }
       timestamps.sort();
+      parlays = {};
       for(var i=timestamps.length-1; i>=0; i--) {
         msg = messagesInMem[timestamps[i]];
-        str+='<tr onmousedown="selectMessage(\''
-            +escape(timestamps[i])+'\'); showBoxes(\'readscreen\');" ><td><img src="'
-            +escape(msg.avatar)+'" /> '
-            +escape(msg.name)+'</td><td>'
-            +escape(msg.subject)+'</td></tr>';
+        if(!parlays[msg.parlay]) {
+          parlays[msg.parlay]=[];
+          str+='<tr onmousedown="selectMessage(\''
+              +escape(timestamps[i])+'\'); showBoxes(\'readscreen\');" ><td>'
+              +escape(msg.parlay)+'</td><td><img src="'
+              +escape(msg.avatar)+'" /> '
+              +escape(msg.name)+'</td><td>'
+              +escape(msg.text.substring(0, 50))+'</td></tr>';
+        }
+        parlays[msg.parlay].push(msg);
       }
       document.getElementById('messagesTable').innerHTML=str;
     }
@@ -151,16 +157,17 @@
         { name: 'A Skillz', avatar: 'mock/avatar3.png' }
       ], 'toTable');
       messagesInMem = {
-        0: { name: 'Dalai Lama', avatar: 'mock/avatar2.png', subject: 'Re: Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
-        1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', subject: 'Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
-        2: { name: 'Krafty Kuts', avatar: 'mock/avatar4.png', subject: 'Re: The funky technician is back', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal' }
+        0: { name: 'Dalai Lama', avatar: 'mock/avatar2.png', parlay: 'Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        1: { name: 'Michiel de Jong', avatar: 'mock/avatar1.png', parlay: 'Announcing Meute v0.1', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal'},
+        2: { name: 'Krafty Kuts', avatar: 'mock/avatar4.png', parlay: 'The funky technician is back', text: 'Il existe un domaine dans lequel je n\'ai pas d\'egal' }
       };
       showMessages();
     }
-    function sendMsg() {
+    function sendMsg(preview) {
       var text = document.getElementById('compose').value,
-        enterPos = text.indexOf('\n');
-      send({
+        enterPos = text.indexOf('\n'),
+        msg;
+      msg = {
         target: {
           email: recipients
         },
@@ -170,7 +177,12 @@
           text: text.substring(enterPos+1)
         },
         verb: 'send'
-      });
+      };
+      if(preview) {
+        console.log(JSON.stringify(msg));
+      } else {
+        send(msg);
+      }
     }
 
     //...
@@ -195,8 +207,8 @@
         }
         messagesInMem[(msg.object?msg.object.messageId:msg.timestamp)] = {
           name: (msg.actor?msg.actor[0].name:''),
-          subject: (msg.object ? msg.object.subject:JSON.stringify(msg)),
-          text: (msg.object ? msg.object.text : '')
+          parlay: (msg.object ? msg.object.subject:JSON.stringify(msg)),
+          text: (msg.object  && msg.object.text ? msg.object.text : '')
         };
         i++;
         if(i>=num) {

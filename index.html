@@ -54,13 +54,14 @@
       </div>
     </nav>
     <article class="box mainscreen" onmousedown="showBoxes('readscreen');">
-      <h2>Messages:</h2>
+      <h2>Parlays:</h2>
       <table id="messagesTable" border="1">
       </table>
     </article>
     <article class="box composescreen addscreen">
       <div>
         <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
+        <input type="submit" value="preview" onmousedown="sendMsg(true);">
         <input type="submit" value="send" onmousedown="sendMsg();"> (first line is email subject)
       </div>
       <div>

@@ -1,0 +1,15 @@
+- one main stream of all notifications.
+- message bodies and attachments separately
+- flag this message / reply to this message
+- mark whole page as read
+- group emails into conversations based on inReplyTo thread-trees
+- group irc msg into conversations based on channel or peer
+- grouping email conversation based on forum is less important
+- group gh issue comments with the issue as the conversation
+- grouping gh issues per repo/state/milestone is important, but doesn't belong in Meute necessarily
+- listing members of a conversation is important in irc
+- for Twitter, each tweet is a new conversation unless it's a reply, so they would be over-represented. maybe make each twitter handle ('the people this handle follows') or search term a conversation
+- for github search terms as conversations can also make sense
+- need a better word for 'conversation'. 'chat'?
+- it should only set the messages that were actually in the current view as 'read'. it's ok to just have 50 messages even it that's all just one thread
+- on the readscreen, show a whole conversation instead of one msg.
