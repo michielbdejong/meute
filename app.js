@@ -222,7 +222,7 @@
     }, recipientAddingTo='to';
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
-    remoteStorage.access.claim('sockethub-credentials', 'r');
+    remoteStorage.access.claim('sockethub', 'r');
     displayLast(50);
     var sock, send = function() { console.log('not ready'); };
     remoteStorage.sockethubCredentials.getUrl().then(function(url) {
