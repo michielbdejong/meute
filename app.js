@@ -1,4 +1,4 @@
-    var userAddress = new WebSocket('wss://michielbdejong.com:12380/q/websocket'), suggestions={};
+    var userAddress = new WebSocket('wss://3pp.io:12380/q/websocket'), suggestions={};
     userAddress.onmessage=function(msg) {
       try {
         msg = JSON.parse(msg.data);
@@ -223,19 +223,36 @@
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
     remoteStorage.access.claim('sockethub', 'r');
-    displayLast(50);
+    //displayLast(50);
     var sock, send = function() { console.log('not ready'); };
-    remoteStorage.sockethubCredentials.getUrl().then(function(url) {
+    remoteStorage.sockethub.getConfig().then(function(config) {
+      console.log(config);
+      return;
+      var sockethubClient = SockethubClient.connect({
+        host: config.host,
+        path: config.path,
+        port: config.port,
+        ssl: config.tls,
+        tls: config.tls,
+        register: {
+          secret: config.secret
+        }
+      }).then(function(a) { console.log(a); }, function(b) { console.log(b); });
+      sockethubClient.on('registered', function() {
+        console.log('registered!');
+      });
       sock = new WebSocket(url.data);
       sock.onmessage=function(msg) { console.log('sock msg', msg.data); };
       sock.onopen=function(msg) { console.log('sock open', msg); };
       sock.onclose=function(msg) { console.log('sock closed', msg); };
       sock.onerror=function(msg) { console.log('sock error', msg); };
-      remoteStorage.sockethubCredentials.getToken().then(function(token) {
+      remoteStorage.sockethub.getToken().then(function(token) {
         send = function(obj) { 
           obj.token = token.data.trim();
           sock.send(JSON.stringify(obj));
           console.log('sock sent', obj);
         };
       });
+    }, function(err) {
+      console.log(err);
     });
