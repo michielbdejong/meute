@@ -242,29 +242,52 @@
         sockethubClient.on('registered', function() {
           console.log('registered!');
           try {
-            //var config = {
-            //  credentials: {
-            //    'user@example.com': {
-            //      actor: {
-            //        address: 'user@example.com',
-            //        name: 'Example User'
-            //      },
-            //      smtp: {
-            //        host: 'mail.gandi.net',
-            //        username: 'user@example.com', 
-            //        password: '...',
-            //        tls: true,
-            //        port: 465
-            //      }
-            //    }
-            //  }
-            //};
-            //remoteStorage.email.writeConfig(config).then(function() {
-            remoteStorage.email.getConfig(config).then(function(config) {
+           var config = {
+             credentials: {
+               'anything@michielbdejong.com': {
+                 actor: {
+                   address: 'anything@michielbdejong.com',
+                   name: 'Michiel de Jong'
+                 },
+                 smtp: {
+                   host: 'mail.gandi.net',
+                   username: 'anything@michielbdejong.com', 
+                   password: '...',
+                   tls: true,
+                   port: 465
+                 },
+                 imap: {
+                   host: 'mail.gandi.net',
+                   username: 'anything@michielbdejong.com', 
+                   password: '...',
+                   tls: true,
+                   port: 993
+                 }
+               }
+             }
+           };
+           //remoteStorage.email.writeConfig(config).then(function() {
+           remoteStorage.email.getConfig(config).then(function(config) {
               delete config['@context'];
               console.log(config);
-              sockethubClient.set('email', config, function(success) {
+              sockethubClient.set('email', config).then(function(success) {
                 console.log('success', success);
+                sockethubClient.sendObject({
+                  platform: 'email',
+                  verb: 'fetch',
+                  actor: {
+                    address: 'anything@michielbdejong.com'
+                  },
+                  object: {
+                    page: 1,
+                    perPage: 10,
+                    includeBody: false
+                  }
+                }).then(function(success) {
+                  console.log('success', success);
+                }, function(failure) {
+                  console.log('failure', failure);
+                });
               }, function(failure) {
                 console.log('failure', failure);
               });
