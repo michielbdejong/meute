@@ -848,23 +848,27 @@ define('sockethub/client',[
       if(typeof(rid) !== 'undefined') {
         var promise = this._ridPromises[rid];
         if(promise) {
-          // rid is known.
+          console.log('rid is known.');
           if(object.verb === 'confirm') {
             // exception: confirm results are ignored, unless their status is fals
             if(object.status) {
               return;
             } else {
+              console.log('rejecting promise '+rid, object.message);
               promise.reject(object);
             }
           } else {
             if('status' in object) {
+              console.log('rejecting/fulfilling promise '+rid, object.message);
               promise[object.status ? 'fulfill' : 'reject'](object);
             } else {
+              console.log('fulfilling promise '+rid, object.message);
               promise.fulfill(object);
             }
           }
           delete this._ridPromises[rid];
         } else {
+          console.log('rid not known '+rid, object.message);
           // rid is not known. -> unexpected response!
           this._emit('unexpected-response', object);
         }

@@ -222,6 +222,7 @@
     }, recipientAddingTo='to';
     remoteStorage.displayWidget();
     remoteStorage.access.claim('inbox', 'r');
+    remoteStorage.access.claim('email', 'rw');
     remoteStorage.access.claim('sockethub', 'r');
     //displayLast(50);
     var sock, send = function() { console.log('not ready'); };
@@ -240,6 +241,37 @@
         });
         sockethubClient.on('registered', function() {
           console.log('registered!');
+          try {
+            //var config = {
+            //  credentials: {
+            //    'user@example.com': {
+            //      actor: {
+            //        address: 'user@example.com',
+            //        name: 'Example User'
+            //      },
+            //      smtp: {
+            //        host: 'mail.gandi.net',
+            //        username: 'user@example.com', 
+            //        password: '...',
+            //        tls: true,
+            //        port: 465
+            //      }
+            //    }
+            //  }
+            //};
+            //remoteStorage.email.writeConfig(config).then(function() {
+            remoteStorage.email.getConfig(config).then(function() {
+              delete config['@context'];
+              console.log(config);
+              sockethubClient.set('email', config, function(success) {
+                console.log('success', success);
+              }, function(failure) {
+                console.log('failure', failure);
+              });
+            });
+          } catch(e) {
+            console.log(e.message);
+          }
         });
       } catch(e) {
         console.log(e.message);
