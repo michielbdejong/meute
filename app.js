@@ -260,7 +260,7 @@
             //  }
             //};
             //remoteStorage.email.writeConfig(config).then(function() {
-            remoteStorage.email.getConfig(config).then(function() {
+            remoteStorage.email.getConfig(config).then(function(config) {
               delete config['@context'];
               console.log(config);
               sockethubClient.set('email', config, function(success) {
