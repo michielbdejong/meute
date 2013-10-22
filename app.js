@@ -227,20 +227,24 @@
     var sock, send = function() { console.log('not ready'); };
     remoteStorage.sockethub.getConfig().then(function(config) {
       console.log(config);
+      try {
+        var sockethubClient = SockethubClient.connect({
+          host: config.host,
+          path: config.path,
+          port: config.port,
+          ssl: config.tls,
+          tls: config.tls,
+          register: {
+            secret: config.secret
+          }
+        }).then(function(a) { console.log(a); }, function(b) { console.log(b); });
+        sockethubClient.on('registered', function() {
+          console.log('registered!');
+        });
+      } catch(e) {
+        console.log(e.message);
+      }
       return;
-      var sockethubClient = SockethubClient.connect({
-        host: config.host,
-        path: config.path,
-        port: config.port,
-        ssl: config.tls,
-        tls: config.tls,
-        register: {
-          secret: config.secret
-        }
-      }).then(function(a) { console.log(a); }, function(b) { console.log(b); });
-      sockethubClient.on('registered', function() {
-        console.log('registered!');
-      });
       sock = new WebSocket(url.data);
       sock.onmessage=function(msg) { console.log('sock msg', msg.data); };
       sock.onopen=function(msg) { console.log('sock open', msg); };
