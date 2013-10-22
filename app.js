@@ -237,7 +237,7 @@
           register: {
             secret: config.secret
           }
-        }).then(function(a) { console.log(a); }, function(b) { console.log(b); });
+        });
         sockethubClient.on('registered', function() {
           console.log('registered!');
         });
