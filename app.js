@@ -301,5 +301,5 @@ remoteStorage.sockethub.getConfig().then(function(config) {
     console.log(e.message);
   }
 }, function(err) {
-  console.log(err);
+  console.log('getConfig error', err.message);
 });
