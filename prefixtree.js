@@ -11,7 +11,9 @@ var PrefixTree = function(baseClient) {
     return key.slice(0, depth).split('').join('/')+'/';
   }
   function keyToItemName(key, depth) {
-    return key.slice(depth);
+    // _ prefix avoids name clash with dir name
+    // and serves as the item name if no chars are left
+    return '_'+key.slice(depth);
   }
   function keyToPath(key, depth) {
     return keyToBase(key, depth)+keyToItemName(key, depth);
@@ -19,10 +21,10 @@ var PrefixTree = function(baseClient) {
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
     return baseClient.getListing(thisDir).then(function(listing) {
-      var itemsMap={};
+      var itemsMap={}, i, numDocuments;
       if(typeof(listing)=='object') {
         if(Array.isArray(listing)) {
-          for(var i=0; i<listing.length; i++) {
+          for(i=0; i<listing.length; i++) {
             itemsMap[listing[i]]=true;
           }
         } else {
@@ -31,17 +33,21 @@ var PrefixTree = function(baseClient) {
       }
       console.log(thisDir, typeof(itemsMap), itemsMap);
       if(itemsMap[key[depth]+'/']) {//go deeper
-        return tryDepth(key, depth+1);
+        console.log('go deeper', key[depth]);
+        return tryDepth(key, depth+1, checkMaxLeaves);
       }
       if(checkMaxLeaves) {
-        var numDocuments = 0;
-        for(var i in itemsMap) {
+        numDocuments = 0;
+        for(i in itemsMap) {
           if(i.substr(-1) != '/') {
             numDocuments++;
           }
         }
         if(numDocuments >= maxLeaves) {//start new subtree for this char
+          console.log('no room', numDocuments);
           return depth+1;
+        } else {
+          console.log('still room', numDocuments);
         }
       }//this depth is OK
       return depth;
