@@ -224,10 +224,19 @@ var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
 remoteStorage.displayWidget();
 remoteStorage.access.claim('inbox', 'r');
 remoteStorage.access.claim('email', 'rw');
-remoteStorage.access.claim('sockethub', 'r');
+remoteStorage.access.claim('sockethub', 'rw');
 //displayLast(50);
 var sock, send = function() { console.log('not ready'); };
 remoteStorage.sockethub.getConfig().then(function(config) {
+  if(!config) {
+    config = {
+      host: '3pp.io',
+      path: '/sockethub',
+      port: 10550,
+      tls: true
+    };
+    remoteStorage.sockethub.writeConfig(config);
+  }
   console.log(config);
   try {
     var sockethubClient = SockethubClient.connect({
