@@ -273,28 +273,37 @@ remoteStorage.sockethub.getConfig().then(function(config) {
           console.log(config);
           sockethubClient.set('email', config).then(function(success) {
             console.log('success', success);
-/*            sockethubClient.sendObject({
-              platform: 'email',
-              verb: 'fetch',
-              actor: {
-                address: 'anything@michielbdejong.com'
-              },
-              object: {
-                page: 1,
-                perPage: 10,
-                includeBody: false
-              }
-            }).then(function(success) {
-              console.log('success', success);
-            }, function(failure) {
-              console.log('failure', failure);
-            });*/
           }, function(failure) {
             console.log('failure', failure);
           });
         });
       } catch(e) {
         console.log(e.message);
+      }
+    });
+    document.fetchEmails = function () {
+      sockethubClient.sendObject({
+        platform: 'email',
+        verb: 'fetch',
+        actor: {
+          address: 'anything@michielbdejong.com'
+        },
+        object: {
+          page: 1,
+          perPage: 10,
+          includeBody: false
+        }
+      }).then(function(success) {
+        console.log('success', success);
+      }, function(failure) {
+        console.log('failure', failure);
+      });
+    }
+    sockethubClient.on('message', function(msg) {
+      console.log('msg', msg);
+      if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
+        key = msg.object.messageId.split('?').join('??').split('/').join('?');
+        remoteStorage.email.storeMessage(key, msg);
       }
     });
   } catch(e) {
