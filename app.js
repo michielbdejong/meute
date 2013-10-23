@@ -273,7 +273,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
           console.log(config);
           sockethubClient.set('email', config).then(function(success) {
             console.log('success', success);
-            sockethubClient.sendObject({
+/*            sockethubClient.sendObject({
               platform: 'email',
               verb: 'fetch',
               actor: {
@@ -288,7 +288,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
               console.log('success', success);
             }, function(failure) {
               console.log('failure', failure);
-            });
+            });*/
           }, function(failure) {
             console.log('failure', failure);
           });
