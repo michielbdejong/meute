@@ -233,7 +233,8 @@ remoteStorage.sockethub.getConfig().then(function(config) {
       host: '3pp.io',
       path: '/sockethub',
       port: 10550,
-      tls: true
+      tls: true,
+      secret: "3rd party people"
     };
     remoteStorage.sockethub.writeConfig(config);
   }
