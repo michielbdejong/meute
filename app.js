@@ -187,7 +187,7 @@ function sendMsg(preview) {
 }
 
 //...
-showBoxes('mainscreen');
+showBoxes('login');
 remoteStorage.contacts = {
   add: function(list) {
     if(Array.isArray(list)) {
