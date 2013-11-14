@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Meute - an unhosted messages/contacts/search app</title>
+    <style>
+      body { font:15px sans-serif; line-height:1.4em; color:#222 }
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+    <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load mock data" onmousedown="loadMockData();" />
+    <nav>
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message to:</h2>
+        <table id="toTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('to');" />
+      </div>
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message cc:</h2>
+        <table id="ccTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('cc');" />
+      </div>
+      <div class="box composescreen addscreen">
+        <h2 style="display:inline">Message bcc:</h2>
+        <table id="bccTable">
+        </table>
+        <input type="submit" value="+" onmousedown="addRecipient('bcc');" />
+      </div>
+      <div class="box mainscreen addscreen">
+        <h2>Search:</h2>
+        <input oninput="filterContacts(this.value);">
+      </div>
+      <div class="box mainscreen addscreen" >
+        <h2>Contacts:</h2>
+        <table id="contactsTable">
+        </table>
+      </div>
+      <div class="box mainscreen addscreen" >
+        <h2>Suggestions:</h2>
+        <table id="suggestionsTable">
+        </table>
+      </div>
+      <div class="box readscreen">
+        <h2 style="display:inline">Message from:</h2>
+        <table id="fromTable">
+        </table>
+      </div>
+    </nav>
+    <article class="box mainscreen" onmousedown="showBoxes('readscreen');">
+      <h2>Parlays:</h2>
+      <table id="messagesTable" border="1">
+      </table>
+    </article>
+    <article class="box composescreen addscreen">
+      <div>
+        <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
+        <input type="submit" value="preview" onmousedown="sendMsg(true);">
+        <input type="submit" value="send" onmousedown="sendMsg();"> (first line is email subject)
+      </div>
+      <div>
+        <textarea id="compose" style="width:100%;height:6em"></textarea>
+      </div>
+    </article>
+    <article class="box readscreen" style="width:40em">
+      <div>
+        <input type="submit" value="back" onmousedown="showBoxes('mainscreen');">
+        <input type="submit" value="reply" onmousedown="showBoxes('composescreen');">
+      </div>
+      <div>
+        <p id="readp" style="width:100%;word-wrap:break-word">
+        </p>
+      </div>
+    </article>
+  </body>
+  <script src="sockethub-client.js"></script>
+  <script src="remotestorage.js"> </script>
+  <script src="remotestorage-modules/inbox.js"> </script>
+  <script src="remotestorage-modules/email.js"> </script>
+  <script src="remotestorage-modules/sockethub.js"> </script>
+  <script src="prefixtree.js"> </script>
+  <script> </script>
+  <script src="app.js"> </script>
+</html>
