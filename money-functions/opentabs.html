@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /></head>
+  <body>see console</body>
+  <script src="opentabs-rs-modules.js"></script>
+  <script src="opentabs-data.js"></script>
+  <script>
+    var tabNames = remoteStorage.money.getTabNames(), peers = {};
+
+    function markCell(i, j) {
+      return;
+      if(!nodeNames[i]) {
+        console.log('unknown row', i);
+      } else if(!nodeNames[j]) {
+        console.log('unknown column', j);
+      } else {
+        document.getElementById(nodeNames[i]+':'+nodeNames[j]).innerHTML='*';
+      }
+    }
+    function showTab(i) {
+      showTabList();
+      document.body.innerHTML += remoteStorage.money.getTabTable(i);
+    }
+    function showTabList() {
+      document.body.innerHTML = ''; 
+      document.body.innerHTML += remoteStorage.money.getCyclesGraph();
+      document.body.innerHTML+= remoteStorage.money.findCycles(markCell);
+      document.body.innerHTML += remoteStorage.money.getTabList();
+    }
+    showTabList();
+  </script>
+</html>
