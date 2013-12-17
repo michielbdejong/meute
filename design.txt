@@ -1,3 +1,27 @@
+meute project aspects:
+======================
+* a showcase for:
+  - unhosted web apps,
+  - 5apps,
+  - remoteStorage,
+  - sockethub,
+  - useraddress,
+  - opentabs.
+* an email client running in your browser, using sockethub
+* stores your contacts and message history on either your remoteStorage or your GoogleDrive, using remotestorage.js
+* support for xmpp, irc, facebook chat, and webrtc are also planned, using future sockethub platforms
+* blogging and polyglot linkback, using future sockethub/welten/? functionality
+* distributed identity, using useraddress + remoteStorage.contacts
+* money without banks, using opentabs
+
+plan:
+=====
+* develop with meute on localhost:4242, remoteStorage on 5apps, and sockethub on build-stuff
+* try out email functionality with real data
+* try out contacts functionality with real data
+
+interface design:
+=================
 - one main stream of all notifications.
 - message bodies and attachments separately
 - flag this message / reply to this message
