@@ -294,7 +294,9 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         console.log(e.message);
       }
     });
-    document.fetchEmails = function () {
+    document.fetchEmails = function (page, perPage) {
+      if(!page) { page = 1; }
+      if(!perPage) { perPage = 10; }
       sockethubClient.sendObject({
         platform: 'email',
         verb: 'fetch',
@@ -302,8 +304,8 @@ remoteStorage.sockethub.getConfig().then(function(config) {
           address: 'anything@michielbdejong.com'
         },
         object: {
-          page: 1,
-          perPage: 10,
+          page: page,
+          perPage: perPage,
           includeBody: false
         }
       }).then(function(success) {
