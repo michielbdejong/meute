@@ -294,7 +294,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         console.log(e.message);
       }
     });
-    document.fetchEmails = function (page, perPage) {
+    document.fetchEmails = function (page, perPage, includeBody) {
       if(!page) { page = 1; }
       if(!perPage) { perPage = 10; }
       sockethubClient.sendObject({
@@ -306,7 +306,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         object: {
           page: page,
           perPage: perPage,
-          includeBody: false
+          includeBody: includeBody
         }
       }).then(function(success) {
         console.log('success', success);
@@ -318,6 +318,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
       console.log('msg', msg);
       if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
         key = msg.object.messageId.split('?').join('??').split('/').join('?');
+        console.log('storing message', key, msg);
         remoteStorage.email.storeMessage(key, msg);
       }
     });

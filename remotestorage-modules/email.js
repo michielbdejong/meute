@@ -1,8 +1,39 @@
 (function () {
   var moduleName = 'email';
+  
+  function mergeObjects(existing, adding) {
+    var i;
+    if((typeof(adding) != 'object') || (typeof(existing) != 'object')) {
+      return existing;
+    }
+    if(Array.isArray(existing)) {
+      if(Array.isArray(adding)) {
+        for(i=0; i<adding.length; i++) {
+          if(existing.indexOf(adding[i]) == -1) {
+            existing.push(adding[i]);
+          }
+        }
+        return existing;
+      } else {
+        return Array.concat(existing, [adding]);
+      }
+    }
+    if(Array.isArray(adding)) {
+      return existing;
+    }
+    for(i in adding) {
+      if(typeof(adding[i]=='object') && typeof(existing[i])) {
+        existing[i]=mergeObjects(existing[i], adding[i]);
+      }
+      if(!existing[i]) {
+        existing[i] = adding[i];
+      }
+    }
+    return existing;
+  }
 
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
-    privateClient.cache('messages/');
+    privateClient.cache('');
     var messages = PrefixTree(privateClient.scope('messages/'));
     return {
       exports: {
@@ -16,7 +47,10 @@
           return messages.getObject(msgId);
         },
         storeMessage: function(msgId, obj) {
-          return messages.storeObject('message', msgId, obj);
+          var existing = messages.getObject(msgId) || {},
+            merge = mergeObjects(existing, obj);
+          console.log('merged', existing, obj, merge);
+          return messages.storeObject('message', msgId, merge);
         }
       }
     };
