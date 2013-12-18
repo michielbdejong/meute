@@ -1,5 +1,5 @@
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
-  var contacts = {}, myName, exports;
+  var exports;
   privateClient.cache('');
   
   function genUuid() {
@@ -42,7 +42,7 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
     },
     addFromList: function(list) {
       var i, name;
-      if(!Array.isArray(list) {
+      if(!Array.isArray(list)) {
         return;
       }
       for(i=0; i<list.length; i++) {

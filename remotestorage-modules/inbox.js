@@ -1,4 +1,5 @@
     RemoteStorage.defineModule('inbox', function(privClient, pubClient) {
+      privClient.cache('');
       function asyncTreeTrav(numLeft, stack, cb) {
         var curr = stack.pop();
         console.log('asyncTreeTrav', numLeft, stack, curr);
