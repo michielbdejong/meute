@@ -20,7 +20,6 @@ userAddress.onmessage=function(msg) {
     }
   }
 };*/
-
 function filterContacts(str) {
   var l, match, matchThis, theseTerms,
     matchTerms = str.trim().toLowerCase().split(' ');
@@ -314,28 +313,30 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         console.log('failure', failure);
       });
     }
-    document.extractContacts = function() {
-      remoteStorage.email.getMessageIds('0/').then(
-        function(a) {
-          console.log('got messageIds', a);
-          for(var b=0;b<a.keys.length;b++) {
-            document.extractContact('0'+a.keys[b].substring(1));
+    document.extractContacts = function(account, box) {
+      remoteStorage.email.getImapBoxIndex(account, box).then(
+        function(inbox) {
+          var a;
+          for(a in inbox) {
+            remoteStorage.email.getMessage(inbox[a].messageId).then(
+              function(obj) {
+                console.log('adding actor contacts from email', obj);
+                remoteStorage.contacts.addFromList(obj.actor);
+                console.log('adding target.to contacts from email', obj);
+                remoteStorage.contacts.addFromList(obj.target.to);
+                console.log('adding target.cc contacts from email', obj);
+                remoteStorage.contacts.addFromList(obj.target.cc);
+              },
+              (function(id) {
+                return function(err) {
+                  console.log('error whil getting message', err, id);
+                };
+              })(inbox[a].messageId)
+            );
           }
-        }
-      );
-    }
-    document.extractContact = function(msgId) {
-      remoteStorage.email.getMessage(msgId).then(
-        function(o) {
-          console.log('retrieved', msgId, o);
-          for(c in o.actor) {
-            remoteStorage.contacts.add(o.actor[c].name || o.actor[c].address, o.actor[c]);
-          }
-          if(o.target.to) {
-            for(c in o.target.to) {
-              remoteStorage.contacts.add(o.target.to[c].name || o.target.to[c].address, o.target.to[c]);
-            }
-          }
+        },
+        function(err) {
+          console.log('error getting imap box index', err);
         }
       );
     }
