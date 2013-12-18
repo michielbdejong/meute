@@ -314,6 +314,31 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         console.log('failure', failure);
       });
     }
+    document.extractContacts = function() {
+      remoteStorage.email.getMessageIds('0/').then(
+        function(a) {
+          console.log('got messageIds', a);
+          for(var b=0;b<a.keys.length;b++) {
+            document.extractContact('0'+a.keys[b].substring(1));
+          }
+        }
+      );
+    }
+    document.extractContact = function(msgId) {
+      remoteStorage.email.getMessage(msgId).then(
+        function(o) {
+          console.log('retrieved', msgId, o);
+          for(c in o.actor) {
+            remoteStorage.contacts.add(o.actor[c].name || o.actor[c].address, o.actor[c]);
+          }
+          if(o.target.to) {
+            for(c in o.target.to) {
+              remoteStorage.contacts.add(o.target.to[c].name || o.target.to[c].address, o.target.to[c]);
+            }
+          }
+        }
+      );
+    }
     sockethubClient.on('message', function(msg) {
       console.log('msg', msg);
       if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {

@@ -2,10 +2,10 @@ var PrefixTree = function(baseClient) {
   var maxLeaves=5, minDepth=1;
   //for key=='abcdefgh',
   // depth -> base + itemName:
-  // 0 -> + abcdefgh
-  // 1 -> a/ + bcdefgh
-  // 2 -> a/b/ + cdefgh
-  // 3 -> a/b/c/ + defgh
+  // 0 -> + _abcdefgh
+  // 1 -> a/ + _bcdefgh
+  // 2 -> a/b/ + _cdefgh
+  // 3 -> a/b/c/ + _defgh
   // etc...
   function keyToBase(key, depth) {
     return key.slice(0, depth).split('').join('/')+'/';
@@ -15,9 +15,40 @@ var PrefixTree = function(baseClient) {
     // and serves as the item name if no chars are left
     return '_'+key.slice(depth);
   }
+  function pathToKey(path) {
+    var parts = path.split('/');
+    if(parts[parts.length-1][0] != '_') {
+      throw new Error('cannot parse path '+path+' to key');
+    }
+    parts[parts.length-1] = parts[parts.length-1].substring(1);
+    return parts.join('');
+  }
   function keyToPath(key, depth) {
     return keyToBase(key, depth)+keyToItemName(key, depth);
   }
+  function getKeysAndDirs(path) {
+    return baseClient.getListing(path).then(function(listing) {
+      var itemsMap={}, i, keys = [], dirs = [];
+      if(typeof(listing)=='object') {
+        if(Array.isArray(listing)) {
+          for(i=0; i<listing.length; i++) {
+            itemsMap[listing[i]]=true;
+          }
+        } else {
+          itemsMap = listing;
+        }
+      }
+      for(i in itemsMap) {
+        if(i.substr(-1)=='/') {
+          dirs.push(path+i);
+        } else {
+          keys.push(pathToKey(path+i));
+        }
+      }
+      return { keys: keys, dirs: dirs };
+    });
+  }
+  
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
     return baseClient.getListing(thisDir).then(function(listing) {
@@ -84,6 +115,7 @@ var PrefixTree = function(baseClient) {
       }, function(err) {
         console.log('storeObject error', typeAlias, key, obj, err.message);
       });
-    }
+    },
+    getKeysAndDirs: getKeysAndDirs
   };
 };

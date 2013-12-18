@@ -35,6 +35,47 @@
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
     privateClient.cache('');
     var messages = PrefixTree(privateClient.scope('messages/'));
+    function getAll(prefix, cb) {
+      console.log('getAll', prefix);
+      var objects=[], pending = 0;
+      function oneDone() {
+        pending--;
+        console.log('still pending for', prefix, pending);
+        if(pending===0) {
+          console.log('objects for prefix', prefix, objects);
+          cb(objects);
+        }
+      }
+      messages.getKeysAndDirs(prefix).then(
+        function(keysAndDirs) {
+          var i;
+          for(i=0; i<keysAndDirs.keys.length; i++) {
+            messages.getFile(keysAndDirs.keys[i]).then(
+              function(f) {
+                console.log('got file', prefix+keysAndDirs.keys[i], f.data);
+                objects.push(f.data);
+              },
+              function(err) {
+                console.log('error in file', prefix+keysAndDirs.keys[i], err);
+              }
+            );
+          }
+          for(i=0; i<keysAndDirs.dirs.length; i++) {
+            pending++;
+            console.log('now  pending for', prefix, pending);
+            getAll(prefix+keysAndDirs.dirs[i], function(subdirObjects) {
+              console.log('subdirObjects', prefix, subdirObjects);
+              objects = objects.concat(subdirObjects);
+              oneDone();
+            });
+          }
+        },
+        function(err) {
+          console.log('error in subdir', prefix);
+          cb([]);
+        }
+      );
+    }
     return {
       exports: {
         getConfig: function () {
@@ -46,12 +87,26 @@
         getMessage: function(msgId) {
           return messages.getObject(msgId);
         },
+        getMessageIds: function(prefix) {
+          return messages.getKeysAndDirs(prefix);
+        },
         storeMessage: function(msgId, obj) {
           var existing = messages.getObject(msgId) || {},
             merge = mergeObjects(existing, obj);
           console.log('merged', existing, obj, merge);
-          return messages.storeObject('message', msgId, merge);
-        }
+          return messages.storeObject('message', msgId, merge).then(function() {
+            return privateClient.getObject('imap/anything@michielbdejong.com/INBOX/');
+          }).then(function(list) {
+            if(!list) {
+              list = {};
+            }
+            list[obj.object.imapSeqno] = msgId;
+            console.log('storing list', list);
+            return privateClient.storeObject('imapSeqno-to-messageId', 'imap/anything@michielbdejong.com/INBOX/', list);
+          });
+        },
+        getAll: getAll,
+        priv: privateClient
       }
     };
   });

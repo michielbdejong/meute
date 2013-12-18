@@ -109,8 +109,20 @@
   <script src="remotestorage.js"> </script>
   <script src="remotestorage-modules/inbox.js"> </script>
   <script src="remotestorage-modules/email.js"> </script>
+  <script src="remotestorage-modules/contacts.js"> </script>
+  <script src="remotestorage-modules/money.js"> </script>
   <script src="remotestorage-modules/sockethub.js"> </script>
   <script src="prefixtree.js"> </script>
-  <script> </script>
+  <script>
+    remoteStorage.email.getAll('', function(objects) {
+      var str = '<table><tr><td>From</td><td>To</td><td>subject</td></tr>';
+      for(var i=0; i<objects.length; i++) {
+        str+='<tr><td>'+objects[i].actor[0].name ||objects[i].actor[0].address+'</td<td>'
+          +objects[i].target.to[0].name ||objects[i].target.to[0].address+'</td<td>'
+          +objects[i].object.subject+'</td</tr>';
+      }
+      document.body.innerHTML = str+'</table>';
+    });
+  </script>
   <script src="app.js"> </script>
 </html>
