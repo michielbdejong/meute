@@ -1,4 +1,4 @@
-var userAddress = new WebSocket('wss://3pp.io:12380/q/websocket'), suggestions={};
+/*var userAddress = new WebSocket('wss://3pp.io:12380/q/websocket'), suggestions={};
 userAddress.onmessage=function(msg) {
   try {
     msg = JSON.parse(msg.data);
@@ -19,7 +19,7 @@ userAddress.onmessage=function(msg) {
       }
     }
   }
-};
+};*/
 
 function filterContacts(str) {
   var l, match, matchThis, theseTerms,
