@@ -223,10 +223,13 @@ var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
 remoteStorage.setApiKeys('googledrive', {
   client_id: '709507725318-3mt4ke1d4tvkc7ktbjvru3csif4nsk67.apps.googleusercontent.com'
 });
+remoteStorage.stopSync();
 remoteStorage.displayWidget();
-remoteStorage.access.claim('inbox', 'r');
+remoteStorage.access.claim('inbox', 'rw');
 remoteStorage.access.claim('email', 'rw');
 remoteStorage.access.claim('sockethub', 'rw');
+remoteStorage.access.claim('contacts', 'rw');
+remoteStorage.access.claim('money', 'rw');
 //displayLast(50);
 var sock, send = function() { console.log('not ready'); };
 remoteStorage.sockethub.getConfig().then(function(config) {
@@ -285,6 +288,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
           console.log(config);
           sockethubClient.set('email', config).then(function(success) {
             console.log('success', success);
+            remoteStorage.stopSync();//because of rs.js bug #545
           }, function(failure) {
             console.log('failure', failure);
           });
