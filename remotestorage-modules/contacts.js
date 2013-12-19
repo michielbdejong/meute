@@ -1,57 +1,66 @@
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
-  var exports, myName;
   privateClient.cache('');
-  function genUuid() {
-    return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
-  }
-  function getContact(name) {
-    return privateClient.getObject('name/'+name);
-  }
-  function setContact(name, details) {
-    return privateClient.storeObject('contact', 'name/'+name, details);
-  }
-  function setMyName(name) {
-    myName = name;
-    return privateClient.storeObject('myName', 'me', name);
-  }
-  function getMyName(name) {
-    return privateClient.getObject('me');
-  }
-  function getMyNameSync(name) {
-    return myName;
-  }
-  exports = {
-    add: function(name, details) {
-      console.log('adding contact', name, details);
-      getContact(name.toLowerCase()).then(
-        function(obj) {
-          if(!obj) {
-            details.id=genUuid();
-            setContact(name.toLowerCase(), details);
-            if(details.me) {
-              setMyName(name);
-            }
-          }
-        },
-        function(err) {
-          console.log('error retrieving contact', name.toLowerCase());
-        }
-      );
-    },
-    getMyName: getMyName,
-    get: getContact,
-    getNames: function() {
-      return privateClient.getListing('name/');
-    },
-    addFromList: function(list) {
-      var i, name;
-      if(!Array.isArray(list)) {
-        return;
+  var myName = new SyncedVar('myname', privateclient), contacts = new SyncedMap('contacts', privateclient);
+  function SyncedVar(name, baseClient) {
+    var data;
+    baseClient.on('change', function(e) {
+      if(e.key==name) {
+        data = e.newValue;
       }
-      for(i=0; i<list.length; i++) {
-        this.add((list[i].name ? list[i].name : list[i].address), list[i]);
+    });
+    return {
+      get: function() {
+        return data;
+      },
+      set: function(val) {
+        baseClient.storeObject('SyncedVar', name, val);
+        data=val;
+      }
+    };
+  }
+  function SyncedMap(name, baseClient) {
+    var data = {};
+    privateClient.cache(name+'/');
+    baseClient.on('change', function(e) {
+      if(e.key.substring(0, name.length+1) == name + '/') {
+        data[e.key.substring(name.length+1)] = e.newValue;
+      }
+    });
+    return {
+      get: function(key) {
+        return data[key];
+      },
+      set: function(key, val) {
+        baseClient.storeObject('SyncedMapKey', name + '/' + key, val);
+        data[key]=val;
+      },
+      getKeys: function() {
+        return Object.getOwnProperties(data);
+      }
+    };
+  }
+  return {
+    exports: {
+      add: function(name, details) {
+        if(contacts.get(name.toLowerCase())) {
+          throw new Error('name clash!');
+        } else {
+          details.id=genUuid();
+          contacts.set(name.toLowerCase(), details);
+          if(details.me) {
+            myName.set(name);
+          }
+        }
+      },
+      getMyName: function() {
+        return myName.get();
+      },
+      get: function(name) {
+        return contacts.get(name);
+      },
+      getNames: function() {
+        return contacts.getKeys();
       }
     }
   };
-  return { exports: exports };
 });
