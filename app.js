@@ -245,7 +245,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
   }
   console.log(config);
   try {
-    var sockethubClient = SockethubClient.connect({
+    document.sockethubClient = SockethubClient.connect({
       host: config.host,
       path: config.path,
       port: config.port,
@@ -255,7 +255,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         secret: config.secret
       }
     });
-    sockethubClient.on('registered', function() {
+    document.sockethubClient.on('registered', function() {
       console.log('registered!');
       try {
        var config = {
@@ -286,7 +286,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
        remoteStorage.email.getConfig().then(function(config) {
           delete config['@context'];
           console.log(config);
-          sockethubClient.set('email', config).then(function(success) {
+          document.sockethubClient.set('email', config).then(function(success) {
             console.log('success', success);
             remoteStorage.stopSync();//because of rs.js bug #545
           }, function(failure) {
@@ -300,7 +300,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
     document.fetchEmails = function (page, perPage, includeBody) {
       if(!page) { page = 1; }
       if(!perPage) { perPage = 10; }
-      sockethubClient.sendObject({
+      document.sockethubClient.sendObject({
         platform: 'email',
         verb: 'fetch',
         actor: {
@@ -345,7 +345,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
         }
       );
     }
-    sockethubClient.on('message', function(msg) {
+    document.sockethubClient.on('message', function(msg) {
       console.log('msg', msg);
       if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
         key = msg.object.messageId.split('?').join('??').split('/').join('?');
