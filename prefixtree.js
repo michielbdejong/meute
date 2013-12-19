@@ -116,6 +116,17 @@ var PrefixTree = function(baseClient) {
         console.log('storeObject error', typeAlias, key, obj, err.message);
       });
     },
+    on: function(event, cb) {
+      if(event==='change') {
+        baseClient.on('change', function(e) {
+          e.key = pathToKey(e.relativePath);
+          console.log('PrefixTree onchange', e.relativePath, e.key);
+          cb(e);
+        });
+      } else {
+        baseClient.on(event, cb);
+      }
+    },
     getKeysAndDirs: getKeysAndDirs
   };
 };

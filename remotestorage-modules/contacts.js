@@ -1,9 +1,15 @@
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
   privateClient.cache('');
-  var myName = new SyncedVar('myname', privateclient), contacts = new SyncedMap('contacts', privateclient);
+  var myName = new SyncedVar('myname', privateClient), contacts = new SyncedMap('contacts', privateClient);
+
+  function genUuid() {
+    return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
+  }
   function SyncedVar(name, baseClient) {
     var data;
     baseClient.on('change', function(e) {
+      e.key = e.relativePath.substring('contacts/'.length);
+      console.log('change', e);
       if(e.key==name) {
         data = e.newValue;
       }
@@ -19,9 +25,10 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
     };
   }
   function SyncedMap(name, baseClient) {
-    var data = {};
-    privateClient.cache(name+'/');
-    baseClient.on('change', function(e) {
+    var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
+    //prefixTree.cache('');
+    prefixTree.on('change', function(e) {
+      console.log('change', e);
       if(e.key.substring(0, name.length+1) == name + '/') {
         data[e.key.substring(name.length+1)] = e.newValue;
       }
@@ -31,11 +38,11 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
         return data[key];
       },
       set: function(key, val) {
-        baseClient.storeObject('SyncedMapKey', name + '/' + key, val);
+        prefixTree.storeObject('SyncedMapKey', key, val);
         data[key]=val;
       },
       getKeys: function() {
-        return Object.getOwnProperties(data);
+        return Object.getOwnPropertyNames(data);
       }
     };
   }
