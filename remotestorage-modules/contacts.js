@@ -1,7 +1,6 @@
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
-  var exports;
+  var exports, myName;
   privateClient.cache('');
-  
   function genUuid() {
     return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
   }
@@ -12,10 +11,14 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
     return privateClient.storeObject('contact', 'name/'+name, details);
   }
   function setMyName(name) {
+    myName = name;
     return privateClient.storeObject('myName', 'me', name);
   }
   function getMyName(name) {
     return privateClient.getObject('me');
+  }
+  function getMyNameSync(name) {
+    return myName;
   }
   exports = {
     add: function(name, details) {

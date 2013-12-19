@@ -15,7 +15,7 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
         if(-a > b) {
           return b;
         } else {
-          return a;
+          return a; 
         }
       }
       return 0;
@@ -139,7 +139,8 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
     }
         
     function getTabList() {
-      var i, j, claims, endBalance, endBalanceStrs, str = '<h2>Tabs</h2><ul>', myName, yourName, havePos, haveNeg;
+      var i, j, claims, endBalance, endBalanceStrs, str = '<h2>Tabs</h2><ul>',
+        myName, yourName, havePos, haveNeg, tabNames = getTabNames();
       for(i=0; i<tabNames.length; i++) {
         if(!edges['tab:'+i]) {
           edges['tab:'+i]=[];
@@ -292,7 +293,8 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       getTabTable: getTabTable,
       findCycles: findCycles,
       getTabList: getTabList,
-      getCyclesGraph: getCyclesGraph
+      getCyclesGraph: getCyclesGraph,
+      tabs: tabs
     }
   };
 });
