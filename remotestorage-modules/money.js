@@ -1,5 +1,5 @@
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
-  var tabs = {}, contacts = {}, myName;
+  var tabs = SyncedMap('tabs', privateClient);
 
     var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
@@ -239,16 +239,18 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
         for(var i=0; i<tab.claims.length; i++) {
           claims[tab.claims[i].id] = [tab.claims[i]];
         }
-        tabs[tab.description] = claims;
+        tabs.set(tab.description, claims);
       },
       updateClaim: function(tabName, claimId, newObj) {
-        tabs[tabName][claimId].push(newObj);
+        var claims = tabs.get(tabName);
+        claims[claimId].push(newObj);
+        tabs.set(tabName, claims);
       },
       getTabNames: function() {
-        return Object.getOwnPropertyNames(tabs);
+        return tabs.getKeys();
       },
       getTab: function(tabName) {
-        return tabs[tabName];
+        return tabs.get(tabName);
       },
       getTabClaims: function(tabName) {
         var claimId, claims = [], conversion = {
@@ -260,8 +262,8 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
           usd: 0.8,
           inr: 0.01226
         }, i, effect, sums= {};
-        for(claimId in tabs[tabName]) {//take the latest version of each claim
-          claim=tabs[tabName][claimId][tabs[tabName][claimId].length-1];
+        for(claimId in tabs.get(tabName)) {//take the latest version of each claim
+          claim=tabs.get(tabName)[claimId][tabs.get(tabName)[claimId].length-1];
           if(!conversion[claim.currency?claim.currency.toLowerCase():'eur']) {
             console.log('unsupported currency', claim.currency?claim.currency.toLowerCase():'eur');
           }
@@ -281,8 +283,8 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       },
       getTabParticipants: function(tabName) {
         var map = {}, i, j, latestVersion;
-        for(i in tabs[tabName]) {
-          latestVersion = tabs[tabName][i][tabs[tabName][i].length-1];
+        for(i in tabs.get(tabName)) {
+          latestVersion = tabs.get(tabName)[i][tabs.get(tabName)[i].length-1];
           map[latestVersion.by]=true;
           for(j=0;j<latestVersion['for'].length;j++) {
             map[latestVersion['for'][j]]=true;
