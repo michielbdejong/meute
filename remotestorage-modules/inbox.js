@@ -19,6 +19,9 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
           ret[keys[i]] = activity.get(keys[i]);
         }
         return ret;
+      },
+      getActivity: function(key) {
+        return activity.get(key);
       }
     }
   };
