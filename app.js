@@ -347,6 +347,7 @@ remoteStorage.sockethub.getConfig().then(function(config) {
     }
     document.sockethubClient.on('message', function(msg) {
       console.log('msg', msg);
+      remoteStorage.inbox.logActivity(msg);
       if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
         key = msg.object.messageId.split('?').join('??').split('/').join('?');
         console.log('storing message', key, msg);
