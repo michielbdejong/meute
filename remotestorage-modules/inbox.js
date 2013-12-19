@@ -10,10 +10,15 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         if(currTime > timestamp) {
           timestamp = currTime;
         }
-        activity.set(timestamp, obj);
+        activity.set(timestamp.toString(), obj);
       },
       getActivitySince: function() {
-        return activity.getKeys();
+        var i, ret = {}, keys = activity.getKeys();
+        console.log('getting activities', keys);
+        for(i=0;i<keys.length; i++) {
+          ret[keys[i]] = activity.get(keys[i]);
+        }
+        return ret;
       }
     }
   };
