@@ -163,18 +163,15 @@ function loadMockData() {
   };
   showMessages();
 }
-function sendMsg(preview) {
-  var text = document.getElementById('compose').value,
-    enterPos = text.indexOf('\n'),
-    msg;
-  msg = {
+function sendEmail(recipients, subject, text, inReplyTo, preview) {
+  var msg = {
     target: {
       email: recipients
     },
     object: {
       inReplyTo: inReplyTo,
-      subject: text.substring(0, enterPos),
-      text: text.substring(enterPos+1)
+      subject: subject,
+      text: text
     },
     verb: 'send'
   };
@@ -183,6 +180,12 @@ function sendMsg(preview) {
   } else {
     send(msg);
   }
+}
+function sendMsg(preview) {
+  var text = document.getElementById('compose').value,
+    enterPos = text.indexOf('\n'),
+    msg;
+  sendEmail(recipients, text.substring(0, enterPos), text.substring(enterPos+1), inReplyTo, preview);
 }
 
 //...
@@ -367,7 +370,7 @@ function displayContactList(list) {
     return '?';
   }
   for(i=0; i<list.length; i++) {
-    str += JSON.stringify(list[i]);
+    str += list[i].name || list[i].address || JSON.stringify(list[i]);
   }
   return str;
 }
