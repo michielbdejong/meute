@@ -62,9 +62,7 @@ var PrefixTree = function(baseClient) {
           itemsMap = listing;
         }
       }
-      console.log(thisDir, typeof(itemsMap), itemsMap);
       if(itemsMap[key[depth]+'/']) {//go deeper
-        console.log('go deeper', key[depth]);
         return tryDepth(key, depth+1, checkMaxLeaves);
       }
       if(checkMaxLeaves) {
@@ -75,10 +73,7 @@ var PrefixTree = function(baseClient) {
           }
         }
         if(numDocuments >= maxLeaves) {//start new subtree for this char
-          console.log('no room', numDocuments);
           return depth+1;
-        } else {
-          console.log('still room', numDocuments);
         }
       }//this depth is OK
       return depth;
@@ -120,7 +115,6 @@ var PrefixTree = function(baseClient) {
       if(event==='change') {
         baseClient.on('change', function(e) {
           e.key = pathToKey(e.relativePath);
-          console.log('PrefixTree onchange', e.relativePath, e.key);
           cb(e);
         });
       } else {
@@ -135,7 +129,6 @@ var PrefixTree = function(baseClient) {
     var data;
     baseClient.on('change', function(e) {
       e.key = e.relativePath.substring('contacts/'.length);
-      console.log('change', e);
       if(e.key==name) {
         data = e.newValue;
       }
@@ -154,7 +147,6 @@ var PrefixTree = function(baseClient) {
     var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
     //prefixTree.cache('');
     prefixTree.on('change', function(e) {
-      console.log('change', e);
       if(e.key.substring(0, name.length+1) == name + '/') {
         data[e.key.substring(name.length+1)] = e.newValue;
       }

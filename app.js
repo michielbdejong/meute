@@ -361,3 +361,27 @@ remoteStorage.sockethub.getConfig().then(function(config) {
 }, function(err) {
   console.log('getConfig error', err.message);
 });
+function displayContactList(list) {
+  var i, str = '';
+  if(!Array.isArray(list)) {
+    return '?';
+  }
+  for(i=0; i<list.length; i++) {
+    str += JSON.stringify(list[i]);
+  }
+  return str;
+}
+function displayInbox() {
+  var list = remoteStorage.inbox.getActivitySince(),
+    i=0, obj, str = '<table><tr><td>timestamp/id</td><td>actor</td><td>preview</td></tr>';
+  console.log('displayInbox', list);
+  for(i in list) {
+    console.log(i, list[i]);
+    str += '<tr><td>'
+      +i+'</td><td>'+
+      +displayContactList(list[i].actor)+'</td><td>'
+      +list[i].object.subject+'</td></tr>';
+  }
+  console.log(str);
+  document.body.innerHTML = str + '</table>';
+}

@@ -9,13 +9,22 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
     exports: {
       add: function(name, details) {
         if(contacts.get(name.toLowerCase())) {
-          throw new Error('name clash!');
+          //throw new Error('name clash!');
         } else {
           details.id=genUuid();
           contacts.set(name.toLowerCase(), details);
           if(details.me) {
             myName.set(name);
           }
+        }
+      },
+      addFromList: function(list) {
+        if(!Array.isArray(list)) {
+          return;
+        }
+        var i;
+        for(i=0; i<list.length; i++) {
+          this.add(list[i].name || list[i].address, list[i]);
         }
       },
       getMyName: function() {
