@@ -2,7 +2,7 @@
   var moduleName = 'sockethub';
 
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
-    //privateClient.cache('');
+    privateClient.cache('');
     return {
       exports: {
         c: privateClient,
@@ -57,9 +57,12 @@
         },
         
         setEverything: function(obj) {
+          console.log('storing sh config', obj);
           if(obj) {
+            console.log('storing sh config', obj);
             return privateClient.storeObject('config', 'config.json', obj);
           }
+          console.log('storing sh config synchronously done');
         }
       }
     };

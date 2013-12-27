@@ -27,10 +27,15 @@ document.expimp = (function() {
       });
     },
     set: function(obj) {
+      console.log('setting sh');
       remoteStorage.sockethub.setEverything(obj.sockethub);
+      console.log('setting ib');
       remoteStorage.inbox.setEverything(obj.inbox);
+      console.log('setting em');
       remoteStorage.email.setEverything(obj.email);
+      console.log('setting ct');
       remoteStorage.contacts.setEverything(obj.contacts);
+      console.log('setting mo');
       remoteStorage.money.setEverything(obj.money);
     }
   };

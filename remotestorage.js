@@ -150,12 +150,15 @@
 
     put: function(path, body, contentType) {
       if (shareFirst.bind(this)(path)) {
+console.log('shareFirst');
         //this.local.put(path, body, contentType);
         return SyncedGetPutDelete._wrapBusyDone.call(this, this.remote.put(path, body, contentType));
       }
       else if (this.caching.cachePath(path)) {
+console.log('caching');
         return this.local.put(path, body, contentType);
       } else {
+console.log('synced');
         return SyncedGetPutDelete._wrapBusyDone.call(this, this.remote.put(path, body, contentType));
       }
     },
@@ -985,7 +988,7 @@
     var revision;
 
     headers['Authorization'] = 'Bearer ' + token;
-
+console.log('WireClient.request');
     RS.WireClient.request(method, uri, {
       body: body,
       headers: headers
@@ -1220,7 +1223,9 @@
     },
 
     put: function(path, body, contentType, options) {
+   console.log('remote put');
       if (!this.connected) {
+   console.log('throwing');
         throw new Error("not connected (path: " + path + ")");
       }
       if (!options) { options = {}; }
@@ -1236,6 +1241,7 @@
           headers['If-None-Match'] = options.ifNoneMatch;
         }
       }
+   console.log('remote put req');
       return request('PUT', this.href + cleanPath(path), this.token,
                      headers, body, this.supportsRevs);
     },
@@ -1315,6 +1321,7 @@
         body = JSON.stringify(body);
       }
     }
+    console.log('sending xhr');
     xhr.send(body);
   };
 
@@ -3648,7 +3655,9 @@ Math.uuid = function (len, radix) {
      *   See <declareType> for examples.
      */
     storeObject: function(typeAlias, path, object) {
+console.log('attaching type');
       this._attachType(object, typeAlias);
+console.log('validating');
       try {
         var validationResult = this.validate(object);
         if (! validationResult.valid) {
@@ -3659,6 +3668,7 @@ Math.uuid = function (len, radix) {
           return promising().reject(exc);
         }
       }
+console.log('putting to storage');
       return this.storage.put(this.makePath(path), object, 'application/json; charset=UTF-8').then(function(status, _body, _mimeType, revision) {
         if (status === 200 || status === 201) {
           return revision;
@@ -3682,9 +3692,10 @@ Math.uuid = function (len, radix) {
       return this.storage.delete(this.makePath(path));
     },
 
-    cache: function(path, disable) {
-      this.storage.caching[disable !== false ? 'enable' : 'disable'](
-        this.makePath(path)
+    cache: function(path, enable) {
+      this.storage.caching[enable === false ? 'disable' : 'enable'](
+        this.makePath(path),
+        this.storage.connected
       );
       return this;
     },
@@ -3939,7 +3950,7 @@ Math.uuid = function (len, radix) {
      * Parameters:
      *   path - Absolute path to a directory.
      */
-    enable: function(path) { this.set(path, { data: true, ready: false }); },
+    enable: function(path, waitForRemote) { this.set(path, { data: true, ready: !waitForRemote }); },
     /**
      * Method: disable
      *

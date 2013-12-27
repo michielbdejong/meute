@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Meute - an unhosted messages/contacts/search app</title>
+    <style>
+      body { font:15px sans-serif; line-height:1.4em; color:#222 }
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+    <article>
+      <input type="file" id="files" name="files[]" multiple />
+      <output id="list"></output>
+
+      <script>
+        function handleFileSelect(evt) {
+          var files = evt.target.files; // FileList object
+
+          // files is a FileList of File objects. List some properties.
+          var output = [];
+          for (var i = 0, f; f = files[i]; i++) {
+            output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                        f.size, ' bytes, last modified: ',
+                        f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                        '</li>');
+            var reader = new FileReader();
+
+            // Closure to capture the file information.
+            reader.onload = (function(theFile) {
+              return function(e) {
+                console.log(e.target.result);
+                document.expimp.set(JSON.parse(e.target.result));
+              };
+            })(f);
+
+            // Read in the image file as a data URL.
+            reader.readAsText(f);
+          }
+          document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+        }
+
+        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+      </script>
+    </article>
+  </body>
+  <script src="sockethub-client.js"></script>
+  <script src="remotestorage.js"> </script>
+  <script src="remotestorage-modules/inbox.js"> </script>
+  <script src="remotestorage-modules/email.js"> </script>
+  <script src="remotestorage-modules/contacts.js"> </script>
+  <script src="remotestorage-modules/money.js"> </script>
+  <script src="remotestorage-modules/sockethub.js"> </script>
+  <script src="remotestorage-modules/module-utils.js"> </script>
+  <script src="irc.js"></script>
+  <script src="app.js"> </script>
+  <script src="messaging.js"> </script>
+  <script src="expimp.js"> </script>
+  <script>
+/*    remoteStorage.email.getAll('', function(objects) {
+      var str = '<table><tr><td>From</td><td>To</td><td>subject</td></tr>';
+      for(var i=0; i<objects.length; i++) {
+        str+='<tr><td>'+objects[i].actor[0].name ||objects[i].actor[0].address+'</td<td>'
+          +objects[i].target.to[0].name ||objects[i].target.to[0].address+'</td<td>'
+          +objects[i].object.subject+'</td</tr>';
+      }
+      document.body.innerHTML = str+'</table>';
+    });
+*/  </script>
+</html>

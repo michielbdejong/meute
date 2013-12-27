@@ -79,6 +79,14 @@ var PrefixTree = function(baseClient) {
       return depth;
     });
   }
+  function storeObject(typeAlias, key, obj) {
+    return tryDepth(key, minDepth, true).then(function(depth) {
+      return baseClient.storeObject(typeAlias, keyToPath(key, depth), obj);
+    }, function(err) {
+      console.log('storeObject error', typeAlias, key, obj, err.message);
+    });
+  }
+  
   return {
     setMaxLeaves: function(val) {
       maxLeaves=val;
@@ -104,13 +112,7 @@ var PrefixTree = function(baseClient) {
         console.log('getObject error', key, err.message);
       });
     },
-    storeObject: function(typeAlias, key, obj) {
-      return tryDepth(key, minDepth, true).then(function(depth) {
-        return baseClient.storeObject(typeAlias, keyToPath(key, depth), obj);
-      }, function(err) {
-        console.log('storeObject error', typeAlias, key, obj, err.message);
-      });
-    },
+    storeObject: storeObject,
     storeObjects: function(typeAlias, map) {
       for(key in map) {
         storeObject(typeAlias, key, map[key]);
