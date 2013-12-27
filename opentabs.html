@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head><meta charset="utf-8" /></head>
-  <body>see console</body>
+  <body>see console
+  </body>
   <script src="remotestorage.js"></script>
   <script src="remotestorage-modules/module-utils.js"></script>
   <script src="remotestorage-modules/contacts.js"></script>
@@ -11,7 +12,9 @@
     remoteStorage.displayWidget();
     remoteStorage.claimAccess('contacts', 'rw');
     remoteStorage.claimAccess('money', 'rw');
-    
+
+    var formHtml = 'Enter Opentabs command:<input id="ot-cmd" /><br>Examples: <ul> <li>2000 INR by me for both #peter paid lunch</li> <li>82.91 USD by peter for michael,john #goa2014 gas</li> <li>0.06 BIT by michael for peter #goa2014 settlement to your bitcoin wallet 2014-01-31 11:14:03</li> </ul>';
+
     var tabNames = remoteStorage.money.getTabNames(), peers = {};
 
     function markCell(i, j) {
@@ -26,10 +29,10 @@
     }
     function showTab(i) {
       showTabList();
-      document.body.innerHTML += remoteStorage.money.getTabTable(i);
+      document.body.innerHTML += formHtml + remoteStorage.money.getTabTable(i);
     }
     function showTabList() {
-      document.body.innerHTML = ''; 
+      document.body.innerHTML = formHtml;
       document.body.innerHTML += remoteStorage.money.getCyclesGraph();
       document.body.innerHTML+= remoteStorage.money.findCycles(markCell);
       document.body.innerHTML += remoteStorage.money.getTabList();
