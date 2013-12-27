@@ -21,7 +21,9 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       },
       getActivity: function(key) {
         return activity.get(key);
-      }
+      },
+      getEverything: function() { var promise = promising(); promise.fulfill(); return promise; },
+      setEverything: function() { }
     }
   };
 });

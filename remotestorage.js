@@ -4002,9 +4002,12 @@ Math.uuid = function (len, radix) {
      */
     waitForPath: function(path) {
       var promise = promising();
+      
       if(this.cachePathReady(path)) {
+        console.log('don\'t have to wait for path '+path);
         promise.fulfill();
       } else {
+        console.log('have to wait for path '+path);
         if(!this.queuedPromises) {
           this.queuedPromises = {};
         }
@@ -4085,6 +4088,7 @@ Math.uuid = function (len, radix) {
         return false;
       }
       var settings = this._query(path);
+      console.log('ready setting for path', path, settings); 
       return ((typeof(settings) === 'object') && (settings.ready));
     },
 

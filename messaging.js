@@ -1,5 +1,5 @@
 document.messaging = (function() {
-
+  
   function sendEmail(recipients, subject, text, inReplyTo, preview) {
     var msg = {
       target: {

@@ -133,7 +133,10 @@
           });
         },
         getAll: getAll,
-        priv: privateClient
+        priv: privateClient,
+        getEverything: function() { var promise = promising(); promise.fulfill(); return promise; },
+        setEverything: function() { }
+        
       }
     };
   });

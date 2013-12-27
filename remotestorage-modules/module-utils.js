@@ -111,6 +111,11 @@ var PrefixTree = function(baseClient) {
         console.log('storeObject error', typeAlias, key, obj, err.message);
       });
     },
+    storeObjects: function(typeAlias, map) {
+      for(key in map) {
+        storeObject(typeAlias, key, map[key]);
+      }
+    },
     on: function(event, cb) {
       if(event==='change') {
         baseClient.on('change', function(e) {
@@ -161,6 +166,13 @@ var PrefixTree = function(baseClient) {
       },
       getKeys: function() {
         return Object.getOwnPropertyNames(data);
+      },
+      getEverything: function() {
+        return data;
+      },
+      setEverything: function(setData) {
+        data = setData;
+        prefixTree.storeObjects('SyncedMapKey', data);
       }
     };
   }

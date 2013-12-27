@@ -296,7 +296,19 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       findCycles: findCycles,
       getTabList: getTabList,
       getCyclesGraph: getCyclesGraph,
-      tabs: tabs
+      tabs: tabs,
+      getEverything: function() {
+        var promise = promising();
+        promise.fulfill({
+          tabs: tabs.getEverything()
+        }); 
+        return promise;
+      },
+      setEverything: function(obj) {
+        if(obj && obj.tabs) {
+          tabs.setEverything(obj.tabs);
+        }
+      }
     }
   };
 });
