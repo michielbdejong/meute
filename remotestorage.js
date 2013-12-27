@@ -6184,7 +6184,7 @@ Math.uuid = function (len, radix) {
         } else {
           query = '\'' + id + '\' in parents';
           fields = 'items(downloadUrl,etag,fileSize,id,mimeType,title)';
-          this._request('GET', BASE_URL + '/drive/v2/files.list?'
+          this._request('GET', BASE_URL + '/drive/v2/files?'
               + 'q=' + encodeURIComponent(query)
               + '&fields=' + encodeURIComponent(fields)
               + '&maxResults=1000',
