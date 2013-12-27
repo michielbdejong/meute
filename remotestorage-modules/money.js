@@ -231,7 +231,11 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       }
       return str+'</table>';
     }
-
+    
+  function getTabNames() {
+    return tabs.getKeys();
+  }
+  
   return {
     exports: {
       addTab: function(tab) {
@@ -246,9 +250,7 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
         claims[claimId].push(newObj);
         tabs.set(tabName, claims);
       },
-      getTabNames: function() {
-        return tabs.getKeys();
-      },
+      getTabNames: getTabNames,
       getTab: function(tabName) {
         return tabs.get(tabName);
       },
