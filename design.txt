@@ -56,3 +56,5 @@ interface design:
 - need a better word for 'conversation'. 'chat'?
 - it should only set the messages that were actually in the current view as 'read'. it's ok to just have 50 messages even it that's all just one thread
 - on the readscreen, show a whole conversation instead of one msg.
+- opentabs form like sms command:
+  2000 INR by me for both #peter paid lunch
