@@ -150,15 +150,12 @@
 
     put: function(path, body, contentType) {
       if (shareFirst.bind(this)(path)) {
-console.log('shareFirst');
         //this.local.put(path, body, contentType);
         return SyncedGetPutDelete._wrapBusyDone.call(this, this.remote.put(path, body, contentType));
       }
       else if (this.caching.cachePath(path)) {
-console.log('caching');
         return this.local.put(path, body, contentType);
       } else {
-console.log('synced');
         return SyncedGetPutDelete._wrapBusyDone.call(this, this.remote.put(path, body, contentType));
       }
     },
@@ -988,7 +985,7 @@ console.log('synced');
     var revision;
 
     headers['Authorization'] = 'Bearer ' + token;
-console.log('WireClient.request');
+
     RS.WireClient.request(method, uri, {
       body: body,
       headers: headers
@@ -1223,9 +1220,7 @@ console.log('WireClient.request');
     },
 
     put: function(path, body, contentType, options) {
-   console.log('remote put');
       if (!this.connected) {
-   console.log('throwing');
         throw new Error("not connected (path: " + path + ")");
       }
       if (!options) { options = {}; }
@@ -1241,7 +1236,6 @@ console.log('WireClient.request');
           headers['If-None-Match'] = options.ifNoneMatch;
         }
       }
-   console.log('remote put req');
       return request('PUT', this.href + cleanPath(path), this.token,
                      headers, body, this.supportsRevs);
     },
@@ -1321,7 +1315,6 @@ console.log('WireClient.request');
         body = JSON.stringify(body);
       }
     }
-    console.log('sending xhr');
     xhr.send(body);
   };
 
@@ -3655,9 +3648,7 @@ Math.uuid = function (len, radix) {
      *   See <declareType> for examples.
      */
     storeObject: function(typeAlias, path, object) {
-console.log('attaching type');
       this._attachType(object, typeAlias);
-console.log('validating');
       try {
         var validationResult = this.validate(object);
         if (! validationResult.valid) {
@@ -3668,7 +3659,6 @@ console.log('validating');
           return promising().reject(exc);
         }
       }
-console.log('putting to storage');
       return this.storage.put(this.makePath(path), object, 'application/json; charset=UTF-8').then(function(status, _body, _mimeType, revision) {
         if (status === 200 || status === 201) {
           return revision;
@@ -3692,10 +3682,9 @@ console.log('putting to storage');
       return this.storage.delete(this.makePath(path));
     },
 
-    cache: function(path, enable) {
-      this.storage.caching[enable === false ? 'disable' : 'enable'](
-        this.makePath(path),
-        this.storage.connected
+    cache: function(path, disable) {
+      this.storage.caching[disable !== false ? 'enable' : 'disable'](
+        this.makePath(path)
       );
       return this;
     },
@@ -3950,7 +3939,7 @@ console.log('putting to storage');
      * Parameters:
      *   path - Absolute path to a directory.
      */
-    enable: function(path, waitForRemote) { this.set(path, { data: true, ready: !waitForRemote }); },
+    enable: function(path) { this.set(path, { data: true, ready: false }); },
     /**
      * Method: disable
      *
@@ -4013,12 +4002,11 @@ console.log('putting to storage');
      */
     waitForPath: function(path) {
       var promise = promising();
-      
       if(this.cachePathReady(path)) {
-        console.log('don\'t have to wait for path '+path);
+        console.log('path ready', path);
         promise.fulfill();
       } else {
-        console.log('have to wait for path '+path);
+        console.log('path not ready', path);
         if(!this.queuedPromises) {
           this.queuedPromises = {};
         }
@@ -4099,7 +4087,6 @@ console.log('putting to storage');
         return false;
       }
       var settings = this._query(path);
-      console.log('ready setting for path', path, settings); 
       return ((typeof(settings) === 'object') && (settings.ready));
     },
 
@@ -4374,12 +4361,13 @@ console.log('putting to storage');
               }
             }
             local.get(change.path).then(function(status, body, contentType) {
+              console.log('local get resulted in', status, body, contentType);
               if (status === 200) {
                 return remote.put(change.path, body, contentType, options);
               } else {
                 return 200; // fake 200 so the change is cleared.
               }
-            }).then(function(status) {
+            }).then(function(status, responseBody, mimeType, revision) {
               if (status === 412) {
                 fireConflict(local, change.path, {
                   localAction: 'PUT',
@@ -4387,6 +4375,7 @@ console.log('putting to storage');
                 });
                 oneDone();
               } else {
+                local._setRevision(path, revision);
                 oneDone(change.path);
               }
             }).then(undefined, errored);
@@ -4765,24 +4754,114 @@ console.log('putting to storage');
     RS.cachingLayer(this);
     RS.eventHandling(this, 'change', 'conflict');
   };
+  
+  function parsePath(path) {
+    var parts, ret = {
+      isRoot: (path === '')
+    };
+    if(path.substr(-1) === '/') {
+      parts = path.substring(0, path.length-1).split('/');
+      ret.isFolder = true;
+      ret.itemName = parts[parts.length-1]+'/';
+    } else {
+      parts = path.split('/');
+      ret.isFolder = false;
+      ret.itemName = parts[parts.length-1];
+    }
+    parts.pop();
+    ret.containingFolder = parts.join('/')+ (parts.length ? '/' : '');
+    console.log('parsePath', path, parts, ret);
+    return ret;
+  }
 
+  function deleteMeta(transaction, pathObj, incoming, cb) {
+    //FIXME: we should also have a rootParent in which we can store the revision of root
+    if(pathObj.isRoot) {
+      cb();
+      return;
+    }
+    var meta = transaction.objectStore('meta');
+    meta.get(pathObj.containingFolder).onsuccess = function(evt) {
+      var parentMeta = evt.target.result;
+      if(parentMeta.items[pathObj.itemName]) {
+        oldRevision = parentMeta.items[pathObj.itemName].ETag;
+        delete parentMeta.items[pathObj.itemName];
+        if(parentMeta.items.length) {
+          meta.put(parentMeta);
+          cb(oldRevision);
+        } else {
+          deleteMeta(transaction, parsePath(pathObj.containingFolder), incoming, function() {
+            cb(oldRevision);
+          });
+        };
+      }
+    };
+  }
+  
+  function createMeta(metaStore, path, revision) {
+    var pathObj = parsePath(path);
+    if(!pathObj.isRoot) {
+      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
+        if(!evt.result) {
+          createMeta(metaStore, pathObj.containingFolder);
+        }
+      };
+    }
+    var items = {};
+    items[pathObj.itemName] = (revision ? {ETag: revision} : {});
+    metaStore.put({
+      path: pathObj.containingFolder,
+      items: items
+    });
+  }
+  
   RS.IndexedDB.prototype = {
 
     get: function(path) {
+      var pathObj = parsePath(path);
+      var storesNeeded = (pathObj.isFolder ? 'meta' : ['meta', 'bodies']);
       var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var nodes = transaction.objectStore('nodes');
-      var nodeReq = nodes.get(path);
-      var node;
+      var transaction = this.db.transaction(storesNeeded, 'readonly');
+      var metaStore = transaction.objectStore('meta'),
+         parentReq, metaData, itemReq, item;
+      if(pathObj.isFolder) {
+        itemReq = metaStore.get(path);
+        itemReq.onsuccess = function(evt) {
+          if(itemReq.result) {
+            item = itemReq.result.items;
+          }
+        };
+      } else {
+        itemReq = transaction.objectStore('bodies')
+            .get(path);
+        itemReq.onsuccess = function(evt) {
+          console.log('bodies get success', evt);
+          if(itemReq.result) {
+            item = itemReq.result.value;
+          }
+        };
+      }
+      console.log('getting containingFolder', pathObj);
+      parentReq = metaStore.get(pathObj.containingFolder);
 
-      nodeReq.onsuccess = function() {
-        node = nodeReq.result;
+      parentReq.onsuccess = function(evt) {
+        console.log('parentReq success', evt);
+        if(parentReq.result) {
+          metaData = parentReq.result[pathObj.itemName];
+        }
       };
-
+      itemReq.onerror = function(evt) {
+        console.log('itemReq error', evt);
+      };
+      parentReq.onerror = function(evt) {
+        console.log('parentReq error', evt);
+      };
       transaction.oncomplete = function() {
-        if (node) {
-          promise.fulfill(200, node.body, node.contentType, node.revision);
+        if (metaData && item) {
+          console.log('fulfulling as success', item, metaData);
+          promise.fulfill(200, item, metaData['Content-Type'], metaData['ETag']);
         } else {
+          console.log('fulfulling as not found', item, metaData);
           promise.fulfill(404);
         }
       };
@@ -4792,22 +4871,38 @@ console.log('putting to storage');
     },
 
     put: function(path, body, contentType, incoming, revision) {
-      var promise = promising();
-      if (path[path.length - 1] === '/') { throw "Bad: don't PUT folders"; }
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
-      var oldNode;
-      var done;
-
-      nodes.get(path).onsuccess = function(evt) {
+      var pathObj = parsePath(path),
+       promise = promising(),
+       transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
+       metaStore = transaction.objectStore('meta'),
+       bodiesStore = transaction.objectStore('bodies'),
+       oldBody, oldRevision, done;
+console.log('putting', path, pathObj);
+      if (pathObj.isFolder) {
+        throw "Bad: don't PUT folders";
+      }
+      
+      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
         try {
-          oldNode = evt.target.result;
-          var node = {
-            path: path,
-            contentType: contentType,
-            body: body
+          if(evt.target.result) {
+            parentMeta = evt.target.result;
+          } else {
+            createMeta(metaStore, pathObj.containingFolder);
+            parentMeta = {
+              path: pathObj.containingFolder,
+              items: {}
+            };
+          }
+          if(parentMeta.items[pathObj.itemName]) {
+            oldRevision = parentMeta.items[pathObj.itemName].ETag;
+          }
+          parentMeta.items[pathObj.itemName] = {
+            ETag: revision,
+            'Content-Type': contentType,
+            'Content-Length': body.length//FIXME: how can we find out the number of bytes, rather than the number of utf-8 chars of a JavaScript String?
           };
-          nodes.put(node);
+          metaStore.put(parentMeta);
+          
         } catch(e) {
           if (typeof(done) === 'undefined') {
             done = true;
@@ -4815,26 +4910,30 @@ console.log('putting to storage');
           }
         }
       };
-
+      
+      bodiesStore.get(path).onsuccess = function(evt) {
+        if(evt.target.result) {
+          oldBody = evt.target.result.value;
+        }
+        bodiesStore.put({
+          path: path,
+          value: body
+        });
+      };
+      
       transaction.oncomplete = function() {
         this._emit('change', {
           path: path,
           origin: incoming ? 'remote' : 'window',
-          oldValue: oldNode ? oldNode.body : undefined,
+          oldValue: oldBody,
           newValue: body
         });
         if (!incoming) {
-          this._recordChange(path, { action: 'PUT', revision: oldNode ? oldNode.revision : undefined });
+          this._recordChange(path, { action: 'PUT', revision: oldRevision });
         }
         if (typeof(done) === 'undefined') {
           done = true;
-          if (incoming) {
-            this._setRevision(path, revision).then(function(){
-              promise.fulfill(200);
-            });
-          } else {
-            promise.fulfill(200);
-          }
+          promise.fulfill(200);
         }
       }.bind(this);
 
@@ -4845,15 +4944,14 @@ console.log('putting to storage');
 
     putDirectory: function(path, body, revision) {
       var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
+      var transaction = this.db.transaction(['meta'], 'readwrite');
+      var meta = transaction.objectStore('meta');
 
-      addDirectoryCacheNode(nodes, path, body);
-      addToParent(nodes, path, 'body');
+      addToParent(meta, path, 'body');
 
       transaction.oncomplete = function() {
-        this._setRevision(path, revision).then(promise.fulfill);
-      }.bind(this);
+        promise.fulfill();
+      };
 
       transaction.onerror = transaction.onabort = promise.reject;
 
@@ -4861,30 +4959,34 @@ console.log('putting to storage');
     },
 
     delete: function(path, incoming) {
-      var promise = promising();
-      if (path[path.length - 1] === '/') { throw "Bad: don't DELETE folders"; }
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
-      var oldNode;
-
-      nodes.get(path).onsuccess = function(evt) {
-        oldNode = evt.target.result;
-        nodes.delete(path).onsuccess = function() {
-          removeFromParent(nodes, path, 'cached', incoming);
-        };
-      };
-
+      var pathObj = parsePath(path);
+      if (pathObj.isRoot) {
+        throw "Bad: don't DELETE root";
+      }
+      var transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
+        promise = promising(),
+        oldBody, bodies;
+      deleteMeta(transaction, pathObj, incoming, function(oldRevision) {
+        if(!pathObj.isFolder) {
+          bodies = transaction.objectStore('bodies');
+          bodies.get(path).onsuccess = function(evt) {
+            oldBody = evt.target.value;
+            bodies.delete(path);
+          };
+        }
+      });
+      
       transaction.oncomplete = function() {
-        if (oldNode) {
+        if (oldBody) {
           this._emit('change', {
             path: path,
             origin: incoming ? 'remote' : 'window',
-            oldValue: oldNode.body,
+            oldValue: oldBody,
             newValue: undefined
           });
         }
         if (! incoming) {
-          this._recordChange(path, { action: 'DELETE', revision: oldNode ? oldNode.revision : undefined });
+          this._recordChange(path, { action: 'DELETE', revision: oldRevision });
         }
         promise.fulfill(200);
       }.bind(this);
@@ -4894,23 +4996,19 @@ console.log('putting to storage');
     },
 
     _setRevision: function(path, revision) {
-      return this._setRevisions([[path, revision]]);
-    },
-
-    _setRevisions: function(revs) {
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-
-      revs.forEach(function(rev) {
-        var nodes = transaction.objectStore('nodes');
-        nodes.get(rev[0]).onsuccess = function(event) {
-          var node = event.target.result || makeNode(rev[0]);
-          node.revision = rev[1];
-          nodes.put(node).onsuccess = function() {
-            addToParent(nodes, rev[0], 'cached', rev[1]);
-          };
-        };
-      });
+      console.log('setting revision', path, revision);
+      var pathObj = parsePath(path),
+        transaction =  this.db.transaction(['meta'], 'readwrite'),
+        metaStore = transaction.objectStore('meta'),
+        promise = promising();
+      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
+        var folder = evt.target.result;
+        if(!folder.items[pathObj.itemName]) {
+          folder.items[pathObj.itemName] = {};
+        }
+        folder.items[pathObj.itemName].ETag = revision;
+        metaStore.put(folder);
+      };
 
       transaction.oncomplete = function() {
         promise.fulfill();
@@ -4921,14 +5019,15 @@ console.log('putting to storage');
     },
 
     getRevision: function(path) {
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
+      var promise = promising(),
+        pathObj = parsePath(path);
+      var transaction = this.db.transaction(['meta'], 'readonly');
       var rev;
 
-      transaction.objectStore('nodes').
-        get(path).onsuccess = function(evt) {
-          if (evt.target.result) {
-            rev = evt.target.result.revision;
+      transaction.objectStore('meta').
+        get(pathObj.containingFolder).onsuccess = function(evt) {
+          if (evt.target.result && evt.target.result.items && evt.target.result.items[pathObj.itemName]) {
+            rev =  evt.target.result.items[pathObj.itemName].ETag;
           }
         };
 
@@ -4937,23 +5036,6 @@ console.log('putting to storage');
       };
 
       transaction.onerror = transaction.onabort = promise.reject;
-      return promise;
-    },
-
-    // TODO this is not used yet
-    getCached: function(path) {
-      if (path[path.length - 1] !== '/') {
-        return this.get(path);
-      }
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var nodes = transaction.objectStore('nodes');
-
-      nodes.get(path).onsuccess = function(evt) {
-        var node = evt.target.result || {};
-        promise.fulfill(200, node.cached, node.contentType, node.revision);
-      };
-
       return promise;
     },
 
@@ -4971,20 +5053,17 @@ console.log('putting to storage');
     },
 
     fireInitial: function() {
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var cursorReq = transaction.objectStore('nodes').openCursor();
+      var transaction = this.db.transaction(['bodies'], 'readonly');
+      var cursorReq = transaction.objectStore('bodies').openCursor();
       cursorReq.onsuccess = function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
-          var path = cursor.key;
-          if (path.substr(-1) !== '/') {
-            this._emit('change', {
-              path: path,
-              origin: 'local',
-              oldValue: undefined,
-              newValue: cursor.value.body
-            });
-          }
+          this._emit('change', {
+            path: cursor.value.path,
+            origin: 'local',
+            oldValue: undefined,
+            newValue: cursor.value.value
+          });
           cursor.continue();
         }
       }.bind(this);
@@ -5031,8 +5110,8 @@ console.log('putting to storage');
       var pl = path.length;
       var changes = [];
 
-      cursorReq.onsuccess = function() {
-        var cursor = cursorReq.result;
+      cursorReq.onsuccess = function(evt) {
+        var cursor = evt.target.result;
         if (cursor) {
           if (cursor.key.substr(0, pl) === path) {
             changes.push(cursor.value);
@@ -5067,7 +5146,7 @@ console.log('putting to storage');
 
   };
 
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
 
   RS.IndexedDB.open = function(name, callback) {
     var timer = setTimeout(function() {
@@ -5085,12 +5164,14 @@ console.log('putting to storage');
     dbOpen.onupgradeneeded = function(event) {
       RemoteStorage.log("[IndexedDB] Upgrade: from ", event.oldVersion, " to ", event.newVersion);
       var db = dbOpen.result;
-      if (event.oldVersion !== 1) {
-        RemoteStorage.log("[IndexedDB] Creating object store: nodes");
-        db.createObjectStore('nodes', { keyPath: 'path' });
+      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
+      db.createObjectStore('meta', { keyPath: 'path' });
+      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
+      db.createObjectStore('bodies', { keyPath: 'path' });
+      if(event.oldVersion != 2) {
+        RemoteStorage.log("[IndexedDB] Creating object store: changes");
+        db.createObjectStore('changes', { keyPath: 'path' });
       }
-      RemoteStorage.log("[IndexedDB] Creating object store: changes");
-      db.createObjectStore('changes', { keyPath: 'path' });
     };
 
     dbOpen.onsuccess = function() {
@@ -5141,6 +5222,7 @@ console.log('putting to storage');
   };
 
 })(typeof(window) !== 'undefined' ? window : global);
+
 
 
 /** FILE: src/localstorage.js **/
@@ -6191,46 +6273,56 @@ console.log('putting to storage');
     _getDir: function(path, options) {
       var promise = promising();
       this._getFileId(path, function(idError, id) {
-        var query, fields, data, i, etagWithoutQuotes, itemsMap;
         if(idError) {
           promise.reject(idError);
         } else if(! id) {
           promise.fulfill(404);
         } else {
-          query = '\'' + id + '\' in parents';
-          fields = 'items(downloadUrl,etag,fileSize,id,mimeType,title)';
-          this._request('GET', BASE_URL + '/drive/v2/files.list?'
-              + 'q=' + encodeURIComponent(query)
-              + '&fields=' + encodeURIComponent(fields)
-              + '&maxResults=1000',
-              {}, function(childrenError, response) {
+          this._request('GET', BASE_URL + '/drive/v2/files/' + id + '/children', {}, function(childrenError, response) {
             if(childrenError) {
               promise.reject(childrenError);
             } else {
               if(response.status === 200) {
-                try {
-                  data = JSON.parse(response.responseText);
-                } catch(e) {
-                  promise.reject('non-JSON response from GoogleDrive');
+                var data = JSON.parse(response.responseText);
+                var n = data.items.length, i = 0;
+                if(n === 0) {
+                  // FIXME: add revision of directory!
+                  promise.fulfill(200, {}, RS_DIR_MIME_TYPE, undefined);
                   return;
                 }
-                itemsMap = {};
-                for(i=0; i<data.items.length; i++) {
-                  etagWithoutQuotes = data.items[i].etag.substring(1, data.items[i].etag.length-1);
-                  if(data.items[i].mimeType === GD_DIR_MIME_TYPE) {
-                    itemsMap[data.items[i].title + '/'] = {
-                      ETag: etagWithoutQuotes
-                    };
-                  } else { 
-                    itemsMap[data.items[i].title] = {
-                      ETag: etagWithoutQuotes,
-                      'Content-Type': data.items[i].mimeType,
-                      'Content-Length': data.items[i].fileSize
-                    };
+                var result = {};
+                var idCache = {};
+                var gotMeta = function(err, meta) {
+                  if(err) {
+                    // FIXME: actually propagate the error.
+                    console.error("getting meta stuff failed: ", err);
+                  } else {
+                    var fileName = fileNameFromMeta(meta);
+                    // NOTE: the ETags are double quoted. This is not a bug, but just the
+                    // way etags from google drive look like.
+                    // Example listing:
+                    //  {
+                    //    "CMakeCache.txt": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA1OTk5NjE1NA\"",
+                    //    "CMakeFiles": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA1OTk5NjUxNQ\"",
+                    //    "Makefile": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA2MDIwNDA0OQ\"",
+                    //    "bgrive": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA1OTkzODE4Nw\"",
+                    //    "cmake_install.cmake": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA1OTkzNzU2NA\"",
+                    //    "grive": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA1OTk2Njg2Ng\"",
+                    //    "libgrive": "\"HK9znrxLd1pIgz63yXyznaLN5rM/MTM3NzA2MDAxNDk1NQ\""
+                    //  }
+                    result[fileName] = meta.etag;
+
+                    // propagate id cache
+                    this._fileIdCache.set(path + fileName, meta.id);
                   }
-                }
-                // FIXME: add revision of directory!
-                promise.fulfill(200, itemsMap, RS_DIR_MIME_TYPE, undefined);
+                  i++;
+                  if(i === n) {
+                    promise.fulfill(200, result, RS_DIR_MIME_TYPE, undefined);
+                  }
+                }.bind(this);
+                data.items.forEach(function(item) {
+                  this._getMeta(item.id, gotMeta);
+                }.bind(this));
               } else {
                 promise.reject('request failed or something: ' + response.status);
               }

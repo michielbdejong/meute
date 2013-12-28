@@ -3,11 +3,50 @@
   <head><meta charset="utf-8" /></head>
   <body>see console
   </body>
-  <script src="remotestorage.js"></script>
+
+  <!-- core -->
+  <script src="rs-js-lib/promising.js"></script>
+  <script src="rs-js-src/remotestorage.js"></script>
+  <script src="rs-js-src/eventhandling.js"></script>
+  <script src="rs-js-src/wireclient.js"></script>
+  <script src="rs-js-src/discover.js"></script>
+  <script src="rs-js-src/authorize.js"></script>
+  <script src="rs-js-src/access.js"></script>
+  <script src="rs-js-src/env.js"></script>
+
+  <!-- widget -->
+  <script src="rs-js-src/i18n.js"></script>
+  <script src="rs-js-src/assets.js"></script>
+  <script src="rs-js-src/widget.js"></script>
+  <script src="rs-js-src/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="rs-js-lib/tv4.js"></script>
+  <script src="rs-js-lib/Math.uuid.js"></script>
+  <script src="rs-js-src/baseclient.js"></script>
+  <script src="rs-js-src/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="rs-js-src/caching.js"></script>
+  <script src="rs-js-src/sync.js"></script>
+  <script src="rs-js-src/cachinglayer.js"></script>
+  <script src="rs-js-src/indexeddb.js"></script>
+  <script src="rs-js-src/localstorage.js"></script>
+  <script src="rs-js-src/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="rs-js-src/modules.js"></script>
+  <script src="rs-js-src/debug/inspect.js"></script>
+  <script src="rs-js-src/legacy.js"></script>
+  <script src="rs-js-src/googledrive.js"></script>
+  <script src="rs-js-src/dropbox.js"></script>
+  <script>remoteStorage = new RemoteStorage();</script>
+
   <script src="remotestorage-modules/module-utils.js"></script>
   <script src="remotestorage-modules/contacts.js"></script>
   <script src="remotestorage-modules/money.js"></script>
   <script src="opentabs-data.js"></script>
+  <script src="expimp.js"></script>
   <script>
     remoteStorage.displayWidget();
     remoteStorage.claimAccess('contacts', 'rw');

@@ -1,8 +1,10 @@
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
   var tabs = SyncedMap('tabs', privateClient);
   privateClient.cache('');
-
-    var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
+  privateClient.on('change', function(e) {
+    console.log('money change', e);
+  });
+  var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
     function minBalance(a, b) {
       if(a > 0 && b < 0) {

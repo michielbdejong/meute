@@ -37,6 +37,26 @@ document.expimp = (function() {
       remoteStorage.contacts.setEverything(obj.contacts);
       console.log('setting mo');
       remoteStorage.money.setEverything(obj.money);
+    },
+    inspectIndexedDb: function() {
+      var dbOpen = indexedDB.open('remotestorage', 2);
+      dbOpen.onsuccess = function() {
+        var db = dbOpen.result;
+        var transaction = db.transaction(['nodes'], 'readonly');
+        var nodes = transaction.objectStore('nodes');
+        var cursorReq = nodes.openCursor();
+      
+        cursorReq.onsuccess = function() {
+          var cursor = cursorReq.result;
+          if(cursor) {
+            console.log('node', cursor.value.path, cursor.value);
+            cursor.continue();
+          }
+        };
+        transaction.oncomplete = function() {
+          console.log('done');
+        };
+      };
     }
   };
 })();
