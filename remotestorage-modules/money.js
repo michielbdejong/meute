@@ -1,5 +1,6 @@
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
   var tabs = SyncedMap('tabs', privateClient);
+  privateClient.cache('');
 
     var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
@@ -227,7 +228,6 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
            str+='</td><td>'+twoDecimals(claims[i].sums[participants[j]] || 0);
          }
          str+='</td></tr>';
-         console.log(i); 
       }
       return str+'</table>';
     }
@@ -235,7 +235,10 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
   function getTabNames() {
     return tabs.getKeys();
   }
-  
+  function genUuid() {
+    return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
+  }
+
   return {
     exports: {
       addTab: function(tab) {
@@ -244,6 +247,12 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
           claims[tab.claims[i].id] = [tab.claims[i]];
         }
         tabs.set(tab.description, claims);
+      },
+      addClaim: function(tabName, claim) {
+        var claims = tabs.get(tabName) || {};
+        claim.id = genUuid();
+        claims[claim.id] = [claim];
+        tabs.set(tabName, claims);
       },
       updateClaim: function(tabName, claimId, newObj) {
         var claims = tabs.get(tabName);
@@ -271,6 +280,9 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
           }
           effect=claim.amount*conversion[claim.currency?claim.currency.toLowerCase():'eur'];
           sums[claim.by]=(sums[claim.by]?sums[claim.by]:0)+effect;
+          if(!claim.for) {
+            console.log('claim has no .for!', tabName, claimId, claims, claim);
+          }
           for(j=0;j<claim.for.length;j++) {
             sums[claim.for[j]]=(sums[claim.for[j]]?sums[claim.for[j]]:0)-(effect/claim.for.length);
           }

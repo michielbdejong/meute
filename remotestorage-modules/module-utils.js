@@ -138,10 +138,14 @@ var PrefixTree = function(baseClient) {
       e.key = e.relativePath.substring('contacts/'.length);
       if(e.key==name) {
         data = e.newValue;
+        delete data['@context'];
       }
     });
     return {
       get: function() {
+        if(typeof(data) === 'object') {
+          delete data['@context'];
+        }
         return data;
       },
       set: function(val) {
@@ -156,10 +160,14 @@ var PrefixTree = function(baseClient) {
     prefixTree.on('change', function(e) {
       if(e.key.substring(0, name.length+1) == name + '/') {
         data[e.key.substring(name.length+1)] = e.newValue;
+        delete data[e.key.substring(name.length+1)]['@context'];
       }
     });
     return {
       get: function(key) {
+        if(typeof(data[key]) === 'object') {
+          delete data[key]['@context'];
+        }
         return data[key];
       },
       set: function(key, val) {
