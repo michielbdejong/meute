@@ -47,6 +47,9 @@
         document.getElementById('files').addEventListener('change', handleFileSelect, false);
       </script>
     </article>
+    <article>
+      <input type="submit" value="export" onmousedown="exp();" />
+    </article>
   </body>
   <script src="sockethub-client.js"></script>
   <script src="remotestorage.js"> </script>
@@ -61,14 +64,10 @@
   <script src="messaging.js"> </script>
   <script src="expimp.js"> </script>
   <script>
-/*    remoteStorage.email.getAll('', function(objects) {
-      var str = '<table><tr><td>From</td><td>To</td><td>subject</td></tr>';
-      for(var i=0; i<objects.length; i++) {
-        str+='<tr><td>'+objects[i].actor[0].name ||objects[i].actor[0].address+'</td<td>'
-          +objects[i].target.to[0].name ||objects[i].target.to[0].address+'</td<td>'
-          +objects[i].object.subject+'</td</tr>';
-      }
-      document.body.innerHTML = str+'</table>';
-    });
-*/  </script>
+    function exp() {
+      document.expimp.get(function(a) {
+        document.body.innerHTML = JSON.stringify(a);
+      });
+    }
+  </script>
 </html>
