@@ -16,7 +16,6 @@
 
   RemoteStorage.Authorize = function(authURL, scope, redirectUri, clientId) {
     RemoteStorage.log('Authorize authURL = ', authURL);
-    RemoteStorage.eventHandling(this, 'not-connected');
 
     var url = authURL;
     url += authURL.indexOf('?') > 0 ? '&' : '?';
@@ -67,7 +66,6 @@
 
   var onFeaturesLoaded;
   RemoteStorage.Authorize._rs_init = function(remoteStorage) {
-
     onFeaturesLoaded = function () {
       if (params) {
         if (params.error) {
@@ -75,14 +73,10 @@
         }
         if (params.access_token) {
           remoteStorage.remote.configure(undefined, undefined, undefined, params.access_token);
-        } else {
-          this._emit('not-connected');
         }
         if (params.remotestorage) {
           remoteStorage.connect(params.remotestorage);
         }
-      } else {
-        this._emit('not-connected');
       }
     };
     var params = extractParams(),

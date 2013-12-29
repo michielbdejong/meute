@@ -204,18 +204,6 @@
     }
   };
 
-
-  function fireReady() {
-    try {
-      if(!readyFired) {
-        this._emit('ready');
-        readyFired = true;
-      }
-    } catch(e) {
-      console.error("'ready' failed: ", e, e.stack);
-      this._emit('error', e);
-    }
-  }
   RemoteStorage.prototype = {
     /**
      ** PUBLIC INTERFACE
@@ -410,14 +398,28 @@
           this._setGPD(this.remote, this.remote);
         }
 
-        if (this.authorize) {
-          this.authorize.on('not-connected', fireReady.bind(this));
-        }
-
         if (this.remote) {
-          this.remote.on('connected', fireReady.bind(this));
+          this.remote.on('connected', function() {
+            try {
+              if(!readyFired) {
+                this._emit('ready');
+                readyFired = true;
+              }
+            } catch(e) {
+              console.error("'ready' failed: ", e, e.stack);
+              this._emit('error', e);
+            }
+          }.bind(this));
           if (this.remote.connected) {
-            fireReady();
+            try {
+              if(!readyFired) {
+                this._emit('ready');
+                readyFired = true;
+              }
+            } catch(e) {
+              console.error("'ready' failed: ", e, e.stack);
+              this._emit('error', e);
+            }
           }
         }
 

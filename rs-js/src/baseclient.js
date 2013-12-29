@@ -420,10 +420,9 @@
       return this.storage.delete(this.makePath(path));
     },
 
-    cache: function(path, enable) {
-      this.storage.caching[enable === false ? 'disable' : 'enable'](
-        this.makePath(path),
-        this.storage.connected
+    cache: function(path, disable) {
+      this.storage.caching[disable !== false ? 'enable' : 'disable'](
+        this.makePath(path)
       );
       return this;
     },
