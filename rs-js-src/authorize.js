@@ -16,6 +16,7 @@
 
   RemoteStorage.Authorize = function(authURL, scope, redirectUri, clientId) {
     RemoteStorage.log('Authorize authURL = ', authURL);
+    RemoteStorage.eventHandling(this, 'not-connected');
 
     var url = authURL;
     url += authURL.indexOf('?') > 0 ? '&' : '?';
@@ -66,7 +67,6 @@
 
   var onFeaturesLoaded;
   RemoteStorage.Authorize._rs_init = function(remoteStorage) {
-    RemoteStorage.eventHandling(this, 'not-connected');
 
     onFeaturesLoaded = function () {
       if (params) {

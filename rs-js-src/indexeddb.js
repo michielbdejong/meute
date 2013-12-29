@@ -73,7 +73,7 @@
   var DEFAULT_DB;
 
   function keepDirNode(node) {
-    return Object.keys(node.body.items).length > 0 ||
+    return Object.keys(node.body).length > 0 ||
       Object.keys(node.cached).length > 0;
   }
 
@@ -106,7 +106,7 @@
       node.body = {};
       node.cached = {};
       node.contentType = 'application/json';
-f    }
+    }
     return node;
   }
 
@@ -143,114 +143,24 @@ f    }
     RS.cachingLayer(this);
     RS.eventHandling(this, 'change', 'conflict');
   };
-  
-  function parsePath(path) {
-    var parts, ret = {
-      isRoot: (path === '')
-    };
-    if(path.substr(-1) === '/') {
-      parts = path.substring(0, path.length-1).split('/');
-      ret.isFolder = true;
-      ret.itemName = parts[parts.length-1]+'/';
-    } else {
-      parts = path.split('/');
-      ret.isFolder = false;
-      ret.itemName = parts[parts.length-1];
-    }
-    parts.pop();
-    ret.containingFolder = parts.join('/')+ (parts.length ? '/' : '');
-    console.log('parsePath', path, parts, ret);
-    return ret;
-  }
-
-  function deleteMeta(transaction, pathObj, incoming, cb) {
-    //FIXME: we should also have a rootParent in which we can store the revision of root
-    if(pathObj.isRoot) {
-      cb();
-      return;
-    }
-    var meta = transaction.objectStore('meta');
-    meta.get(pathObj.containingFolder).onsuccess = function(evt) {
-      var parentMeta = evt.target.result;
-      if(parentMeta.items[pathObj.itemName]) {
-        oldRevision = parentMeta.items[pathObj.itemName].ETag;
-        delete parentMeta.items[pathObj.itemName];
-        if(parentMeta.items.length) {
-          meta.put(parentMeta);
-          cb(oldRevision);
-        } else {
-          deleteMeta(transaction, parsePath(pathObj.containingFolder), incoming, function() {
-            cb(oldRevision);
-          });
-        };
-      }
-    };
-  }
-  
-  function createMeta(metaStore, path, revision) {
-    var pathObj = parsePath(path);
-    if(!pathObj.isRoot) {
-      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
-        if(!evt.result) {
-          createMeta(metaStore, pathObj.containingFolder);
-        }
-      };
-    }
-    var items = {};
-    items[pathObj.itemName] = (revision ? {ETag: revision} : {});
-    metaStore.put({
-      path: pathObj.containingFolder,
-      items: items
-    });
-  }
 
   RS.IndexedDB.prototype = {
 
     get: function(path) {
-      var pathObj = parsePath(path);
-      var storesNeeded = (pathObj.isFolder ? 'meta' : ['meta', 'bodies']);
       var promise = promising();
-      var transaction = this.db.transaction(storesNeeded, 'readonly');
-      var metaStore = transaction.objectStore('meta'),
-         parentReq, metaData, itemReq, item;
-      if(pathObj.isFolder) {
-        itemReq = metaStore.get(path);
-        itemReq.onsuccess = function(evt) {
-          if(itemReq.result) {
-            item = itemReq.result.items;
-          }
-        };
-      } else {
-        itemReq = transaction.objectStore('bodies')
-            .get(path);
-        itemReq.onsuccess = function(evt) {
-          console.log('bodies get success', evt);
-          if(itemReq.result) {
-            item = itemReq.result.value;
-          }
-        };
-      }
-      console.log('getting containingFolder', pathObj);
-      parentReq = metaStore.get(pathObj.containingFolder);
+      var transaction = this.db.transaction(['nodes'], 'readonly');
+      var nodes = transaction.objectStore('nodes');
+      var nodeReq = nodes.get(path);
+      var node;
 
-      parentReq.onsuccess = function(evt) {
-        console.log('parentReq success', evt);
-        if(parentReq.result) {
-          metaData = parentReq.result[pathObj.itemName];
-        }
+      nodeReq.onsuccess = function() {
+        node = nodeReq.result;
       };
-      itemReq.onerror = function(evt) {
-        console.log('itemReq error', evt);
-      };
-      parentReq.onerror = function(evt) {
-        console.log('parentReq error', evt);
-      };
+
       transaction.oncomplete = function() {
-        if (metaData && item) {
-          console.log('fulfulling as success', item, metaData);
-          promise.fulfill(200, item, metaData['Content-Type'], metaData['ETag']);
+        if (node) {
+          promise.fulfill(200, node.body, node.contentType, node.revision);
         } else {
-          console.log('fulfulling as not found', item, metaData);
           promise.fulfill(404);
         }
       };
@@ -260,38 +170,22 @@ f    }
     },
 
     put: function(path, body, contentType, incoming, revision) {
-      var pathObj = parsePath(path),
-       promise = promising(),
-       transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
-       metaStore = transaction.objectStore('meta'),
-       bodiesStore = transaction.objectStore('bodies'),
-       oldBody, oldRevision, done;
-console.log('putting', path, pathObj);
-      if (pathObj.isFolder) {
-        throw "Bad: don't PUT folders";
-      }
-      
-      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
-        try {
-          if(evt.target.result) {
-            parentMeta = evt.target.result;
-          } else {
-            createMeta(metaStore, pathObj.containingFolder);
-            parentMeta = {
-              path: pathObj.containingFolder,
-              items: {}
-            };
-          }
-          if(parentMeta.items[pathObj.itemName]) {
-            oldRevision = parentMeta.items[pathObj.itemName].ETag;
-          }
-          parentMeta.items[pathObj.itemName] = {
-            ETag: revision,
-            'Content-Type': contentType,
-            'Content-Length': body.length//FIXME: how can we find out the number of bytes, rather than the number of utf-8 chars of a JavaScript String?
-          };
-          metaStore.put(parentMeta);
+      var promise = promising();
+      if (path[path.length - 1] === '/') { throw "Bad: don't PUT folders"; }
+      var transaction = this.db.transaction(['nodes'], 'readwrite');
+      var nodes = transaction.objectStore('nodes');
+      var oldNode;
+      var done;
 
+      nodes.get(path).onsuccess = function(evt) {
+        try {
+          oldNode = evt.target.result;
+          var node = {
+            path: path,
+            contentType: contentType,
+            body: body
+          };
+          nodes.put(node);
         } catch(e) {
           if (typeof(done) === 'undefined') {
             done = true;
@@ -299,31 +193,26 @@ console.log('putting', path, pathObj);
           }
         }
       };
-      
-      bodiesStore.get(path).onsuccess = function(evt) {
-        if(evt.target.result) {
-          oldBody = evt.target.result.value;
-        }
-        bodiesStore.put({
-          path: path,
-          value: body
-        });
-      };
-      
+
       transaction.oncomplete = function() {
-        //TODO: emit change event with origin 'device' to other tabs & windows of the same browser
         this._emit('change', {
           path: path,
           origin: incoming ? 'remote' : 'window',
-          oldValue: oldBody,
+          oldValue: oldNode ? oldNode.body : undefined,
           newValue: body
         });
         if (!incoming) {
-          this._recordChange(path, { action: 'PUT', revision: oldRevision });
+          this._recordChange(path, { action: 'PUT', revision: oldNode ? oldNode.revision : undefined });
         }
         if (typeof(done) === 'undefined') {
           done = true;
-          promise.fulfill(200);
+          if (incoming) {
+            this._setRevision(path, revision).then(function(){
+              promise.fulfill(200);
+            });
+          } else {
+            promise.fulfill(200);
+          }
         }
       }.bind(this);
 
@@ -334,14 +223,15 @@ console.log('putting', path, pathObj);
 
     putDirectory: function(path, body, revision) {
       var promise = promising();
-      var transaction = this.db.transaction(['meta'], 'readwrite');
-      var meta = transaction.objectStore('meta');
+      var transaction = this.db.transaction(['nodes'], 'readwrite');
+      var nodes = transaction.objectStore('nodes');
 
-      addToParent(meta, path, 'body');
+      addDirectoryCacheNode(nodes, path, body);
+      addToParent(nodes, path, 'body');
 
       transaction.oncomplete = function() {
-        promise.fulfill();
-      };
+        this._setRevision(path, revision).then(promise.fulfill);
+      }.bind(this);
 
       transaction.onerror = transaction.onabort = promise.reject;
 
@@ -349,35 +239,30 @@ console.log('putting', path, pathObj);
     },
 
     delete: function(path, incoming) {
-      var pathObj = parsePath(path);
-      if (pathObj.isRoot) {
-        throw "Bad: don't DELETE root";
-      }
-      var transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
-        promise = promising(),
-        oldBody, bodies;
-      deleteMeta(transaction, pathObj, incoming, function(oldRevision) {
-        if(!pathObj.isFolder) {
-          bodies = transaction.objectStore('bodies');
-          bodies.get(path).onsuccess = function(evt) {
-            oldBody = evt.target.value;
-            bodies.delete(path);
-          };
-        }
-      });
-      
+      var promise = promising();
+      if (path[path.length - 1] === '/') { throw "Bad: don't DELETE folders"; }
+      var transaction = this.db.transaction(['nodes'], 'readwrite');
+      var nodes = transaction.objectStore('nodes');
+      var oldNode;
+
+      nodes.get(path).onsuccess = function(evt) {
+        oldNode = evt.target.result;
+        nodes.delete(path).onsuccess = function() {
+          removeFromParent(nodes, path, 'cached', incoming);
+        };
+      };
+
       transaction.oncomplete = function() {
-        if (oldBody) {
-          //TODO: emit change event with origin 'device' to other tabs & windows of the same browser
+        if (oldNode) {
           this._emit('change', {
             path: path,
             origin: incoming ? 'remote' : 'window',
-            oldValue: oldBody,
+            oldValue: oldNode.body,
             newValue: undefined
           });
         }
         if (! incoming) {
-          this._recordChange(path, { action: 'DELETE', revision: oldRevision });
+          this._recordChange(path, { action: 'DELETE', revision: oldNode ? oldNode.revision : undefined });
         }
         promise.fulfill(200);
       }.bind(this);
@@ -387,19 +272,23 @@ console.log('putting', path, pathObj);
     },
 
     _setRevision: function(path, revision) {
-      console.log('setting revision', path, revision);
-      var pathObj = parsePath(path),
-        transaction =  this.db.transaction(['meta'], 'readwrite'),
-        metaStore = transaction.objectStore('meta'),
-        promise = promising();
-      metaStore.get(pathObj.containingFolder).onsuccess = function(evt) {
-        var folder = evt.target.result;
-        if(!folder.items[pathObj.itemName]) {
-          folder.items[pathObj.itemName] = {};
-        }
-        folder.items[pathObj.itemName].ETag = revision;
-        metaStore.put(folder);
-      };
+      return this._setRevisions([[path, revision]]);
+    },
+
+    _setRevisions: function(revs) {
+      var promise = promising();
+      var transaction = this.db.transaction(['nodes'], 'readwrite');
+
+      revs.forEach(function(rev) {
+        var nodes = transaction.objectStore('nodes');
+        nodes.get(rev[0]).onsuccess = function(event) {
+          var node = event.target.result || makeNode(rev[0]);
+          node.revision = rev[1];
+          nodes.put(node).onsuccess = function() {
+            addToParent(nodes, rev[0], 'cached', rev[1]);
+          };
+        };
+      });
 
       transaction.oncomplete = function() {
         promise.fulfill();
@@ -410,15 +299,14 @@ console.log('putting', path, pathObj);
     },
 
     getRevision: function(path) {
-      var promise = promising(),
-        pathObj = parsePath(path);
-      var transaction = this.db.transaction(['meta'], 'readonly');
+      var promise = promising();
+      var transaction = this.db.transaction(['nodes'], 'readonly');
       var rev;
 
-      transaction.objectStore('meta').
-        get(pathObj.containingFolder).onsuccess = function(evt) {
-          if (evt.target.result && evt.target.result.items && evt.target.result.items[pathObj.itemName]) {
-            rev =  evt.target.result.items[pathObj.itemName].ETag;
+      transaction.objectStore('nodes').
+        get(path).onsuccess = function(evt) {
+          if (evt.target.result) {
+            rev = evt.target.result.revision;
           }
         };
 
@@ -427,6 +315,23 @@ console.log('putting', path, pathObj);
       };
 
       transaction.onerror = transaction.onabort = promise.reject;
+      return promise;
+    },
+
+    // TODO this is not used yet
+    getCached: function(path) {
+      if (path[path.length - 1] !== '/') {
+        return this.get(path);
+      }
+      var promise = promising();
+      var transaction = this.db.transaction(['nodes'], 'readonly');
+      var nodes = transaction.objectStore('nodes');
+
+      nodes.get(path).onsuccess = function(evt) {
+        var node = evt.target.result || {};
+        promise.fulfill(200, node.cached, node.contentType, node.revision);
+      };
+
       return promise;
     },
 
@@ -444,17 +349,20 @@ console.log('putting', path, pathObj);
     },
 
     fireInitial: function() {
-      var transaction = this.db.transaction(['bodies'], 'readonly');
-      var cursorReq = transaction.objectStore('bodies').openCursor();
+      var transaction = this.db.transaction(['nodes'], 'readonly');
+      var cursorReq = transaction.objectStore('nodes').openCursor();
       cursorReq.onsuccess = function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
-          this._emit('change', {
-            path: cursor.value.path,
-            origin: 'local',
-            oldValue: undefined,
-            newValue: cursor.value.value
-          });
+          var path = cursor.key;
+          if (path.substr(-1) !== '/') {
+            this._emit('change', {
+              path: path,
+              origin: 'local',
+              oldValue: undefined,
+              newValue: cursor.value.body
+            });
+          }
           cursor.continue();
         }
       }.bind(this);
@@ -501,8 +409,8 @@ console.log('putting', path, pathObj);
       var pl = path.length;
       var changes = [];
 
-      cursorReq.onsuccess = function(evt) {
-        var cursor = evt.target.result;
+      cursorReq.onsuccess = function() {
+        var cursor = cursorReq.result;
         if (cursor) {
           if (cursor.key.substr(0, pl) === path) {
             changes.push(cursor.value);
@@ -537,7 +445,7 @@ console.log('putting', path, pathObj);
 
   };
 
-  var DB_VERSION = 3;
+  var DB_VERSION = 2;
 
   RS.IndexedDB.open = function(name, callback) {
     var timer = setTimeout(function() {
@@ -555,14 +463,12 @@ console.log('putting', path, pathObj);
     dbOpen.onupgradeneeded = function(event) {
       RemoteStorage.log("[IndexedDB] Upgrade: from ", event.oldVersion, " to ", event.newVersion);
       var db = dbOpen.result;
-      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
-      db.createObjectStore('meta', { keyPath: 'path' });
-      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
-      db.createObjectStore('bodies', { keyPath: 'path' });
-      if(event.oldVersion != 2) {
-        RemoteStorage.log("[IndexedDB] Creating object store: changes");
-        db.createObjectStore('changes', { keyPath: 'path' });
+      if (event.oldVersion !== 1) {
+        RemoteStorage.log("[IndexedDB] Creating object store: nodes");
+        db.createObjectStore('nodes', { keyPath: 'path' });
       }
+      RemoteStorage.log("[IndexedDB] Creating object store: changes");
+      db.createObjectStore('changes', { keyPath: 'path' });
     };
 
     dbOpen.onsuccess = function() {
