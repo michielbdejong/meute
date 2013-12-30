@@ -1,7 +1,12 @@
 (function () {
   var moduleName = 'sockethub';
 
+  console.log('RemoteStorage.defineModule(\''+moduleName+'\', ...');
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
+    console.log('RemoteStorage.defineModule(\''+moduleName+'\', ... building');
+    privateClient.on('change', function(e) { console.log(moduleName+' module change', e); });
+
+    privateClient.cache('');
     return {
       exports: {
         c: privateClient,
@@ -49,6 +54,19 @@
 
         writeConfig: function (data) {
           return privateClient.storeObject('config', 'config.json', data);
+        },
+        
+        getEverything: function () {
+          return privateClient.getObject('config.json');
+        },
+        
+        setEverything: function(obj) {
+          console.log('storing sh config', obj);
+          if(obj) {
+            console.log('storing sh config', obj);
+            return privateClient.storeObject('config', 'config.json', obj);
+          }
+          console.log('storing sh config synchronously done');
         }
       }
     };

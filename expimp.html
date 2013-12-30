@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Meute - an unhosted messages/contacts/search app</title>
+    <style>
+      body { font:15px sans-serif; line-height:1.4em; color:#222 }
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+    <article>
+      <input type="file" id="files" name="files[]" multiple />
+      <output id="list"></output>
+
+      <script>
+        function handleFileSelect(evt) {
+          var files = evt.target.files; // FileList object
+
+          // files is a FileList of File objects. List some properties.
+          var output = [];
+          for (var i = 0, f; f = files[i]; i++) {
+            output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                        f.size, ' bytes, last modified: ',
+                        f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                        '</li>');
+            var reader = new FileReader();
+
+            // Closure to capture the file information.
+            reader.onload = (function(theFile) {
+              return function(e) {
+                console.log(e.target.result);
+                document.expimp.set(JSON.parse(e.target.result));
+              };
+            })(f);
+
+            // Read in the image file as a data URL.
+            reader.readAsText(f);
+          }
+          document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+        }
+
+        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+      </script>
+    </article>
+    <article>
+      <input type="submit" value="export" onmousedown="exp();" />
+    </article>
+  </body>
+  <script src="sockethub-client.js"></script>
+
+  <!-- core -->
+  <script src="..\remotestorage.js/lib/promising.js"></script>
+  <script src="..\remotestorage.js/src/remotestorage.js"></script>
+  <script src="..\remotestorage.js/src/eventhandling.js"></script>
+  <script src="..\remotestorage.js/src/wireclient.js"></script>
+  <script src="..\remotestorage.js/src/discover.js"></script>
+  <script src="..\remotestorage.js/src/authorize.js"></script>
+  <script src="..\remotestorage.js/src/access.js"></script>
+  <script src="..\remotestorage.js/src/env.js"></script>
+
+  <!-- widget -->
+  <script src="..\remotestorage.js/src/i18n.js"></script>
+  <script src="..\remotestorage.js/src/assets.js"></script>
+  <script src="..\remotestorage.js/src/widget.js"></script>
+  <script src="..\remotestorage.js/src/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="..\remotestorage.js/lib/tv4.js"></script>
+  <script src="..\remotestorage.js/lib/Math.uuid.js"></script>
+  <script src="..\remotestorage.js/src/baseclient.js"></script>
+  <script src="..\remotestorage.js/src/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="..\remotestorage.js/src/caching.js"></script>
+  <script src="..\remotestorage.js/src/sync.js"></script>
+  <script src="..\remotestorage.js/src/cachinglayer.js"></script>
+  <script src="..\remotestorage.js/src/indexeddb.js"></script>
+  <script src="..\remotestorage.js/src/localstorage.js"></script>
+  <script src="..\remotestorage.js/src/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="..\remotestorage.js/src/modules.js"></script>
+  <script src="..\remotestorage.js/src/debug/inspect.js"></script>
+  <script src="..\remotestorage.js/src/legacy.js"></script>
+  <script src="..\remotestorage.js/src/googledrive.js"></script>
+  <script src="..\remotestorage.js/src/dropbox.js"></script>
+  <script>remoteStorage = new RemoteStorage();</script>
+
+
+
+
+  <script src="remotestorage-modules/inbox.js"> </script>
+  <script src="remotestorage-modules/email.js"> </script>
+  <script src="remotestorage-modules/contacts.js"> </script>
+  <script src="remotestorage-modules/money.js"> </script>
+  <script src="remotestorage-modules/sockethub.js"> </script>
+  <script src="remotestorage-modules/module-utils.js"> </script>
+  <script src="irc.js"></script>
+  <script src="app.js"> </script>
+  <script src="messaging.js"> </script>
+  <script src="expimp.js"> </script>
+  <script>
+    function exp() {
+      document.expimp.get(function(a) {
+        document.body.innerHTML = JSON.stringify(a);
+      });
+    }
+  </script>
+</html>

@@ -1,4 +1,8 @@
+console.log('RemoteStorage.defineModule(\'contacts\', ...');
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
+  console.log('RemoteStorage.defineModule(\'contacts\', ... building');
+  privateClient.on('change', function(e) { console.log('contacts module change', e); });
+
   privateClient.cache('');
   var myName = new SyncedVar('myname', privateClient), contacts = new SyncedMap('contacts', privateClient);
 
@@ -35,7 +39,24 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
       },
       getNames: function() {
         return contacts.getKeys();
-      }
+      },
+      getEverything: function() {
+        var promise = promising();
+        promise.fulfill({
+          myName: myName.get(),
+          contacts: contacts.getEverything()
+        }); 
+        return promise;
+      },
+      setEverything: function(obj) {
+        if(obj && obj.myName) {
+          myName.set(obj.myName);
+        }
+        if(obj && obj.contacts) {
+          contacts.setEverything(obj.contacts);
+        }
+      },
+      contacts: contacts
     }
   };
 });

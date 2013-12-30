@@ -1,4 +1,8 @@
+console.log('RemoteStorage.defineModule(\'inbox\', ...');
 RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
+  console.log('RemoteStorage.defineModule(\'inbox\', ... building');
+  privateClient.on('change', function(e) { console.log('inbox module change', e); });
+  
   privateClient.cache('');
   var activity = new SyncedMap('activity', privateClient), timestamp = new Date().getTime();
 
@@ -21,7 +25,9 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       },
       getActivity: function(key) {
         return activity.get(key);
-      }
+      },
+      getEverything: function() { var promise = promising(); promise.fulfill(); return promise; },
+      setEverything: function() { }
     }
   };
 });

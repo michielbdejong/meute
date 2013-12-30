@@ -1,4 +1,5 @@
 var PrefixTree = function(baseClient) {
+  console.log('creating PrefixTree with base', baseClient.base);
   var maxLeaves=5, minDepth=1;
   //for key=='abcdefgh',
   // depth -> base + itemName:
@@ -51,17 +52,8 @@ var PrefixTree = function(baseClient) {
   
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
-    return baseClient.getListing(thisDir).then(function(listing) {
-      var itemsMap={}, i, numDocuments;
-      if(typeof(listing)=='object') {
-        if(Array.isArray(listing)) {
-          for(i=0; i<listing.length; i++) {
-            itemsMap[listing[i]]=true;
-          }
-        } else {
-          itemsMap = listing;
-        }
-      }
+    return baseClient.getListing(thisDir).then(function(itemsMap) {
+      var numDocuments;
       if(itemsMap[key[depth]+'/']) {//go deeper
         return tryDepth(key, depth+1, checkMaxLeaves);
       }
@@ -79,6 +71,15 @@ var PrefixTree = function(baseClient) {
       return depth;
     });
   }
+  function storeObject(typeAlias, key, obj) {
+    return tryDepth(key, minDepth, true).then(function(depth) {
+      return baseClient.storeObject(typeAlias, keyToPath(key, depth), obj);
+    }, function(err) {
+      console.log('storeObject error', typeAlias, key, obj, err.message);
+    });
+  }
+  
+  console.log('returning PrefixTree with base', baseClient.base);
   return {
     setMaxLeaves: function(val) {
       maxLeaves=val;
@@ -104,17 +105,17 @@ var PrefixTree = function(baseClient) {
         console.log('getObject error', key, err.message);
       });
     },
-    storeObject: function(typeAlias, key, obj) {
-      return tryDepth(key, minDepth, true).then(function(depth) {
-        return baseClient.storeObject(typeAlias, keyToPath(key, depth), obj);
-      }, function(err) {
-        console.log('storeObject error', typeAlias, key, obj, err.message);
-      });
+    storeObject: storeObject,
+    storeObjects: function(typeAlias, map) {
+      for(key in map) {
+        storeObject(typeAlias, key, map[key]);
+      }
     },
     on: function(event, cb) {
       if(event==='change') {
         baseClient.on('change', function(e) {
           e.key = pathToKey(e.relativePath);
+          console.log('prefixTree added key to event', e.key, e.relativePath); 
           cb(e);
         });
       } else {
@@ -131,10 +132,14 @@ var PrefixTree = function(baseClient) {
       e.key = e.relativePath.substring('contacts/'.length);
       if(e.key==name) {
         data = e.newValue;
+        delete data['@context'];
       }
     });
     return {
       get: function() {
+        if(typeof(data) === 'object') {
+          delete data['@context'];
+        }
         return data;
       },
       set: function(val) {
@@ -143,16 +148,24 @@ var PrefixTree = function(baseClient) {
       }
     };
   }
+  
   function SyncedMap(name, baseClient) {
+    console.log('SyncedMap '+name+' building its prefixTree');
     var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
     //prefixTree.cache('');
+    console.log('SyncedMap '+name+' setting its prefixTree', prefixTree, '.on(\'change\', ... for baseClient with base', baseClient.base);
     prefixTree.on('change', function(e) {
-      if(e.key.substring(0, name.length+1) == name + '/') {
-        data[e.key.substring(name.length+1)] = e.newValue;
+      if(e.origin != 'window') {
+        console.log('prefixTree event coming in to SyncedMap '+name, e);
+        data[e.key] = e.newValue;
+        delete data[e.key]['@context'];
       }
     });
     return {
       get: function(key) {
+        if(typeof(data[key]) === 'object') {
+          delete data[key]['@context'];
+        }
         return data[key];
       },
       set: function(key, val) {
@@ -161,6 +174,13 @@ var PrefixTree = function(baseClient) {
       },
       getKeys: function() {
         return Object.getOwnPropertyNames(data);
+      },
+      getEverything: function() {
+        return data;
+      },
+      setEverything: function(setData) {
+        data = setData;
+        prefixTree.storeObjects('SyncedMapKey', data);
       }
     };
   }

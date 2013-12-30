@@ -1,7 +1,12 @@
+console.log('RemoteStorage.defineModule(\'money\', ...');
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
+  console.log('RemoteStorage.defineModule(\'money\', ... building');
+  privateClient.on('change', function(e) { console.log('money module change', e); });
+  
   var tabs = SyncedMap('tabs', privateClient);
-
-    var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
+  privateClient.cache('');
+  
+  var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
     function minBalance(a, b) {
       if(a > 0 && b < 0) {
@@ -227,10 +232,16 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
            str+='</td><td>'+twoDecimals(claims[i].sums[participants[j]] || 0);
          }
          str+='</td></tr>';
-         console.log(i); 
       }
       return str+'</table>';
     }
+    
+  function getTabNames() {
+    return tabs.getKeys();
+  }
+  function genUuid() {
+    return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
+  }
 
   return {
     exports: {
@@ -241,14 +252,18 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
         }
         tabs.set(tab.description, claims);
       },
+      addClaim: function(tabName, claim) {
+        var claims = tabs.get(tabName) || {};
+        claim.id = genUuid();
+        claims[claim.id] = [claim];
+        tabs.set(tabName, claims);
+      },
       updateClaim: function(tabName, claimId, newObj) {
         var claims = tabs.get(tabName);
         claims[claimId].push(newObj);
         tabs.set(tabName, claims);
       },
-      getTabNames: function() {
-        return tabs.getKeys();
-      },
+      getTabNames: getTabNames,
       getTab: function(tabName) {
         return tabs.get(tabName);
       },
@@ -269,6 +284,9 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
           }
           effect=claim.amount*conversion[claim.currency?claim.currency.toLowerCase():'eur'];
           sums[claim.by]=(sums[claim.by]?sums[claim.by]:0)+effect;
+          if(!claim.for) {
+            console.log('claim has no .for!', tabName, claimId, claims, claim);
+          }
           for(j=0;j<claim.for.length;j++) {
             sums[claim.for[j]]=(sums[claim.for[j]]?sums[claim.for[j]]:0)-(effect/claim.for.length);
           }
@@ -296,7 +314,19 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       findCycles: findCycles,
       getTabList: getTabList,
       getCyclesGraph: getCyclesGraph,
-      tabs: tabs
+      tabs: tabs,
+      getEverything: function() {
+        var promise = promising();
+        promise.fulfill({
+          tabs: tabs.getEverything()
+        }); 
+        return promise;
+      },
+      setEverything: function(obj) {
+        if(obj && obj.tabs) {
+          tabs.setEverything(obj.tabs);
+        }
+      }
     }
   };
 });
