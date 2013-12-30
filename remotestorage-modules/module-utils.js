@@ -51,17 +51,8 @@ var PrefixTree = function(baseClient) {
   
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
-    return baseClient.getListing(thisDir).then(function(listing) {
-      var itemsMap={}, i, numDocuments;
-      if(typeof(listing)=='object') {
-        if(Array.isArray(listing)) {
-          for(i=0; i<listing.length; i++) {
-            itemsMap[listing[i]]=true;
-          }
-        } else {
-          itemsMap = listing;
-        }
-      }
+    return baseClient.getListing(thisDir).then(function(itemsMap) {
+      var numDocuments;
       if(itemsMap[key[depth]+'/']) {//go deeper
         return tryDepth(key, depth+1, checkMaxLeaves);
       }
@@ -158,10 +149,8 @@ var PrefixTree = function(baseClient) {
     var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
     //prefixTree.cache('');
     prefixTree.on('change', function(e) {
-      if(e.key.substring(0, name.length+1) == name + '/') {
-        data[e.key.substring(name.length+1)] = e.newValue;
-        delete data[e.key.substring(name.length+1)]['@context'];
-      }
+      data[e.key] = e.newValue;
+      delete data[e.key]['@context'];
     });
     return {
       get: function(key) {
