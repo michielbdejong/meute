@@ -526,8 +526,8 @@
           this._setGPD(this.remote, this.remote);
         }
 
-        if (this.authorize) {
-          this.authorize.on('not-connected', fireReady);
+        if (this.authorization) {
+          this.authorization.on('not-connected', fireReady);
         }
 
         if (this.remote) {
@@ -571,7 +571,7 @@
         'Access',
         'Caching',
         'Discover',
-        'Authorize',
+        'Authorization',
         'Widget',
         'IndexedDB',
         'LocalStorage',
@@ -1500,12 +1500,12 @@
 })(typeof(window) !== 'undefined' ? window : global);
 
 
-/** FILE: src/authorize.js **/
+/** FILE: src/authorization.js **/
 (function(global) {
 
   function extractParams() {
     //FF already decodes the URL fragment in document.location.hash, so use this instead:
-    var location = RemoteStorage.Authorize.getLocation(),
+    var location = RemoteStorage.Authorization.getLocation(),
         hashPos  = location.href.indexOf('#'),
         hash;
     if (hashPos === -1) { return; }
@@ -1517,7 +1517,7 @@
     }, {});
   }
 
-  RemoteStorage.Authorize = function(authURL, scope, redirectUri, clientId) {
+  RemoteStorage.Authorization = function(authURL, scope, redirectUri, clientId) {
     RemoteStorage.log('Authorize authURL = ', authURL);
     RemoteStorage.eventHandling(this, 'not-connected');
 
@@ -1527,7 +1527,7 @@
     url += '&scope=' + encodeURIComponent(scope);
     url += '&client_id=' + encodeURIComponent(clientId);
     url += '&response_type=token';
-    RemoteStorage.Authorize.setLocation(url);
+    RemoteStorage.Authorization.setLocation(url);
   };
 
   RemoteStorage.prototype.authorize = function(authURL) {
@@ -1537,7 +1537,7 @@
     var redirectUri = String(RemoteStorage.Authorize.getLocation());
     var clientId = redirectUri.match(/^(https?:\/\/[^\/]+)/)[0];
 
-    RemoteStorage.Authorize(authURL, scope, redirectUri, clientId);
+    RemoteStorage.Authorization(authURL, scope, redirectUri, clientId);
   };
 
   /**
@@ -1545,7 +1545,7 @@
    *
    * Override this method if access to document.location is forbidden
    */
-  RemoteStorage.Authorize.getLocation = function () {
+  RemoteStorage.Authorization.getLocation = function () {
     return global.document.location;
   };
 
@@ -1554,7 +1554,7 @@
    *
    * Override this method if access to document.location is forbidden
    */
-  RemoteStorage.Authorize.setLocation = function (location) {
+  RemoteStorage.Authorization.setLocation = function (location) {
     if (typeof location === 'string') {
       global.document.location.href = location;
     } else if (typeof location === 'object') {
@@ -1564,13 +1564,13 @@
     }
   };
 
-  RemoteStorage.Authorize._rs_supported = function(remoteStorage) {
+  RemoteStorage.Authorization._rs_supported = function(remoteStorage) {
     return typeof(document) !== 'undefined';
   };
 
   var onFeaturesLoaded;
-  RemoteStorage.Authorize._rs_init = function(remoteStorage) {
-
+  RemoteStorage.Authorization._rs_init = function(remoteStorage) {
+    var self = this;
     onFeaturesLoaded = function () {
       if (params) {
         if (params.error) {
@@ -1579,25 +1579,25 @@
         if (params.access_token) {
           remoteStorage.remote.configure(undefined, undefined, undefined, params.access_token);
         } else {
-          this._emit('not-connected');
+          self._emit('not-connected');
         }
         if (params.remotestorage) {
           remoteStorage.connect(params.remotestorage);
         }
       } else {
-        this._emit('not-connected');
+        self._emit('not-connected');
       }
     };
     var params = extractParams(),
         location;
     if (params) {
-      location = RemoteStorage.Authorize.getLocation();
+      location = RemoteStorage.Authorization.getLocation();
       location.hash = '';
     }
     remoteStorage.on('features-loaded', onFeaturesLoaded);
   };
 
-  RemoteStorage.Authorize._rs_cleanup = function(remoteStorage) {
+  RemoteStorage.Authorization._rs_cleanup = function(remoteStorage) {
     remoteStorage.removeEventListener('features-loaded', onFeaturesLoaded);
   };
 
