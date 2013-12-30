@@ -206,18 +206,18 @@
     /**
      * Event: disconnect
      *
-     * depricated use disconnected
+     * deprecated use disconnected
      **/
     /**
      * Event: conflict
      *
-     * fired when a conflict occures
+     * fired when a conflict occurs
      * TODO: arguments, how does this work
      **/
     /**
      * Event: error
      *
-     * fired when an error occures
+     * fired when an error occurs
      *
      * Arguments:
      * the error
@@ -230,7 +230,7 @@
     /**
      * Event: connecting
      *
-     * fired before webfinger lookpu
+     * fired before webfinger lookup
      **/
     /**
      * Event: authing
@@ -966,7 +966,7 @@
       Int32Array, Uint32Array, Float32Array, Float64Array
     ];
     isArrayBufferView = function(object) {
-      for(var i=0;i<8;i++) {
+      for (var i=0;i<8;i++) {
         if (object instanceof arrayBufferViews[i]) {
           return true;
         }
@@ -975,65 +975,6 @@
     };
   }
 
-  function request(method, uri, token, headers, body, getEtag, fakeRevision) {
-    if ((method === 'PUT' || method === 'DELETE') && uri[uri.length - 1] === '/') {
-      throw "Don't " + method + " on directories!";
-    }
-
-    var promise = promising(),
-      revision,
-      reqType;
-
-    headers['Authorization'] = 'Bearer ' + token;
-
-    if(method === 'GET') {
-      reqType = (isDir(path) ? 'get-folder' : 'get-document');
-    } else {
-      reqType = method.toLowerCase();
-    }
-    this._emit('wire-busy', reqType);
-
-    RS.WireClient.request(method, uri, {
-      body: body,
-      headers: headers
-    }, function(error, response) {
-      if (error) {
-        this._emit('wire-done', reqType, false);
-        promise.reject(error);
-      } else {
-        this._emit('wire-done', reqType, true);
-        if ([401, 403, 404, 412].indexOf(response.status) >= 0) {
-          promise.fulfill(response.status);
-        } else if ([201, 204, 304].indexOf(response.status) >= 0 ||
-                   (response.status === 200 && method !== 'GET')) {
-          revision = response.getResponseHeader('ETag');
-          promise.fulfill(response.status, undefined, undefined, revision);
-        } else {
-          var mimeType = response.getResponseHeader('Content-Type');
-          var body;
-          if (getEtag) {
-            revision = response.getResponseHeader('ETag');
-          } else {
-            revision = response.status === 200 ? fakeRevision : undefined;
-          }
-
-          if ((! mimeType) || mimeType.match(/charset=binary/)) {
-            RS.WireClient.readBinaryData(response.response, mimeType, function(result) {
-              promise.fulfill(response.status, result, mimeType, revision);
-            });
-          } else {
-            if (mimeType && mimeType.match(/^application\/json/)) {
-              body = JSON.parse(response.responseText);
-            } else {
-              body = response.responseText;
-            }
-            promise.fulfill(response.status, body, mimeType, revision);
-          }
-        }
-      }
-    });
-    return promise;
-  }
 
   function readBinaryData(content, mimeType, callback) {
     var blob = new Blob([content], { type: mimeType });
@@ -1075,7 +1016,7 @@
     RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done');
 
     onErrorCb = function(error){
-      if(error instanceof RemoteStorage.Unauthorized) {
+      if (error instanceof RemoteStorage.Unauthorized) {
         this.configure(undefined, undefined, undefined, null);
       }
     }.bind(this);
@@ -1136,6 +1077,73 @@
      *   // -> 'draft-dejong-remotestorage-01'
      */
 
+    _request: function(method, uri, token, headers, body, getEtag, fakeRevision) {
+      if ((method === 'PUT' || method === 'DELETE') && uri[uri.length - 1] === '/') {
+        throw "Don't " + method + " on directories!";
+      }
+
+      var promise = promising();
+      var revision;
+      var reqType;
+      var self = this;
+
+      headers['Authorization'] = 'Bearer ' + token;
+
+      this._emit('wire-busy', {
+        method: method,
+        isFolder: isDir(uri)
+      });
+
+      RS.WireClient.request(method, uri, {
+	body: body,
+	headers: headers
+      }, function(error, response) {
+	if (error) {
+	  self._emit('wire-done', {
+            method: method,
+            isFolder: isDir(uri),
+            success: false
+          });
+	  promise.reject(error);
+	} else {
+	  self._emit('wire-done', {
+            method: method,
+            isFolder: isDir(uri),
+            success: true
+          });
+	  if ([401, 403, 404, 412].indexOf(response.status) >= 0) {
+	    promise.fulfill(response.status);
+	  } else if ([201, 204, 304].indexOf(response.status) >= 0 ||
+		     (response.status === 200 && method !== 'GET')) {
+	    revision = response.getResponseHeader('ETag');
+	    promise.fulfill(response.status, undefined, undefined, revision);
+	  } else {
+	    var mimeType = response.getResponseHeader('Content-Type');
+	    var body;
+	    if (getEtag) {
+	      revision = response.getResponseHeader('ETag');
+	    } else {
+	      revision = response.status === 200 ? fakeRevision : undefined;
+	    }
+
+	    if ((! mimeType) || mimeType.match(/charset=binary/)) {
+	      RS.WireClient.readBinaryData(response.response, mimeType, function(result) {
+		promise.fulfill(response.status, result, mimeType, revision);
+	      });
+	    } else {
+	      if (mimeType && mimeType.match(/^application\/json/)) {
+		body = JSON.parse(response.responseText);
+	      } else {
+		body = response.responseText;
+	      }
+	      promise.fulfill(response.status, body, mimeType, revision);
+	    }
+	  }
+	}
+      });
+      return promise;
+    },
+
     configure: function(userAddress, href, storageApi, token) {
       if (typeof(userAddress) !== 'undefined') {
         this.userAddress = userAddress;
@@ -1186,7 +1194,7 @@
       } else if (options.ifNoneMatch) {
         var oldRev = this._revisionCache[path];
       }
-      var promise = request('GET', this.href + cleanPath(path), this.token, headers,
+      var promise = this._request('GET', this.href + cleanPath(path), this.token, headers,
                             undefined, this.supportsRevs, this._revisionCache[path]).then(function(status, body, contentType, revision) {
         return promising().fulfill(status, body, contentType, revision);
       }, function(err) {
@@ -1251,7 +1259,7 @@
           headers['If-None-Match'] = options.ifNoneMatch;
         }
       }
-      return request('PUT', this.href + cleanPath(path), this.token,
+      return this._request('PUT', this.href + cleanPath(path), this.token,
                      headers, body, this.supportsRevs).then(function(status, body, contentType, revision) {
         return promising().fulfill(status, body, contentType, revision);
       }, function(err) {
@@ -1271,7 +1279,7 @@
           headers['If-Match'] = options.ifMatch;
         }
       }
-      return request('DELETE', this.href + cleanPath(path), this.token,
+      return this._request('DELETE', this.href + cleanPath(path), this.token,
                      headers,
                      undefined, this.supportsRevs).then(function(status, body, contentType, revision) {
         return promising().fulfill(status, body, contentType, revision);
@@ -1309,7 +1317,7 @@
       xhr.responseType = options.responseType;
     }
     if (options.headers) {
-      for(var key in options.headers) {
+      for (var key in options.headers) {
         xhr.setRequestHeader(key, options.headers[key]);
       }
     }
@@ -1915,6 +1923,13 @@ RemoteStorage.Assets = {
     };
   }
 
+  function flashFor(evt) {
+    if (evt.method === 'GET' && evt.isFolder) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Class: RemoteStorage.Widget
    *   the Widget Controler that comunicates with the view
@@ -1932,7 +1947,7 @@ RemoteStorage.Assets = {
    *   error        :  depending on the error initial,offline, unauthorized or error
    **/
   RemoteStorage.Widget = function(remoteStorage) {
-    this.activeWireRequests = 0;
+    this.requestsToFlashFor = 0;
     // setting event listeners on rs events to put
     // the widget into corresponding states
     this.rs = remoteStorage;
@@ -1940,18 +1955,15 @@ RemoteStorage.Assets = {
     this.rs.on('disconnected', stateSetter(this, 'initial'));
     this.rs.on('connecting', stateSetter(this, 'authing'));
     this.rs.on('authing', stateSetter(this, 'authing'));
-    this.rs.on('wire-busy', function(type) {
-      if(type !== 'get-folder') {
-        this.activeWireRequests++;
+    this.rs.on('wire-busy', function(evt) {
+      if(flashFor(evt)) {
+        this.requestsToFlashFor++;
         stateSetter(this, 'busy')();
       }
     });
-    this.rs.on('wire-done', function(type, success) {
-      if(type !== 'get-folder') {
-        this.activeWireRequests--;
-        if(this.activeWireRequests === 0) {
-          stateSetter(this, 'connected')();
-        }
+    this.rs.on('wire-done', function(evt) {
+      if(flashFor(evt) && this.requestsToFlashFor === 0) {
+        stateSetter(this, 'connected')();
       }
     });
     this.rs.on('error', errorsHandler(this) );
@@ -5022,7 +5034,7 @@ Math.uuid = function (len, radix) {
             path: cursor.value.path,
             origin: 'local',
             oldValue: undefined,
-            newValue: cursor.value.value
+            newValue: cursor.value.body
           });
           cursor.continue();
         }
