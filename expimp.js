@@ -38,13 +38,16 @@ document.expimp = (function() {
       console.log('setting mo');
       remoteStorage.money.setEverything(obj.money);
     },
-    inspectIndexedDb: function() {
-      var dbOpen = indexedDB.open('remotestorage', 2);
+    inspectIndexedDb: function(storeName) {
+      if(!storeName) {
+        storeName = 'meta';
+      }
+      var dbOpen = indexedDB.open('remotestorage', 3);
       dbOpen.onsuccess = function() {
         var db = dbOpen.result;
-        var transaction = db.transaction(['nodes'], 'readonly');
-        var nodes = transaction.objectStore('nodes');
-        var cursorReq = nodes.openCursor();
+        var transaction = db.transaction([storeName], 'readonly');
+        var store = transaction.objectStore(storeName);
+        var cursorReq = store.openCursor();
       
         cursorReq.onsuccess = function() {
           var cursor = cursorReq.result;
