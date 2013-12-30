@@ -1,9 +1,11 @@
+console.log('RemoteStorage.defineModule(\'money\', ...');
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
+  console.log('RemoteStorage.defineModule(\'money\', ... building');
+  privateClient.on('change', function(e) { console.log('money module change', e); });
+  
   var tabs = SyncedMap('tabs', privateClient);
   privateClient.cache('');
-  privateClient.on('change', function(e) {
-    console.log('money change', e);
-  });
+  
   var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
     function minBalance(a, b) {

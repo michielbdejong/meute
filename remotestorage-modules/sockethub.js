@@ -1,7 +1,11 @@
 (function () {
   var moduleName = 'sockethub';
 
+  console.log('RemoteStorage.defineModule(\''+moduleName+'\', ...');
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
+    console.log('RemoteStorage.defineModule(\''+moduleName+'\', ... building');
+    privateClient.on('change', function(e) { console.log(moduleName+' module change', e); });
+
     privateClient.cache('');
     return {
       exports: {
