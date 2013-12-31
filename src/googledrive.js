@@ -116,10 +116,7 @@
         }
       }
       this._getFileId(path, function(idError, id) {
-        if(idError) {
-          promise.reject(idError);
-          return;
-        } else if(id) {
+        if(id) {
           this._updateFile(id, path, body, contentType, options, putDone);
         } else {
           this._createFile(path, body, contentType, options, putDone);
@@ -358,8 +355,8 @@
         // id is cached.
         callback(null, id);
       } else {
-        // id is not cached (or file doesn't exist).
-        // load parent directory listing to propagate / update id cache.
+        console.log('id for '+path+' is not cached (or file doesn\'t exist).');
+        console.log('load parent directory listing to propagate / update id cache.');
         this._getDir(parentPath(path)).then(function() {
           var id = this._fileIdCache.get(path);
           if (!id) {
