@@ -3433,8 +3433,8 @@ Math.uuid = function (len, radix) {
         throw "Not a directory: " + path;
       }
       return this.storage.get(this.makePath(path)).then(
-        function(status, body) {
-          return (status === 404) ? undefined : body;
+        function(status, itemsMap) {
+          return (status === 404) ? {} : itemsMap;
         }
       );
     },
@@ -4364,7 +4364,7 @@ Math.uuid = function (len, radix) {
               } else {
                 return 200; // fake 200 so the change is cleared.
               }
-            }).then(function(status) {
+            }).then(function(status, responseBody, mimeType, revision) {
               if (status === 412) {
                 fireConflict(local, change.path, {
                   localAction: 'PUT',
@@ -4372,6 +4372,7 @@ Math.uuid = function (len, radix) {
                 });
                 oneDone();
               } else {
+                local._setRevision(path, revision);
                 oneDone(change.path);
               }
             }).then(undefined, errored);
@@ -4679,66 +4680,71 @@ Math.uuid = function (len, radix) {
   var DEFAULT_DB_NAME = 'remotestorage';
   var DEFAULT_DB;
 
-  function keepDirNode(node) {
-    return Object.keys(node.body).length > 0 ||
-      Object.keys(node.cached).length > 0;
-  }
-
-  function removeFromParent(nodes, path, key) {
-    var parts = path.match(/^(.*\/)([^\/]+\/?)$/);
-    if (parts) {
-      var dirname = parts[1], basename = parts[2];
-      nodes.get(dirname).onsuccess = function(evt) {
-        var node = evt.target.result;
-        if (!node) {//attempt to remove something from a non-existing directory
-          return;
-        }
-        delete node[key][basename];
-        if (keepDirNode(node)) {
-          nodes.put(node);
-        } else {
-          nodes.delete(node.path).onsuccess = function() {
-            if (dirname !== '/') {
-              removeFromParent(nodes, dirname, key);
-            }
-          };
-        }
-      };
-    }
-  }
-
-  function makeNode(path) {
-    var node = { path: path };
-    if (path[path.length - 1] === '/') {
-      node.body = {};
-      node.cached = {};
-      node.contentType = 'application/json';
-    }
-    return node;
-  }
-
-  function addToParent(nodes, path, key, revision) {
-    var parts = path.match(/^(.*\/)([^\/]+\/?)$/);
-    if (parts) {
-      var dirname = parts[1], basename = parts[2];
-      nodes.get(dirname).onsuccess = function(evt) {
-        var node = evt.target.result || makeNode(dirname);
-        node[key][basename] = revision || true;
-        nodes.put(node).onsuccess = function() {
-          if (dirname !== '/') {
-            addToParent(nodes, dirname, key, true);
-          }
-        };
-      };
-    }
-  }
-
-  function addDirectoryCacheNode(nodes, path, body) {
-    nodes.get(path).onsuccess = function(evt) {
-      var node = evt.target.result || makeNode(path);
-      node['body'] = body;
-      nodes.put(node);
+  function getBody(bodyStore, path, cb) {
+    bodyStore.get(path).onsuccess = function(evt) {
+      var node = evt.target.result;
+      if(node) {
+        cb(node.body);
+      } else {
+        cb();
+      }
     };
+  }
+
+  function setBody(bodyStore, path, body, cb) {
+    if(cb) {
+      bodyStore.get(path).onsuccess = function(evt) {
+        var oldBody;
+        if(evt.target.result) {
+          oldBody = evt.target.result.body;
+        }
+        setBody(bodyStore, path, body);
+        cb(oldBody);
+      };
+    } else {
+      bodyStore.put({
+        path: path,
+        body: body
+      });
+    }
+  }
+
+  function getMetas(metaStore, path, cb) {
+    metaStore.get(path).onsuccess = function(evt) {
+      var node = evt.target.result;
+      if(node) {
+        cb(node.items);
+      } else {
+        cb({});
+      }
+    };
+  }
+
+  function setMetas(metaStore, path, items) {
+    metaStore.put({
+      path: path,
+      items: items
+    });
+  }
+    
+  function addToParent(metaStore, pathObj, revision, contentType, contentLength, cb) {
+    getMetas(metaStore, pathObj.containingFolder, function(items) {
+      var oldRevision, parentPathObj = parsePath(pathObj.containingFolder);
+      //creating this folder's path up to the root:
+      if(!parentPathObj.isRoot ) {
+        addToParent(metaStore, parentPathObj, true);
+      }
+      if(items[pathObj.itemName]) {
+        oldRevision = items[pathObj.itemName].ETag;
+      } else {
+         items[pathObj.itemName] = {};
+      }
+      items[pathObj.itemName].ETag = (revision || true);
+      setMetas(metaStore, pathObj.containingFolder, items);
+      if(cb) {
+        cb(oldRevision);
+      }
+    });
   }
 
   RS.IndexedDB = function(database) {
@@ -4750,76 +4756,117 @@ Math.uuid = function (len, radix) {
     RS.cachingLayer(this);
     RS.eventHandling(this, 'change', 'conflict');
   };
+  
+  function parsePath(path) {
+    var parts, ret = {
+      isRoot: (path === '')
+    };
+    if(path.substr(-1) === '/') {
+      parts = path.substring(0, path.length-1).split('/');
+      ret.isFolder = true;
+      ret.itemName = parts[parts.length-1]+'/';
+    } else {
+      parts = path.split('/');
+      ret.isFolder = false;
+      ret.itemName = parts[parts.length-1];
+    }
+    parts.pop();
+    ret.containingFolder = parts.join('/')+ (parts.length ? '/' : '');
+    return ret;
+  }
+
+  function deleteMeta(metaStore, pathObj, cb) {
+    if(pathObj.isRoot) {
+      cb();
+      return;
+    }
+    getMetas(metaStore, pathObj.containingFolder, function(items) {
+      if(items[pathObj.itemName]) {
+        oldRevision = items[pathObj.itemName].ETag;
+        delete items[pathObj.itemName];
+        if(items.length) {
+          setMetas(metaStore, pathObj.containingFolder, items);
+          cb(oldRevision);
+        } else {
+          deleteMeta(metaStore, parsePath(pathObj.containingFolder), function() {
+            cb(oldRevision);
+          });
+        }
+      }
+    });
+  }
 
   RS.IndexedDB.prototype = {
 
     get: function(path) {
+      var pathObj = parsePath(path);
+      var storesNeeded = (pathObj.isFolder ? 'meta' : ['meta', 'bodies']);
       var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var nodes = transaction.objectStore('nodes');
-      var nodeReq = nodes.get(path);
-      var node;
-
-      nodeReq.onsuccess = function() {
-        node = nodeReq.result;
-      };
-
+      var transaction = this.db.transaction(storesNeeded, 'readonly');
+      var metaStore = transaction.objectStore('meta'),
+         parentReq, metaData, itemReq, item;
+      if(pathObj.isFolder) {
+        getMetas(metaStore, path, function(items) {
+          item = items;
+        });
+      } else {
+        getBody(transaction.objectStore('bodies'), path, function(body) {
+          item = body;
+        });
+      }
+      getMetas(metaStore, pathObj.containingFolder, function(items) {
+          metaData = items[pathObj.itemName];
+      });
       transaction.oncomplete = function() {
-        if (node) {
-          promise.fulfill(200, node.body, node.contentType, node.revision);
+        if (metaData && item) {
+          promise.fulfill(200, item, metaData['Content-Type'], metaData['ETag']);
         } else {
           promise.fulfill(404);
         }
       };
 
-      transaction.onerror = transaction.onabort = promise.reject;
+      transaction.onerror = transaction.onabort = function(err) {
+        promise.reject('error while getting '+path+' '+err);
+      };
       return promise;
     },
 
     put: function(path, body, contentType, incoming, revision) {
-      var promise = promising();
-      if (path[path.length - 1] === '/') { throw "Bad: don't PUT folders"; }
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
-      var oldNode;
-      var done;
-
-      nodes.get(path).onsuccess = function(evt) {
-        try {
-          oldNode = evt.target.result;
-          var node = {
-            path: path,
-            contentType: contentType,
-            body: body
-          };
-          nodes.put(node);
-        } catch(e) {
-          if (typeof(done) === 'undefined') {
-            done = true;
-            promise.reject(e);
-          }
+      var pathObj = parsePath(path),
+        promise = promising(),
+        transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
+        oldBody, oldRevision, done;
+      if (pathObj.isFolder) {
+        throw "Bad: don't PUT folders";
+      }
+      try {
+        addToParent(transaction.objectStore('meta'), pathObj, revision, contentType, body.length, function(setOldRevision) {
+          oldRevision = setOldRevision;
+        });
+        setBody(transaction.objectStore('bodies'), path, body, function(setOldBody) {
+          oldBody = setOldBody;
+        });
+      } catch(e) {
+        if (typeof(done) === 'undefined') {
+          done = true;
+          promise.reject(e);
         }
-      };
+      }
 
       transaction.oncomplete = function() {
+        //TODO: emit change event with origin 'device' to other tabs & windows of the same browser
         this._emit('change', {
           path: path,
           origin: incoming ? 'remote' : 'window',
-          oldValue: oldNode ? oldNode.body : undefined,
+          oldValue: oldBody,
           newValue: body
         });
         if (!incoming) {
-          this._recordChange(path, { action: 'PUT', revision: oldNode ? oldNode.revision : undefined });
+          this._recordChange(path, { action: 'PUT', revision: oldRevision });
         }
         if (typeof(done) === 'undefined') {
           done = true;
-          if (incoming) {
-            this._setRevision(path, revision).then(function(){
-              promise.fulfill(200);
-            });
-          } else {
-            promise.fulfill(200);
-          }
+          promise.fulfill(200);
         }
       }.bind(this);
 
@@ -4828,17 +4875,17 @@ Math.uuid = function (len, radix) {
       return promise;
     },
 
-    putDirectory: function(path, body, revision) {
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
-
-      addDirectoryCacheNode(nodes, path, body);
-      addToParent(nodes, path, 'body');
+    putDirectory: function(path, items, revision) {
+      var promise = promising(),
+        transaction = this.db.transaction(['meta'], 'readwrite'),
+        metaStore = transaction.objectStore('meta');
+      
+      setMetas(metaStore, path, items);
+      addToParent(metaStore, parsePath(path), revision);
 
       transaction.oncomplete = function() {
-        this._setRevision(path, revision).then(promise.fulfill);
-      }.bind(this);
+        promise.fulfill();
+      };
 
       transaction.onerror = transaction.onabort = promise.reject;
 
@@ -4846,30 +4893,33 @@ Math.uuid = function (len, radix) {
     },
 
     delete: function(path, incoming) {
-      var promise = promising();
-      if (path[path.length - 1] === '/') { throw "Bad: don't DELETE folders"; }
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-      var nodes = transaction.objectStore('nodes');
-      var oldNode;
-
-      nodes.get(path).onsuccess = function(evt) {
-        oldNode = evt.target.result;
-        nodes.delete(path).onsuccess = function() {
-          removeFromParent(nodes, path, 'cached', incoming);
-        };
-      };
-
+      var pathObj = parsePath(path), oldBody, oldRevision;
+      if (pathObj.isRoot) {
+        throw "Bad: don't DELETE root";
+      }
+      var transaction = this.db.transaction(['meta', 'bodies'], 'readwrite'),
+        promise = promising(),
+        oldBody, bodies;
+      deleteMeta(transaction.objectStore('meta'), pathObj, function(setOldRevision) {
+        oldRevision = setOldRevision;
+        getBody(transaction.objectStore('bodies'), path, function(setOldBody) {
+          oldBody = setOldBody;
+          bodies.delete(path);
+        });
+      });
+      
       transaction.oncomplete = function() {
-        if (oldNode) {
+        if (oldBody) {
+          //TODO: emit change event with origin 'device' to other tabs & windows of the same browser
           this._emit('change', {
             path: path,
             origin: incoming ? 'remote' : 'window',
-            oldValue: oldNode.body,
+            oldValue: oldBody,
             newValue: undefined
           });
         }
         if (! incoming) {
-          this._recordChange(path, { action: 'DELETE', revision: oldNode ? oldNode.revision : undefined });
+          this._recordChange(path, { action: 'DELETE', revision: oldRevision });
         }
         promise.fulfill(200);
       }.bind(this);
@@ -4878,24 +4928,11 @@ Math.uuid = function (len, radix) {
       return promise;
     },
 
-    _setRevision: function(path, revision) {
-      return this._setRevisions([[path, revision]]);
-    },
-
-    _setRevisions: function(revs) {
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readwrite');
-
-      revs.forEach(function(rev) {
-        var nodes = transaction.objectStore('nodes');
-        nodes.get(rev[0]).onsuccess = function(event) {
-          var node = event.target.result || makeNode(rev[0]);
-          node.revision = rev[1];
-          nodes.put(node).onsuccess = function() {
-            addToParent(nodes, rev[0], 'cached', rev[1]);
-          };
-        };
-      });
+    setRevision: function(path, revision) {
+      var pathObj = parsePath(path),
+        transaction = this.db.transaction(['meta'], 'readwrite'),
+        promise = promising();
+      this._addToParent(transaction.objectStore('meta'), pathObj, revision);
 
       transaction.oncomplete = function() {
         promise.fulfill();
@@ -4906,39 +4943,21 @@ Math.uuid = function (len, radix) {
     },
 
     getRevision: function(path) {
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var rev;
-
-      transaction.objectStore('nodes').
-        get(path).onsuccess = function(evt) {
-          if (evt.target.result) {
-            rev = evt.target.result.revision;
-          }
-        };
+      var promise = promising(),
+        pathObj = parsePath(path),
+        transaction = this.db.transaction(['meta'], 'readonly')
+        promise = promising();
+      getMetas(transaction.objectStore('meta'), pathObj.containingDir, function(items) {
+        if(items[pathObj.itemName]) {
+          rev =  items[pathObj.itemName].ETag;
+        }
+      });
 
       transaction.oncomplete = function() {
         promise.fulfill(rev);
       };
 
       transaction.onerror = transaction.onabort = promise.reject;
-      return promise;
-    },
-
-    // TODO this is not used yet
-    getCached: function(path) {
-      if (path[path.length - 1] !== '/') {
-        return this.get(path);
-      }
-      var promise = promising();
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var nodes = transaction.objectStore('nodes');
-
-      nodes.get(path).onsuccess = function(evt) {
-        var node = evt.target.result || {};
-        promise.fulfill(200, node.cached, node.contentType, node.revision);
-      };
-
       return promise;
     },
 
@@ -4956,20 +4975,17 @@ Math.uuid = function (len, radix) {
     },
 
     fireInitial: function() {
-      var transaction = this.db.transaction(['nodes'], 'readonly');
-      var cursorReq = transaction.objectStore('nodes').openCursor();
+      var transaction = this.db.transaction(['bodies'], 'readonly');
+      var cursorReq = transaction.objectStore('bodies').openCursor();
       cursorReq.onsuccess = function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
-          var path = cursor.key;
-          if (path.substr(-1) !== '/') {
-            this._emit('change', {
-              path: path,
-              origin: 'local',
-              oldValue: undefined,
-              newValue: cursor.value.body
-            });
-          }
+          this._emit('change', {
+            path: cursor.value.path,
+            origin: 'local',
+            oldValue: undefined,
+            newValue: cursor.value.value
+          });
           cursor.continue();
         }
       }.bind(this);
@@ -5016,8 +5032,8 @@ Math.uuid = function (len, radix) {
       var pl = path.length;
       var changes = [];
 
-      cursorReq.onsuccess = function() {
-        var cursor = cursorReq.result;
+      cursorReq.onsuccess = function(evt) {
+        var cursor = evt.target.result;
         if (cursor) {
           if (cursor.key.substr(0, pl) === path) {
             changes.push(cursor.value);
@@ -5052,7 +5068,7 @@ Math.uuid = function (len, radix) {
 
   };
 
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
 
   RS.IndexedDB.open = function(name, callback) {
     var timer = setTimeout(function() {
@@ -5070,12 +5086,14 @@ Math.uuid = function (len, radix) {
     dbOpen.onupgradeneeded = function(event) {
       RemoteStorage.log("[IndexedDB] Upgrade: from ", event.oldVersion, " to ", event.newVersion);
       var db = dbOpen.result;
-      if (event.oldVersion !== 1) {
-        RemoteStorage.log("[IndexedDB] Creating object store: nodes");
-        db.createObjectStore('nodes', { keyPath: 'path' });
+      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
+      db.createObjectStore('meta', { keyPath: 'path' });
+      RemoteStorage.log("[IndexedDB] Creating object store: nodes");
+      db.createObjectStore('bodies', { keyPath: 'path' });
+      if(event.oldVersion != 2) {
+        RemoteStorage.log("[IndexedDB] Creating object store: changes");
+        db.createObjectStore('changes', { keyPath: 'path' });
       }
-      RemoteStorage.log("[IndexedDB] Creating object store: changes");
-      db.createObjectStore('changes', { keyPath: 'path' });
     };
 
     dbOpen.onsuccess = function() {
@@ -5131,23 +5149,14 @@ Math.uuid = function (len, radix) {
 /** FILE: src/localstorage.js **/
 (function(global) {
 
-  var NODES_PREFIX = "remotestorage:cache:nodes:";
+  var META_PREFIX = "remotestorage:cache:meta:";
+  var BODIES_PREFIX = "remotestorage:cache:bodies:";
   var CHANGES_PREFIX = "remotestorage:cache:changes:";
 
   RemoteStorage.LocalStorage = function() {
     RemoteStorage.cachingLayer(this);
     RemoteStorage.eventHandling(this, 'change', 'conflict');
   };
-
-  function makeNode(path) {
-    var node = { path: path };
-    if (path[path.length - 1] === '/') {
-      node.body = {};
-      node.cached = {};
-      node.contentType = 'application/json';
-    }
-    return node;
-  }
 
   function b64ToUint6 (nChr) {
     return nChr > 64 && nChr < 91 ?
@@ -5182,6 +5191,25 @@ Math.uuid = function (len, radix) {
     return taBytes;
   }
 
+  function parsePath(path) {
+    var parts, ret = {
+      isRoot: (path === '')
+    };
+    if(path.substr(-1) === '/') {
+      parts = path.substring(0, path.length-1).split('/');
+      ret.isFolder = true;
+      ret.itemName = parts[parts.length-1]+'/';
+    } else {
+      parts = path.split('/');
+      ret.isFolder = false;
+      ret.itemName = parts[parts.length-1];
+    }
+    parts.pop();
+    ret.containingFolder = parts.join('/')+ (parts.length ? '/' : '');
+    console.log('parsePath', path, parts, ret);
+    return ret;
+  }
+
   // Helper to decide if node body is binary or not
   function isBinary(node){
     return node.match(/charset=binary/);
@@ -5201,59 +5229,54 @@ Math.uuid = function (len, radix) {
     toArrayBuffer: base64DecToArr,
 
     put: function(path, body, contentType, incoming, revision) {
-      var oldNode = this._get(path);
-      if (isBinary(contentType)){
-        body = this.toBase64(body);
-      }
-      var node = {
-        path: path,
-        contentType: contentType,
-        body: body
-      };
-      localStorage[NODES_PREFIX + path] = JSON.stringify(node);
+      var oldBody = this._getBody(path),
+        pathObj = parsePath(path);
       this._emit('change', {
         path: path,
         origin: incoming ? 'remote' : 'window',
-        oldValue: oldNode ? oldNode.body : undefined,
+        oldValue: oldBody,
         newValue: body
       });
-      if (incoming) {
-        this._setRevision(path, revision);
+      if (isBinary(contentType)){
+        body = this.toBase64(body);
       }
+      localStorage[BODIES_PREFIX + path] = body;
+      this._addToParent(pathObj, revision, contentType, body.length);
       if (!incoming) {
         this._recordChange(path, { action: 'PUT' });
       }
       return promising().fulfill(200);
     },
 
-    putDirectory: function(path, body, revision) {
-      this._addDirectoryCacheNode(path, body);
-      this._addToParent(path, 'body');
-      this._setRevision(path, revision);
+    putFolder: function(path, items, revision) {
+      var pathObj = parsePath(path);
+      this._setMetas(path, items);
+      this._addToParent(pathObj, revision);
       return promising().fulfill();
     },
 
     get: function(path) {
-      var node = this._get(path);
-      if (node) {
-        if (isBinary(node.contentType)){
-          node.body = this.toArrayBuffer(node.body);
+      var body = this._getBody(path),
+        meta = this._getMeta(path);
+      if (body) {
+        if (isBinary(meta.contentType)){
+          body = this.toArrayBuffer(body);
         }
-        return promising().fulfill(200, node.body, node.contentType, node.revision);
+        return promising().fulfill(200, body, meta.contentType, meta.revision);
       } else {
         return promising().fulfill(404);
       }
     },
 
     'delete': function(path, incoming) {
-      var oldNode = this._get(path);
-      delete localStorage[NODES_PREFIX + path];
+      var oldBody = this._getBody(path);
+      delete localStorage[BODIES_PREFIX + path];
       this._removeFromParent(path);
-      if (oldNode) {
+      if (oldBody) {
         this._emit('change', {
           path: path,
           origin: incoming ? 'remote' : 'window',
-          oldValue: oldNode.body,
+          oldValue: oldBody,
           newValue: undefined
         });
       }
@@ -5263,25 +5286,40 @@ Math.uuid = function (len, radix) {
       return promising().fulfill(200);
     },
 
-    _setRevision: function(path, revision) {
-      var node = this._get(path) || makeNode(path);
-      node.revision = revision;
-      localStorage[NODES_PREFIX + path] = JSON.stringify(node);
-      this._addToParent(path, 'cached', revision);
+    setRevision: function(path, revision) {
+      var pathObj = parsePath(path);
+      this._addToParent(pathObj, revision);
       return promising().fulfill();
     },
 
     getRevision: function(path) {
-      var node = this._get(path);
-      return promising.fulfill(node ? node.revision : undefined);
+      var meta = this._getMeta(path);
+      return promising.fulfill(meta ? meta.ETag : undefined);
     },
 
-    _get: function(path) {
-      var node;
-      try {
-        node = JSON.parse(localStorage[NODES_PREFIX + path]);
-      } catch(e) { /* ignored */ }
-      return node;
+    _getBody: function(path) {
+      return localStorage[BODIES_PREFIX + path];
+    },
+
+    _getMeta: function(path) {
+      var pathObj = parsePath(path),
+        parentItems = this._getMetas(pathObj.containingFolder);
+      return parentItems[pathObj.itemName];
+    },
+
+    _getMetas: function(path) {
+      var str = localStorage[META_PREFIX + path], items;
+      if(str.length) {
+        try {
+          items = JSON.parse(str);
+        } catch(e) {
+        }
+      }
+      return items || {};
+    },
+
+    _setMetas: function(path, items) {
+      localStorage[BODIES_PREFIX + path] = JSON.stringify(items);
     },
 
     _recordChange: function(path, attributes) {
@@ -5322,56 +5360,45 @@ Math.uuid = function (len, radix) {
       this._emit('conflict', event);
     },
 
-    _addToParent: function(path, key, revision) {
-      var parts = path.match(/^(.*\/)([^\/]+\/?)$/);
-      if (parts) {
-        var dirname = parts[1], basename = parts[2];
-        var node = this._get(dirname) || makeNode(dirname);
-        node[key][basename] = revision || true;
-        localStorage[NODES_PREFIX + dirname] = JSON.stringify(node);
-        if (dirname !== '/') {
-          this._addToParent(dirname, key, true);
-        }
+    _addToParent: function(pathObj, revision, contentType, contentLength) {
+      var items = this._getMetas(pathObj.containingFolder), parentPathObj = parsePath(pathObj.containingFolder);
+      //creating this folder's path up to the root:
+      if(!parentPathObj.isRoot && items === {}) {
+        this._addToParent(parentPathObj, true);
       }
+      if(!items[pathObj.itemName]) {
+        items[pathObj.itemName] = {};
+      }
+      if(revision) {
+        items[pathObj.itemName].ETag = revision;
+      }
+      if(contentType) {
+        items[pathObj.itemName]['Content-Type'] = contentType;
+      }
+      if(contentLength) {
+        items[pathObj.itemName]['Content-Length'] = contentLength;
+      }
+      this._setMetas(pathObj.containingFolder, items);
     },
 
-    _addDirectoryCacheNode: function(path, body) {
-      var node = this._get(path) || makeNode(path);
-      node.body = body;
-      localStorage[NODES_PREFIX + path] = JSON.stringify(node);
-    },
-
-    _removeFromParent: function(path) {
-      var parts = path.match(/^(.*\/)([^\/]+\/?)$/);
-      if (parts) {
-        var dirname = parts[1], basename = parts[2];
-        var node = this._get(dirname);
-        if (node) {
-          delete node.cached[basename];
-          if (Object.keys(node.cached).length > 0) {
-            localStorage[NODES_PREFIX + dirname] = JSON.stringify(node);
-          } else {
-            delete localStorage[NODES_PREFIX + dirname];
-            if (dirname !== '/') {
-              this._removeFromParent(dirname);
-            }
-          }
-        }
-      }
+    _removeFromParent: function(pathObj) {
+      var items = this._getMetas(pathObj.containingFolder);// should trigger creation up to the root
+      delete items[pathObj.itemName];
+      this._setMetas(pathObj.containingFolder, items);
     },
 
     fireInitial: function() {
-      var l = localStorage.length, npl = NODES_PREFIX.length;
+      var l = localStorage.length, bpl = BODIES_PREFIX.length;
       for(var i=0;i<l;i++) {
         var key = localStorage.key(i);
-        if (key.substr(0, npl) === NODES_PREFIX) {
-          var path = key.substr(npl);
-          var node = this._get(path);
+        if (key.substr(0, bpl) === BODIES_PREFIX) {
+          var path = key.substr(bpl);
+          var body = this._getBody(path);
           this._emit('change', {
             path: path,
             origin: 'local',
             oldValue: undefined,
-            newValue: node.body
+            newValue: body
           });
         }
       }
@@ -5387,11 +5414,12 @@ Math.uuid = function (len, radix) {
 
   RemoteStorage.LocalStorage._rs_cleanup = function() {
     var l = localStorage.length;
-    var npl = NODES_PREFIX.length, cpl = CHANGES_PREFIX.length;
+    var bpl = BODIES_PREFIX.length, mpl = META_PREFIX.length, cpl = CHANGES_PREFIX.length;
     var remove = [];
     for(var i=0;i<l;i++) {
       var key = localStorage.key(i);
-      if (key.substr(0, npl) === NODES_PREFIX ||
+      if (key.substr(0, bpl) === BODIES_PREFIX ||
+         key.substr(0, mpl) === META_PREFIX ||
          key.substr(0, cpl) === CHANGES_PREFIX) {
         remove.push(key);
       }
