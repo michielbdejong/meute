@@ -503,15 +503,15 @@
     _init: function() {
       var self = this, readyFired = false;
       function fireReady() {
-	try {
-	  if (!readyFired) {
-	    self._emit('ready');
-	    readyFired = true;
-	  }
-	} catch(e) {
-	  console.error("'ready' failed: ", e, e.stack);
-	  self._emit('error', e);
-	}
+        try {
+          if (!readyFired) {
+            self._emit('ready');
+            readyFired = true;
+          }
+        } catch(e) {
+          console.error("'ready' failed: ", e, e.stack);
+          self._emit('error', e);
+        }
       }
       this._loadFeatures(function(features) {
         this.log('all features loaded');
@@ -526,12 +526,9 @@
           this._setGPD(this.remote, this.remote);
         }
 
-        if (this.authorization) {
-          this.authorization.on('not-connected', fireReady);
-        }
-
         if (this.remote) {
           this.remote.on('connected', fireReady);
+          this.remote.on('not-connected', fireReady);
           if (this.remote.connected) {
             fireReady();
           }
@@ -571,7 +568,7 @@
         'Access',
         'Caching',
         'Discover',
-        'Authorization',
+        'Authorize',
         'Widget',
         'IndexedDB',
         'LocalStorage',
@@ -1013,7 +1010,7 @@
      *   fired when the wireclient connect method realizes that it is
      *   in posession of a token and a href
      **/
-    RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done');
+    RS.eventHandling(this, 'change', 'connected', 'not-connected', 'wire-busy', 'wire-done');
 
     onErrorCb = function(error){
       if (error instanceof RemoteStorage.Unauthorized) {
@@ -1178,6 +1175,12 @@
       RS.WireClient.configureHooks.forEach(function(hook) {
         hook.call(this);
       }.bind(this));
+    },
+
+    notAuthing: function() {
+      if (!this.connected) {
+        this._emit('not-connected');
+      }
     },
 
     get: function(path, options) {
@@ -1500,12 +1503,12 @@
 })(typeof(window) !== 'undefined' ? window : global);
 
 
-/** FILE: src/authorization.js **/
+/** FILE: src/authorize.js **/
 (function(global) {
 
   function extractParams() {
     //FF already decodes the URL fragment in document.location.hash, so use this instead:
-    var location = RemoteStorage.Authorization.getLocation(),
+    var location = RemoteStorage.Authorize.getLocation(),
         hashPos  = location.href.indexOf('#'),
         hash;
     if (hashPos === -1) { return; }
@@ -1517,9 +1520,8 @@
     }, {});
   }
 
-  RemoteStorage.Authorization = function(authURL, scope, redirectUri, clientId) {
+  RemoteStorage.Authorize = function(authURL, scope, redirectUri, clientId) {
     RemoteStorage.log('Authorize authURL = ', authURL);
-    RemoteStorage.eventHandling(this, 'not-connected');
 
     var url = authURL;
     url += authURL.indexOf('?') > 0 ? '&' : '?';
@@ -1527,7 +1529,7 @@
     url += '&scope=' + encodeURIComponent(scope);
     url += '&client_id=' + encodeURIComponent(clientId);
     url += '&response_type=token';
-    RemoteStorage.Authorization.setLocation(url);
+    RemoteStorage.Authorize.setLocation(url);
   };
 
   RemoteStorage.prototype.authorize = function(authURL) {
@@ -1537,7 +1539,7 @@
     var redirectUri = String(RemoteStorage.Authorize.getLocation());
     var clientId = redirectUri.match(/^(https?:\/\/[^\/]+)/)[0];
 
-    RemoteStorage.Authorization(authURL, scope, redirectUri, clientId);
+    RemoteStorage.Authorize(authURL, scope, redirectUri, clientId);
   };
 
   /**
@@ -1545,7 +1547,7 @@
    *
    * Override this method if access to document.location is forbidden
    */
-  RemoteStorage.Authorization.getLocation = function () {
+  RemoteStorage.Authorize.getLocation = function () {
     return global.document.location;
   };
 
@@ -1554,7 +1556,7 @@
    *
    * Override this method if access to document.location is forbidden
    */
-  RemoteStorage.Authorization.setLocation = function (location) {
+  RemoteStorage.Authorize.setLocation = function (location) {
     if (typeof location === 'string') {
       global.document.location.href = location;
     } else if (typeof location === 'object') {
@@ -1564,40 +1566,42 @@
     }
   };
 
-  RemoteStorage.Authorization._rs_supported = function(remoteStorage) {
+  RemoteStorage.Authorize._rs_supported = function(remoteStorage) {
     return typeof(document) !== 'undefined';
   };
 
   var onFeaturesLoaded;
-  RemoteStorage.Authorization._rs_init = function(remoteStorage) {
-    var self = this;
+  RemoteStorage.Authorize._rs_init = function(remoteStorage) {
+
     onFeaturesLoaded = function () {
+      var authing = false;
       if (params) {
         if (params.error) {
           throw "Authorization server errored: " + params.error;
         }
         if (params.access_token) {
           remoteStorage.remote.configure(undefined, undefined, undefined, params.access_token);
-        } else {
-          self._emit('not-connected');
+          authing = true;
         }
         if (params.remotestorage) {
           remoteStorage.connect(params.remotestorage);
+          authing = true;
         }
-      } else {
-        self._emit('not-connected');
+      }
+      if(!authing) {
+        remoteStorage.remote.notAuthing();
       }
     };
     var params = extractParams(),
         location;
     if (params) {
-      location = RemoteStorage.Authorization.getLocation();
+      location = RemoteStorage.Authorize.getLocation();
       location.hash = '';
     }
     remoteStorage.on('features-loaded', onFeaturesLoaded);
   };
 
-  RemoteStorage.Authorization._rs_cleanup = function(remoteStorage) {
+  RemoteStorage.Authorize._rs_cleanup = function(remoteStorage) {
     remoteStorage.removeEventListener('features-loaded', onFeaturesLoaded);
   };
 
@@ -5034,7 +5038,7 @@ Math.uuid = function (len, radix) {
             path: cursor.value.path,
             origin: 'local',
             oldValue: undefined,
-            newValue: cursor.value.body
+            newValue: cursor.value.value
           });
           cursor.continue();
         }
