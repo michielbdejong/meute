@@ -104,6 +104,7 @@
     },
 
     put: function(path, body, contentType, options) {
+      console.log('put: function(', path, body, contentType, options);
       var promise = promising();
       function putDone(error, response) {
         if(error) {
