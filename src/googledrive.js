@@ -218,8 +218,11 @@
               var options = {};
               if(meta.mimeType.match(/charset=binary/)) {
                 options.responseType = 'blob';
+                console.log('xhr responseType blob');
               }
+              console.log('getFile xhr sending');
               this._request('GET', meta.downloadUrl, options, function(downloadError, response) {
+                console.log('getFile xhr returned');
                 if(downloadError) {
                   promise.reject(downloadError);
                 } else {
@@ -271,13 +274,14 @@
                 itemsMap = {};
                 for(i=0; i<data.items.length; i++) {
                   console.log('storing fileId', path + data.items[i].title, data.items[i].id);
-                  this._fileIdCache.set(path + data.items[i].title, data.items[i].id);
                   etagWithoutQuotes = data.items[i].etag.substring(1, data.items[i].etag.length-1);
                   if(data.items[i].mimeType === GD_DIR_MIME_TYPE) {
+                    this._fileIdCache.set(path + data.items[i].title + '/', data.items[i].id);
                     itemsMap[data.items[i].title + '/'] = {
                       ETag: etagWithoutQuotes
                     };
                   } else { 
+                    this._fileIdCache.set(path + data.items[i].title, data.items[i].id);
                     itemsMap[data.items[i].title] = {
                       ETag: etagWithoutQuotes,
                       'Content-Type': data.items[i].mimeType,
