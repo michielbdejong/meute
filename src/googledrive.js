@@ -213,7 +213,7 @@
         } else {
           this._getMeta(id, function(metaError, meta) {
             var etagWithoutQuotes;
-            if (typeof(meta) === 'object' && typeof(meta.eta) === 'string') {
+            if (typeof(meta) === 'object' && typeof(meta.etag) === 'string') {
               etagWithoutQuotes = meta.etag.substring(1, meta.etag.length-1);
             }
             if(metaError) {
