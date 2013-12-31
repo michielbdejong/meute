@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /></head>
+  <body>see console
+  </body>
+
+  <!-- core -->
+  <script src="lib/promising.js"></script>
+  <script src="src/remotestorage.js"></script>
+  <script src="src/eventhandling.js"></script>
+  <script src="src/wireclient.js"></script>
+  <script src="src/discover.js"></script>
+  <script src="src/authorize.js"></script>
+  <script src="src/access.js"></script>
+  <script src="src/env.js"></script>
+
+  <!-- widget -->
+  <script src="src/i18n.js"></script>
+  <script src="src/assets.js"></script>
+  <script src="src/widget.js"></script>
+  <script src="src/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="lib/tv4.js"></script>
+  <script src="lib/Math.uuid.js"></script>
+  <script src="src/baseclient.js"></script>
+  <script src="src/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="src/caching.js"></script>
+  <script src="src/sync.js"></script>
+  <script src="src/cachinglayer.js"></script>
+  <script src="src/indexeddb.js"></script>
+  <script src="src/localstorage.js"></script>
+  <script src="src/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="src/modules.js"></script>
+  <script src="src/debug/inspect.js"></script>
+  <script src="src/legacy.js"></script>
+  <script src="src/googledrive.js"></script>
+  <script src="src/dropbox.js"></script>
+  <script>remoteStorage = new RemoteStorage();</script>
+
+  <script src="remotestorage-modules/module-utils.js"></script>
+  <script src="remotestorage-modules/contacts.js"></script>
+  <script src="remotestorage-modules/sockethub.js"></script>
+  <script src="remotestorage-modules/email.js"></script>
+  <script src="remotestorage-modules/inbox.js"></script>
+  <script src="remotestorage-modules/money.js"></script>
+<!--  <script src="opentabs-data.js"></script> -->
+  <script src="expimp.js"></script>
+  <script>
+    remoteStorage.displayWidget();
+    remoteStorage.claimAccess('contacts', 'rw');
+    remoteStorage.claimAccess('money', 'rw');
+
+    var formHtml = 'Enter Opentabs command:<input id="ot-cmd" style="width:50em" /><br>Examples: <ul> <li>2000 INR by me for both #peter paid lunch</li> <li>82.91 USD by peter for michael,john #goa2014 gas</li> <li>0.06 BIT by michael for peter #goa2014 settlement to your bitcoin wallet 2014-01-31 11:14:03</li> </ul>';
+    function otCmdEvt(e) {
+      if(e.keyCode==13) {
+        otCmd(e.target.value);
+      }
+    }
+
+    function otCmd(str) {
+      console.log('ot cmd', str);
+      var parts = str.split(' '),
+        claim = {
+          amount: parseInt(parts[0]),
+          currency: parts[1],
+          by: parts[3],
+          for: parts[5].split(','),
+          description: parts.slice(7).join(' ')
+        },
+        tab = parts[6].substring(1);
+      remoteStorage.money.addClaim(tab, claim);
+    }
+
+    var tabNames = remoteStorage.money.getTabNames(), peers = {};
+
+    function markCell(i, j) {
+      return;
+      if(!nodeNames[i]) {
+        console.log('unknown row', i);
+      } else if(!nodeNames[j]) {
+        console.log('unknown column', j);
+      } else {
+        document.getElementById(nodeNames[i]+':'+nodeNames[j]).innerHTML='*';
+      }
+    }
+    function showTab(i) {
+      showTabList();
+      document.body.innerHTML += remoteStorage.money.getTabTable(i);
+    }
+    function showTabList() {
+      document.body.innerHTML = formHtml;
+      document.body.innerHTML += remoteStorage.money.getCyclesGraph();
+      document.body.innerHTML+= remoteStorage.money.findCycles(markCell);
+      document.body.innerHTML += remoteStorage.money.getTabList();
+      document.getElementById('ot-cmd').addEventListener('keydown', otCmdEvt);
+    }
+    showTabList();
+    console.log('opentabs.html loaded');
+  </script>
+</html>
