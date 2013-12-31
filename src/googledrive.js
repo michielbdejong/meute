@@ -212,6 +212,10 @@
           promise.reject(idError);
         } else {
           this._getMeta(id, function(metaError, meta) {
+            var etagWithoutQuotes;
+            if (typeof(meta) === 'object' && typeof(meta.eta) === 'string') {
+              etagWithoutQuotes = meta.etag.substring(1, meta.etag.length-1);
+            }
             if(metaError) {
               promise.reject(metaError);
             } else if(meta.downloadUrl) {
@@ -232,12 +236,12 @@
                       body = JSON.parse(body);
                     } catch(e) {}
                   }
-                  promise.fulfill(200, body, meta.mimeType, meta.etag);
+                  promise.fulfill(200, body, meta.mimeType, etagWithoutQuotes);
                 }
               });
             } else {
               // empty file
-              promise.fulfill(200, '', meta.mimeType, meta.etag);
+              promise.fulfill(200, '', meta.mimeType, etagWithoutQuotes);
             }
           });
         }
