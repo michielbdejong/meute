@@ -60,6 +60,14 @@ document.expimp = (function() {
           console.log('done');
         };
       };
+    },
+    debugPromise: function(promise) {
+      promise.then(function(a) {
+        console.log('ok', a);
+      },
+      function(a) {
+        console.log('err', a);
+      });
     }
   };
 })();

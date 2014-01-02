@@ -126,61 +126,61 @@ var PrefixTree = function(baseClient) {
   };
 };
 
-  function SyncedVar(name, baseClient) {
-    var data;
-    baseClient.on('change', function(e) {
-      e.key = e.relativePath.substring('contacts/'.length);
-      if(e.key==name) {
-        data = e.newValue;
+function SyncedVar(name, baseClient) {
+  var data;
+  baseClient.on('change', function(e) {
+    e.key = e.relativePath.substring('contacts/'.length);
+    if(e.key==name) {
+      data = e.newValue;
+      delete data['@context'];
+    }
+  });
+  return {
+    get: function() {
+      if(typeof(data) === 'object') {
         delete data['@context'];
       }
-    });
-    return {
-      get: function() {
-        if(typeof(data) === 'object') {
-          delete data['@context'];
-        }
-        return data;
-      },
-      set: function(val) {
-        baseClient.storeObject('SyncedVar', name, val);
-        data=val;
+      return data;
+    },
+    set: function(val) {
+      baseClient.storeObject('SyncedVar', name, val);
+      data=val;
+    }
+  };
+}
+
+function SyncedMap(name, baseClient) {
+  console.log('SyncedMap '+name+' building its prefixTree');
+  var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
+  //prefixTree.cache('');
+  console.log('SyncedMap '+name+' setting its prefixTree', prefixTree, '.on(\'change\', ... for baseClient with base', baseClient.base);
+  prefixTree.on('change', function(e) {
+    if(e.origin != 'window') {
+      console.log('prefixTree event coming in to SyncedMap '+name, e);
+      data[e.key] = e.newValue;
+      delete data[e.key]['@context'];
+    }
+  });
+  return {
+    get: function(key) {
+      if(typeof(data[key]) === 'object') {
+        delete data[key]['@context'];
       }
-    };
-  }
-  
-  function SyncedMap(name, baseClient) {
-    console.log('SyncedMap '+name+' building its prefixTree');
-    var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
-    //prefixTree.cache('');
-    console.log('SyncedMap '+name+' setting its prefixTree', prefixTree, '.on(\'change\', ... for baseClient with base', baseClient.base);
-    prefixTree.on('change', function(e) {
-      if(e.origin != 'window') {
-        console.log('prefixTree event coming in to SyncedMap '+name, e);
-        data[e.key] = e.newValue;
-        delete data[e.key]['@context'];
-      }
-    });
-    return {
-      get: function(key) {
-        if(typeof(data[key]) === 'object') {
-          delete data[key]['@context'];
-        }
-        return data[key];
-      },
-      set: function(key, val) {
-        prefixTree.storeObject('SyncedMapKey', key, val);
-        data[key]=val;
-      },
-      getKeys: function() {
-        return Object.getOwnPropertyNames(data);
-      },
-      getEverything: function() {
-        return data;
-      },
-      setEverything: function(setData) {
-        data = setData;
-        prefixTree.storeObjects('SyncedMapKey', data);
-      }
-    };
-  }
+      return data[key];
+    },
+    set: function(key, val) {
+      prefixTree.storeObject('SyncedMapItem', key, val);
+      data[key]=val;
+    },
+    getKeys: function() {
+      return Object.getOwnPropertyNames(data);
+    },
+    getEverything: function() {
+      return data;
+    },
+    setEverything: function(setData) {
+      data = setData;
+      prefixTree.storeObjects('SyncedMapItem', data);
+    }
+  };
+}
