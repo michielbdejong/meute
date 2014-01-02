@@ -217,8 +217,8 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
       return r;
     }
     function getTabTable(i) {
-      var name = tabNames[i];
-      console.log(name);
+      var name = getTabNames()[i];
+      console.log('getting name', i, name, tabNames);
       var i, participants = remoteStorage.money.getTabParticipants(name),
         claims = remoteStorage.money.getTabClaims(name), str='<table><tr><td>Description:</td><td>by:</td><td>for:</td>'
           +'<td>amount:</td><td>currency:</td><td>'+participants.join('</td><td>')+'</td></tr>';

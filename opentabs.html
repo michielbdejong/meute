@@ -89,6 +89,7 @@
       }
     }
     function showTab(i) {
+      console.log('showTab', i);
       showTabList();
       document.body.innerHTML += remoteStorage.money.getTabTable(i);
     }
@@ -98,7 +99,10 @@
       document.body.innerHTML+= remoteStorage.money.findCycles(markCell);
       document.body.innerHTML += remoteStorage.money.getTabList();
       document.getElementById('ot-cmd').addEventListener('keydown', otCmdEvt);
+      remoteStorage.displayWidget();
     }
+
+    //remoteStorage._emit('ready');
     showTabList();
     console.log('opentabs.html loaded');
   </script>
