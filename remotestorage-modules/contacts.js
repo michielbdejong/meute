@@ -1,9 +1,4 @@
-console.log('RemoteStorage.defineModule(\'contacts\', ...');
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
-  console.log('RemoteStorage.defineModule(\'contacts\', ... building');
-  privateClient.on('change', function(e) { console.log('contacts module change', e); });
-
-  privateClient.cache('');
   var myName = new SyncedVar('myname', privateClient), contacts = new SyncedMap('contacts', privateClient);
 
   function genUuid() {
@@ -11,6 +6,10 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
   }
   return {
     exports: {
+      _init: function() {
+        console.log('caching contacts');
+        privateClient.cache('');
+      },
       add: function(name, details) {
         if(contacts.get(name.toLowerCase())) {
           //throw new Error('name clash!');
@@ -60,3 +59,4 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
     }
   };
 });
+remoteStorage.contacts._init();
