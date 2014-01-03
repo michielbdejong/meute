@@ -1,5 +1,5 @@
 RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
-  var myName = new SyncedVar('myname', privateClient), contacts = new SyncedMap('contacts', privateClient);
+  var myName, contacts;
 
   function genUuid() {
     return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
@@ -9,6 +9,8 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
       _init: function() {
         console.log('caching contacts');
         privateClient.cache('');
+        myName = new SyncedVar('myname', privateClient);
+        contacts = new SyncedMap('contacts', privateClient);
       },
       add: function(name, details) {
         if(contacts.get(name.toLowerCase())) {

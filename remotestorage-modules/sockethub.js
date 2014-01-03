@@ -2,11 +2,12 @@
   var moduleName = 'sockethub';
 
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
-    privateClient.cache('');
     return {
       exports: {
         c: privateClient,
-
+        _init: function() {
+          privateClient.cache('');
+        },
         init: function () {
           //privateClient.release('');
           //publicClient.release('');
@@ -69,3 +70,4 @@
   });
 
 })();
+remoteStorage.sockethub._init();

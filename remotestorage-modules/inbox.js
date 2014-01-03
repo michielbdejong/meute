@@ -1,9 +1,13 @@
 RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
-  privateClient.cache('');
-  var activity = new SyncedMap('activity', privateClient), timestamp = new Date().getTime();
+  var activity, timestamp;
 
   return {
     exports: {
+      _init: function() {
+        privateClient.cache('');
+        activity = new SyncedMap('activity', privateClient);
+        timestamp = new Date().getTime();
+      },
       logActivity: function(obj) {
         timestamp++;
         var currTime = new Date().getTime();
@@ -27,3 +31,4 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
     }
   };
 });
+remoteStorage.inbox._init();

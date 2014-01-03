@@ -1,6 +1,5 @@
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
-  var tabs = SyncedMap('tabs', privateClient);
-  privateClient.cache('');
+  var tabs;
   
   var edges = {}, reachable = {}, nodeNames = {}, cycles = [];
   
@@ -250,6 +249,10 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
   }
   return {
     exports: {
+      _init: function() {
+        tabs = SyncedMap('tabs', privateClient);
+        privateClient.cache('');
+      },
       addTab: function(tab) {
         var claims = {};
         for(var i=0; i<tab.claims.length; i++) {
@@ -348,3 +351,4 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
     }
   };
 });
+remoteStorage.money._init();

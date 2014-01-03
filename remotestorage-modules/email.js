@@ -33,7 +33,6 @@
   }
 
   RemoteStorage.defineModule(moduleName, function(privateClient, publicClient) {
-    privateClient.cache('');
     var messages = PrefixTree(privateClient.scope('messages/'));
     function getAll(prefix, cb) {
       console.log('getAll', prefix);
@@ -78,6 +77,9 @@
     }
     return {
       exports: {
+        _init: function() {
+          privateClient.cache('');
+        },
         getConfig: function () {
           return privateClient.getObject('config.json');
         },
@@ -141,3 +143,4 @@
     };
   });
 })();
+remoteStorage.email._init();
