@@ -114,7 +114,11 @@ var PrefixTree = function(baseClient) {
     on: function(event, cb) {
       if(event==='change') {
         baseClient.on('change', function(e) {
-          e.key = pathToKey(e.relativePath);
+          try {
+            e.key = pathToKey(e.relativePath);
+          } catch (e) {
+            return;
+          }
           console.log('prefixTree added key to event', e.key, e.relativePath); 
           cb(e);
         });

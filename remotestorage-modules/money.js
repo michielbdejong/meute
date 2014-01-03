@@ -1,8 +1,4 @@
-console.log('RemoteStorage.defineModule(\'money\', ...');
 RemoteStorage.defineModule('money', function(privateClient, publicClient) {
-  console.log('RemoteStorage.defineModule(\'money\', ... building');
-  privateClient.on('change', function(e) { console.log('money module change', e); });
-  
   var tabs = SyncedMap('tabs', privateClient);
   privateClient.cache('');
   
@@ -243,6 +239,15 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
     return Math.random()+'-'+(new Date().getTime().toString())+Math.random();
   }
 
+  function normalizeClaim(claim) {
+    if(typeof(claim.for) === 'string') {
+      claim.for = [claim.for];
+    }
+    if(typeof(claim.currency) !== 'string') {
+      claim.currency = 'EUR';
+    }
+    return claim;
+  }
   return {
     exports: {
       addTab: function(tab) {
@@ -253,16 +258,29 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
         tabs.set(tab.description, claims);
       },
       addClaim: function(tabName, claim) {
+        console.log('addClaim', tabName, claim);
         var claims = tabs.get(tabName) || {};
         claim.id = genUuid();
-        claims[claim.id] = [claim];
+        claims[claim.id] = [normalizeClaim(claim)];
         tabs.set(tabName, claims);
       },
       updateClaim: function(tabName, claimId, newObj) {
         var claims = tabs.get(tabName);
-        claims[claimId].push(newObj);
+        claims[claimId].push(normalizeClaim(newObj));
         tabs.set(tabName, claims);
       },
+      counterTab: function(cycle, amount) {
+        var i, lastPerson = cycle[cycle.length-1];
+        for (i=0; i<cycle.length; i+=2) {
+          this.addClaim(cycle[i], {
+            by: lastPerson,
+            for: cycle[i+1],
+            amount: amount
+          });
+          lastPerson = cycle[i+1];
+        }
+      },
+          
       getTabNames: getTabNames,
       getTab: function(tabName) {
         return tabs.get(tabName);
