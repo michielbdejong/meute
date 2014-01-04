@@ -50,13 +50,17 @@
           var i;
           for(i=0; i<keysAndDirs.keys.length; i++) {
             messages.getFile(keysAndDirs.keys[i]).then(
-              function(f) {
-                console.log('got file', prefix+keysAndDirs.keys[i], f.data);
-                objects.push(f.data);
-              },
-              function(err) {
-                console.log('error in file', prefix+keysAndDirs.keys[i], err);
-              }
+              (function(j) {
+                return function(f) {
+                  console.log('got file', prefix+keysAndDirs.keys[j], f.data);
+                  objects.push(f.data);
+                };
+              })(i),
+              (function(j) {
+                return function(err) {
+                  console.log('error in file', prefix+keysAndDirs.keys[j], err);
+                };
+              })(i)
             );
           }
           for(i=0; i<keysAndDirs.dirs.length; i++) {
@@ -90,7 +94,7 @@
           return messages.getObject(msgId);
         },
         getMessageIds: function(prefix) {
-          return messages.getKeysAndDirs(prefix);
+          return messages.getKeysAndDirs(prefix || '');
         },
         getImapBoxIndex: function(account, box) {
           return remoteStorage.email.priv.getAll('imap/'+account+'/'+box+'/');

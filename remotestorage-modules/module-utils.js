@@ -1,5 +1,4 @@
 var PrefixTree = function(baseClient) {
-  console.log('creating PrefixTree with base', baseClient.base);
   var maxLeaves=5, minDepth=1;
   //for key=='abcdefgh',
   // depth -> base + itemName:
@@ -79,7 +78,6 @@ var PrefixTree = function(baseClient) {
     });
   }
   
-  console.log('returning PrefixTree with base', baseClient.base);
   return {
     setMaxLeaves: function(val) {
       maxLeaves=val;
@@ -119,7 +117,6 @@ var PrefixTree = function(baseClient) {
           } catch (e) {
             return;
           }
-          console.log('prefixTree added key to event', e.key, e.relativePath); 
           cb(e);
         });
       } else {
@@ -154,13 +151,10 @@ function SyncedVar(name, baseClient) {
 }
 
 function SyncedMap(name, baseClient) {
-  console.log('SyncedMap '+name+' building its prefixTree');
   var data = {}, prefixTree = PrefixTree(baseClient.scope(name+'/'));
   //prefixTree.cache('');
-  console.log('SyncedMap '+name+' setting its prefixTree', prefixTree, '.on(\'change\', ... for baseClient with base', baseClient.base);
   prefixTree.on('change', function(e) {
     if(e.origin != 'window') {
-      console.log('prefixTree event coming in to SyncedMap '+name, e);
       data[e.key] = e.newValue;
       delete data[e.key]['@context'];
     }
