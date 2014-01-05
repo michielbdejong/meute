@@ -23,6 +23,14 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         }
         return ret;
       },
+      getActivityInterval: function(first, num) {
+        var i, ret = {}, keys = activity.getKeys();
+        for(i=keys.length-first-1; i > keys.length-first-num-1; i--) {
+          console.log(i, keys);
+          ret[keys[i]] = activity.get(keys[i]);
+        }
+        return ret;
+      },
       getActivity: function(key) {
         return activity.get(key);
       },

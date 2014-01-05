@@ -81,7 +81,6 @@ document.messaging = (function() {
             console.log(config);
             document.sockethubClient.set('email', config).then(function(success) {
               console.log('success', success);
-              remoteStorage.stopSync();//because of rs.js bug #545
             }, function(failure) {
               console.log('failure', failure);
             });
@@ -159,7 +158,15 @@ document.messaging = (function() {
     getAccounts: function() {},//-> [{...}]
     setAccount: function() {},//(i, {...})
     onMessage: function() {},//(function(activity))
-    getMessages: function() {},//(page, pageSize)
+    getFeedTable: function(pageNum) {
+      window.items = remoteStorage.inbox.getActivityInterval(10*pageNum, 10),
+        str = '<table border="1">';
+      for(var i in items) {
+        items[i].id = i;
+        str += asrender.toTableRow(items[i]);
+      }
+      return str + '</table>'; 
+    },
     send: function() {}//()
   };
 

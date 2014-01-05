@@ -30,13 +30,9 @@ var PrefixTree = function(baseClient) {
     return baseClient.getListing(path).then(function(listing) {
       var itemsMap={}, i, keys = [], dirs = [];
       if(typeof(listing)=='object') {
-        if(Array.isArray(listing)) {
-          for(i=0; i<listing.length; i++) {
-            itemsMap[listing[i]]=true;
-          }
-        } else {
-          itemsMap = listing;
-        }
+        itemsMap = listing
+      } else {
+        itemsMap = {};
       }
       for(i in itemsMap) {
         if(i.substr(-1)=='/') {
@@ -52,6 +48,9 @@ var PrefixTree = function(baseClient) {
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
     return baseClient.getListing(thisDir).then(function(itemsMap) {
+      if(!itemsMap) {
+        itemsMap = {};
+      }
       var numDocuments;
       if(itemsMap[key[depth]+'/']) {//go deeper
         return tryDepth(key, depth+1, checkMaxLeaves);
