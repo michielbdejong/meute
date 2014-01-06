@@ -79,7 +79,7 @@
       document.getElementById('homefeed').innerHTML =
         document.messaging.getFeedTable(i)
         + '<input type="submit" value="older..." onmousedown="go('+(i+1)+');" />';
-      remoteStorage.displayWidget();
+  //    remoteStorage.displayWidget();
     }
     console.log('alpha sync loaded');
     remoteStorage.on('ready', function() {

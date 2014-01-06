@@ -50,6 +50,11 @@
     <article>
       <input type="submit" value="export" onmousedown="exp();" />
     </article>
+    <article id="contacts-view" >
+    </article>
+    <article id="inbox-view" >
+    </article>
+    <article id="money-view" >
   </body>
   <script src="sockethub-client.js"></script>
 
@@ -94,16 +99,17 @@
 
 
 
+  <script src="remotestorage-modules/module-utils.js"> </script>
   <script src="remotestorage-modules/inbox.js"> </script>
   <script src="remotestorage-modules/email.js"> </script>
   <script src="remotestorage-modules/contacts.js"> </script>
   <script src="remotestorage-modules/money.js"> </script>
   <script src="remotestorage-modules/sockethub.js"> </script>
-  <script src="remotestorage-modules/module-utils.js"> </script>
   <script src="irc.js"></script>
   <script src="app.js"> </script>
   <script src="messaging.js"> </script>
   <script src="expimp.js"> </script>
+  <script src="showviews.js"> </script>
   <script>
     function exp() {
       document.expimp.get(function(a) {

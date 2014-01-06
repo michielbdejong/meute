@@ -40,7 +40,7 @@ document.expimp = (function() {
     },
     inspectIndexedDb: function(storeName) {
       if(!storeName) {
-        storeName = 'meta';
+        storeName = 'nodes';
       }
       var dbOpen = indexedDB.open('remotestorage', 3);
       dbOpen.onsuccess = function() {
