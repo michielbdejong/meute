@@ -1,0 +1,168 @@
+# introduction
+
+Opentabs is a formalization of the well-known system of "keeping tabs". It defines a number of actions and message types related to money and debt, which can be used in communication between participating parties to avoid misunderstandings about who owes what.
+
+# Basic messaging: Proposal, Ack, and Nack
+
+Give a number of parties (for instance humans) who have some way of communicating with each other (for instance email). The main Opentabs message types are /Proposal/, /Ack/, and /Nack/. Proposals can be sent at any time by any party, to any number other party, and each party can either ignore the proposal, reject it with an explicit Nack, or support it with an Ack. If all parties involved in a proposal support it, then it the proposal is accepted. Otherwise, the proposal has no effect.
+
+It is up to the sender of a proposal to make sure it arrives at all the parties involved, so that they get a chance to support it. It is up to the supporting parties to broadcast their support to all other parties involved, to make sure all parties become aware that the proposal has been accepted.
+
+# Ledger messaging: Announce
+
+A ledger exists between a pair of two parties. Each pair of parties keeps track of what the current list of accepted proposals that involve both the parties. This list is called the ledger for those two parties. The two parties send each other Announce messages, containing the latest proposal, an optional salt string, and the SHA1 of the latest Announce message. This way, the Announce messages are reliably chained together, each next message confirming the SHA1 hash of the previous one.
+
+If communication is reliable, each party will send the exact same Announce message to the other party shortly after a proposal in which both parties are involved gets accepted. If a party does not receive an Announce message from one of the parties involved in a recently accepted proposal, then that ledger is "down", and cannot be used in new proposals. It's possible that only one of the two parties is aware of the ledger being down. Therefore, that party may repeat their Announce messages until the other party does the same, and the ledger is brought back up. Proposals involving a ledger that is down should be replied to with a Nack message, indicating the ledger being down as a reason.
+
+# Proposals
+
+Whereas Ack, Nack and Announce messages only serve to communicate and reach consensus, Proposal messages carry the actual payload of the Opentabs system: claim-revisions. Each proposal can one or more claim-revisions, which are either all accepted or all rejected atomically. The proposal participants should be the same parties as all parties occurring in any of the claim-revisions, or be known to be authorized to act on their behalf. A claim-revision has a tab identifier, a position, a revision id, and a claim. The tab identifier consists of a list of participant nick names, and an optional tab name. The revision id and position are zero-based integers. For instance:
+
+    {
+      tab: {
+        participants: ["Paul", "Peter"],
+        name: "Ibiza 2014"
+      },
+      position: 36,
+      revision: 0,
+      claim: {
+        description: "gas station Thu morning",
+        amount: 76.32,
+        by: "Peter",
+        for: "both"
+      }
+    }
+    
+If the currency is left out, it is taken from the claim at the highest revision, at position 0. The shorthand "both" or "all" in the "for" field of the claim means all participants, so in this case ["Paul", "Peter"]. The virtual party "pot" can be used to represent money that is owned collectively by the participants.
+
+The nick names should be well understood and non-ambiguous for all participants, at least given the tab name. A claim-revision follow after a claim-revision for either its revision-1 with the same position, or for its position-1 if its revision is zero, with the exact same tab identifier, unless both its position and its revision are zero. TODO: write this down a bit more mathematically.
+
+Multiple claim-revisions in one proposal can be used for moving debt between tabs, and for merging and renaming tabs. The special 'close' field can be used to indicate that this tab should no longer be used for adding new claims, except when corrections occur and need to be settled again. For instance, if Peter currently owes Paul 16.23 EUR on this tab, then the following pair of claim-revisions would effectively rename the tab from the previous example:
+
+    [
+      {
+        tab: {
+          participants: ["Paul", "Peter"],
+          name: "Ibiza 2014"
+        },
+        position: 37,
+        revision: 0,
+        close: true,
+        claim: {
+          description: "settle to renamed tab",
+          amount: 16.23,
+          currency: 'EUR'
+          by: "Paul",
+          for: "Peter"
+        }
+      },
+      {
+        tab: {
+          participants: ["Paul S.", "Peter"],
+          name: "Ibiza, Summer '14"
+        },
+        position: 0,
+        revision: 0,
+        claim: {
+          description: "balance from tab before rename",
+          amount: 16.23,
+          currency: 'EUR'
+          by: "Peter",
+          for: "Paul"
+        }
+      }
+    ]
+    
+Remember the 'currency' field is obligatory on the claim at position 0, revision 0.
+
+Claims can be corrected for errors, or converted to another currency, by adding revisions to them at the same position. The last revision of each position is what counts for calculating the current balance of each tab participant.
+
+It's important to keep tab participants and proposal participants apart; they play different roles. Proposals only exist to create Announce messages on the ledgers, which in turn establish the claim revisions, which in turn define the actual current tab contents.
+
+
+
+
+
+
+
+=======================
+
+
+
+
+# Tabs
+
+A tab consists of a tab description, and an array of zero or more claim-positions. Each claim-position consists of an array of one or more claim-revisions.
+
+## Tab description
+
+A party is a human being or any other entity capable of ownership. A tab is defined by a utf-8 string 'name' and two or more utf-8 string participant nick names. The nick names may be globally unique (for instance, they may be email addresses), but they don't have to be. A simple first name or nick name is also valid. They should however clearly and unambiguously identify the participant to all other participants in the context of the tab's other participant names and its descriptive name. For instance, if a first name occurs twice within the group, the first letter of the surname may be added to disambiguate.
+
+## Claim-revision
+
+A claim-revision has:
+* a string description,
+* a numerical amount,
+* a string currency,
+* a 'by' field containing one of the participant nick names of the tab it belongs to, or the special value 'pot',
+* a 'for' field containing an array of strings, or one of the special string value 'pot'. In case it's an array, it should list one or more of the participants nick names.
+
+The meaning of a claim-revision is that /amount/ /currency/ was paid by /by/, for /for/, in the context of /description/, and that this fact should be counterbalanced by another payment by the other participants, or by paying back the same amount, or an amount of equivalent value in another currency, in an explicit money transaction.
+
+The meaning of a tab is the combined effect of each last claim-revision of each claim-position.
+
+## Updates
+
+An update is an array of tab-edits, where each tab-edit consists of a tab-description, a numerical position p, a numerical revision r, and a claim-revision, such that they either add the next position, or add the next revision to an existing position:
+
+* if no previous claim-revisions exist on the tab, then p and r should both be 0
+* if no previous claim-revisions with the same position p exist, then r should be 0 and one or more existing claim-revisions on the tab should have position p-1
+* if previous claim-revisions with the same position p do exist, then one of them should have revision r-1
+
+# Ledgers
+
+A ledger is a list of subsequent statements communicated between two parties. Unless it's a special entry (see below), it should contain an entry for each update made to any tab in which both parties participate (regardless of whether either of the parties participate in those actual changes). The ledger entry should contain the update, an optional salt string, and the SHA1 of the preceding update on the ledger.
+
+Special ledger entries can be 'initial', 'final', 'fork' or 'merge'. Initial entries have no parentSHA1 field, and merge entries have an array value there, containing one SHA1 for each final message in each merging ledger. A 'fork' message has a 'tabs' field indicating which tabs will fork out of the ledger. The ledger itself continues with the remaining tabs.
+
+# Ledger messages
+
+A ledger message is sent in each direction between the two ledger parties whenever an update is added to a ledger. If a party sends a ledger message but does not receive the exact same one as well, then the ledger is down. If a party finds out that the ledger is down, or receives the same message twice, then they should resend their last ledger message, or use out-of-band communication to work out what is wrong.
+
+# Disputes
+
+If there is no consensus between two peers about whether or not a certain update was accepted (or was even proposed), then they can resend their Ack or Nack message to the other participants (if any). Other participants can then reply with Acks or Nacks, and parties can then detect the dispute, gather more information, use out-of-band communication, and rethink their position, until a concensus is reached between all parties involved about whether this update should go into the ledgers or not.
+
+Two players who disagree on one or more updates cannot interact further until that disagreement is resolved. If no agreement is reached, this may lead to a tab split. Consider a dinner club of 15 people who take turns to cook for each other. At one point, a person cooked for the group, and claims a very high amount of money for the dinner. Five of the  participants don't want to pay, and the dispute is unresolvable. These five people can then leave the dinner club and start their own one, where a maximum spending per dinner is agreed on explicitly. The other 10 people stay in the original dinner club.
+
+The person who cooked the expensive dinner lost money in this dispute, and will no longer interact with the five people who left. So 5 of the 15x15 ledgers are now in dispute, meaning the original dinner club can no longer function well. It is even possible to use two tabs for the same dinner club, and still all cook for each other. But it's clear that for fluent business, it's beneficial to always try to resolve disputes wherever possible, recognize the misunderstanding, split the blame, and maybe agree to also simply split the disputed amount of money.
+
+# Proposal, Ack and Nack messages
+
+Once all parties involved ack a proposal, they can all send around the corresponding announce message, so that it gets added to all the ledgers and thus recorded in the appropriate tabs.
+
+# Fraud and Tab Pots
+
+A valid question is what (new) possibilities for fraud are created by this system. The potential impact of identity theft is increased by using Opentabs client tools. If Charlie steals Bob's identity, then he might convince Alice to transfer money to a bank account under Charlie's control, because Alice will think she is talking to Bob all the time. This is possible anyway in normal conversation, but it may be easier to automate wherever Alice and Bob use more automated Opentabs client tools.
+ 
+Apart from identity theft, all sorts of tricks can be played on trade partners when using temporary identities. This is similar to trade on an ad-hoc and uncontrolled market place. There is no entry barrier to the Opentabs system as such: users should vet their peers themselves through out-of-band means, and only trade with people they already trust.
+
+Even if a person is trusted by a lot of other people, they can at any point disappear and leave behind unpaid debt. However, the group will then no longer let this person participate further. So the amount of money trusted to a member of a club should in general be smaller than the estimated value of membership to that person. It is also possible that a person is willing, but unable to pay their debts, due to mismanagement. The Opentabs system does not provide explicit ways to give out guarantees for other persons, charge interest, etcetera, except for one mechanism: a tab can have a 'pot'.
+
+When a tab has a pot, this acts as an extra participant in the tab, represented by the group as a whole. Updates involving the pot need to be accepted by all the real tab participants. The money in the pot is owned by the group as a whole, meaning group membership itself has a value. If participants all pay a small guarantee into the pot at first, then the group can agree to pay the damage from the pot when a person disappears.
+
+# Tab scalability and Strangers
+
+The number of announce messages that need to be sent for each tab-edit is equal to twice the number of participants in the tab. Therefore, it can be more efficient to keep small edits local between fewer participants, and only put their accumulative result into the larger tab. Parties can create as many tabs as they like, and propose updates that move money back and forth between them.
+
+For instance, a sports club with 500 members might have one central members tab, keeping track of who paid the rent of the club house and who owes their membership contribution. Apart from that, there may be one bar tab per member, where drinks and snacks are written down, and which is settled to the central members tab only once a month.
+
+Spontaneous trade with strangers is not made easier by the Opentabs system. If a salesman opens an online trade shop, sending goods to strangers who pledge to owe him their value via Opentabs, then this salesman may not ever receive his money from these strangers who are not invested in their relationship with him. Likewises, a buyer who pays goods upfront may not ever receive these goods, regardless of whether the payment was recorded as an accepted proposal on Opentabs. It is however possible to create small groups where membership is valuable to buyers and/or to sellers, and is cancelled whenever goods or payment are withheld.
+
+This can be implemented using for instance proof-of-work (such as an expensive namecoin identity), proof of social status (good customer reviews, or membership of a controlled guild), or a trusted third party who sells a guarantor service.
+
+# Integration with other money systems
+
+A claim in a tab can easily record a Bitcoin transaction, a web-payments transaction, an Open Transactions transaction, or a Ripple transaction. It can also have Bitcoins or XRP as its currency. It can also record statement entries exported from online banking interfaces of traditional banks, as well as from paypal accounts. The same is true for m-pesa, credit cards, physical money, eExisting payment systems can also expose an Opentabs interface, where updates are automatically proposed, and proposals are automatically acknowledged for verified peers which match the corresponding peer in the existing payment system.
+
+For instance, a traditional bank could add an option in their online banking interface, to link a certain contact from the addressbook (uniquely identified by for instance an IBAN bank account number) to a certain Opentabs email or xmpp address. The bank can then automatically send an Opentabs proposal whenever an IBAN transfer is made to that account, or a payment is received from that account. A sports club using Opentabs for their membership administration would then automatically see who paid their contribution. The bank offering the bank account to the club could implement the whole Opentabs system for the membership administration and the drinks & snacks administration in the club house, as an added service to the sports club.
