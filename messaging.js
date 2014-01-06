@@ -77,7 +77,9 @@ document.messaging = (function() {
          };
          //remoteStorage.email.writeConfig(config).then(function() {
          remoteStorage.email.getConfig().then(function(config) {
-            delete config['@context'];
+            if(typeof(config) === 'object' && object['@context']) {
+              delete config['@context'];
+            }
             console.log(config);
             document.sockethubClient.set('email', config).then(function(success) {
               console.log('success', success);

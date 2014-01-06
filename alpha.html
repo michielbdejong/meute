@@ -19,6 +19,8 @@
     <article>
       <div id="homefeed"></div>
       <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load home feed" onmousedown="go(0);" />
+      <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="fetch email" onmousedown="fetchEmail();" />
+      <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="join irc" onmousedown="joinIrc();" />
     </article>
   </body>
   <script src="sockethub-client.js"></script>
@@ -81,9 +83,21 @@
         + '<input type="submit" value="older..." onmousedown="go('+(i+1)+');" />';
   //    remoteStorage.displayWidget();
     }
+    function fetchEmail() {
+      document.fetchEmails(0, 10, false);
+    }
+    function joinIrc() {
+      joinRooms('michielbdejong', ['#meute']);
+    }
     console.log('alpha sync loaded');
     remoteStorage.on('ready', function() {
       console.log('remoteStorage ready');
+    });
+    remoteStorage.sockethub.writeConfig({
+      host: '162.242.174.14',
+      port: 10550,
+      tls: false,
+      secret: '1234567890'
     });
 /*    remoteStorage.email.getAll('', function(objects) {
       var str = '<table><tr><td>From</td><td>To</td><td>subject</td></tr>';
