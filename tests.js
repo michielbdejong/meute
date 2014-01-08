@@ -21,6 +21,7 @@ var tests = {
     return true;
   },
   'store message': function() {
+    var list, obj, i;
     document.messaging.storeMessage({
       actor: {
         address: 'sen@de.r'
@@ -30,6 +31,8 @@ var tests = {
         messageId: 'some-message-id',
       }
     });
+
+    //check contacts:
     list = remoteStorage.contacts.getNames();
     if(list.length != 1) {
       console.log('failure 36', list);
@@ -41,6 +44,18 @@ var tests = {
       return false;
     }
     remoteStorage.contacts.remove('sen@de.r');
+
+    //check inbox:
+    map = remoteStorage.inbox.getActivitySince();
+    if(Object.getOwnPropertyNames(map).length != 1) {
+      console.log('failure 51', map);
+      return false;
+    }
+    i = Object.getOwnPropertyNames(map)[0];
+    if(!map[i].actor || map[i].actor.address != 'sen@de.r') {
+      console.log('failure 56', map);
+      return false;
+    }
     return true;
   }
 };
