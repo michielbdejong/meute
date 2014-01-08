@@ -52,9 +52,20 @@
       +'</td><td>'+renderObject(obj.object)
       +'</td><td>'+renderTarget(obj.target, obj.platform)      
       +'</td></tr>';
+  }  
+  function toTable(obj) {
+    return '<table border="1">'
+      +'<tr><td>Actor:</td><td>'+renderActor(obj.actor, obj.platform)+'</td></tr>'
+      +'<tr><td>Verb</td><td>'+renderVerb(obj.verb)+'</td></tr>'
+      +'<tr><td>Headers</td><td>'+JSON.stringify(obj && obj.object ? obj.object.headers: '')+'</td></tr>'
+      +'<tr><td>Subject</td><td>'+renderObject(obj.object)+'</td></tr>'
+      +'<tr><td>Target</td><td>'+renderTarget(obj.target, obj.platform)+'</td></tr>'      
+      +'<tr><td colspan="2">'+(obj && obj.object ? obj.object.text : '(no text)')+'</td></tr>'      
+      +'</table>';
   }
 
   window.asrender = {
-    toTableRow: toTableRow
+    toTableRow: toTableRow,
+    toTable: toTable
   };
 })();

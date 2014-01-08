@@ -18,6 +18,8 @@
   <body>
     <article>
       <h3>Email:</h3>
+      <div id="view">
+      </div>
     </article>
   </body>
   <script>
@@ -33,15 +35,16 @@
         id = localStorage.id;
       }
       return function () {
+        console.log('showing', id);
         if(id && id.length) {
-          console.log('showing email', id);
+          document.getElementById('view').innerHTML = window.asrender.toTable(remoteStorage.inbox.getActivity(id));
         } else {
           console.log('no id');
         }
       };
     })();
   </script>
-  <script src="sockethub-client.js"></script>
+<!--  <script src="sockethub-client.js"></script> -->
 
   <!-- core -->
   <script src="../remotestorage.js/lib/promising.js"></script>
@@ -89,12 +92,20 @@
   <script src="remotestorage-modules/money.js"> </script>
   <script src="remotestorage-modules/sockethub.js"> </script>
   <script src="irc.js"></script>
-  <script src="app.js"> </script>
   <script src="asrender.js"> </script>
   <script src="messaging.js"> </script>
   <script src="expimp.js"> </script>
   <script src="tests.js"> </script>
   <script>
+    var timer;
+    remoteStorage.scope('/').on('change', function() {
+      if(timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(function() {
+        showEmail();
+      }, 250);
+    });
     document.onSockethubReady = function() {
 //      joinIrc();
 //      fetchEmail();
