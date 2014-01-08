@@ -20,7 +20,27 @@
       <h3>Email:</h3>
     </article>
   </body>
-  <script>if(!localStorage.href) { localStorage.href = window.location.href; }</script>
+  <script>
+    showEmail = (function() {
+      var pos, id = '';
+      pos = window.location.href.indexOf('#');
+      if (pos) {
+        id = window.location.href.substring(pos+1);
+      }
+      if (id.length) {
+        localStorage.id = id;
+      } else {
+        id = localStorage.id;
+      }
+      return function () {
+        if(id && id.length) {
+          console.log('showing email', id);
+        } else {
+          console.log('no id');
+        }
+      };
+    })();
+  </script>
   <script src="sockethub-client.js"></script>
 
   <!-- core -->
