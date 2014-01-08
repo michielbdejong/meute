@@ -31,14 +31,19 @@ add the full Activity to:
 and point to it from:
 * email/imap/[account]/[folder]#seqno
 * inbox/contact/[each contactId]/
-* inbox/unread/
+* inbox/unread/ can then point to contactIds
 
 plan:
 =====
-* develop with meute on localhost:4242, remoteStorage on 5apps, and sockethub on build-stuff
+* develop with
+  - meute on localhost:4242 (meute.lolcathost.de:4242 for GoogleDrive testing),
+  - remoteStorage on 5apps,
+  - sockethub on ws://162.242.174.14:10550, secret: '1234567890'
 * try out email functionality with real data
 * try out contacts functionality with real data
-* build rs.js that works when not connected. do ad-hoc email and irc messaging. clean up unused code.
+* use rs.js me/dev branch, included locally into alpha.html file-by-file.
+* do ad-hoc email and irc messaging.
+* clean up unused code.
 * build parlay view
 * bring in opentabs data
 * debug and use in production for email, irc, opentabs
