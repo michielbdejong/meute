@@ -47,7 +47,7 @@
     return renderActor(target, platform);
   }  
   function toTableRow(obj) {
-    return '<tr onmousedown="console.log(JSON.stringify(items['+obj.id+']), items['+obj.id+']);" ><td>'+renderActor(obj.actor, obj.platform)
+    return '<tr onmousedown="window.open(\'viewemail.html#'+obj.id+'\');" ><td>'+renderActor(obj.actor, obj.platform)
       +'</td><td>'+renderVerb(obj.verb)
       +'</td><td>'+renderObject(obj.object)
       +'</td><td>'+renderTarget(obj.target, obj.platform)      
