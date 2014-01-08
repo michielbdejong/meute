@@ -54,6 +54,9 @@
       +'</td></tr>';
   }  
   function toTable(obj) {
+    if(!obj) {
+      return 'no object';
+    }
     return '<table border="1">'
       +'<tr><td>Actor:</td><td>'+renderActor(obj.actor, obj.platform)+'</td></tr>'
       +'<tr><td>Verb</td><td>'+renderVerb(obj.verb)+'</td></tr>'

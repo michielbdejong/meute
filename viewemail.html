@@ -35,9 +35,18 @@
         id = localStorage.id;
       }
       return function () {
+        var activity;
         console.log('showing', id);
         if(id && id.length) {
-          document.getElementById('view').innerHTML = window.asrender.toTable(remoteStorage.inbox.getActivity(id));
+          activity = remoteStorage.inbox.getActivity(localStorage.id);
+          if(activity && activity.object && activity.object.messageId) {
+            remoteStorage.email.getMessage(activity.object.messageId).then(function(obj) {
+              document.getElementById('view').innerHTML = window.asrender.toTable(obj);        
+            });
+          } else {
+             console.log('activity has no obj.object.messageId! Not retrieving real email message object.');
+             document.getElementById('view').innerHTML = window.asrender.toTable(activity);
+          }
         } else {
           console.log('no id');
         }
@@ -98,7 +107,7 @@
   <script src="tests.js"> </script>
   <script>
     var timer;
-    remoteStorage.scope('/').on('change', function() {
+    remoteStorage.scope('/').on('change', function() { 
       if(timer) {
         clearTimeout(timer);
       }
