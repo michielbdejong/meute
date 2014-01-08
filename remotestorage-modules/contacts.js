@@ -33,7 +33,9 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
         console.log('adding contacts', list);
         var i;
         for(i=0; i<list.length; i++) {
-          this.add(list[i].name || list[i].address, list[i]);
+          if(typeof(list[i]) === 'object') {
+            this.add(list[i].name || list[i].address, list[i]);
+          }
         }
       },
       getMyName: function() {

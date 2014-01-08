@@ -153,7 +153,7 @@ document.messaging = (function() {
         }
       });
       document.fetchEmails = function (page, perPage, includeBody) {
-        if(!page) { page = 1; }
+        if(!page) { page = 0; }
         if(!perPage) { perPage = 10; }
         document.sockethubClient.sendObject({
           platform: 'email',
@@ -186,7 +186,7 @@ document.messaging = (function() {
     setAccount: function() {},//(i, {...})
     onMessage: function() {},//(function(activity))
     getFeedTable: function(pageNum) {
-      window.items = remoteStorage.inbox.getActivityInterval(10*pageNum, 10),
+      window.items = remoteStorage.inbox.getActivityInterval(100*pageNum, 100),
         str = '<table border="1">';
       for(var i in items) {
         items[i].id = i;

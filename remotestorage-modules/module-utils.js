@@ -136,12 +136,12 @@ var PrefixTree = function(baseClient) {
 function SyncedVar(name, baseClient) {
   var data;
   baseClient.on('change', function(e) {
-    e.key = e.relativePath.substring('contacts/'.length);
-    if(e.key==name) {
+    if(e.relativePath === name) {
       data = e.newValue;
       delete data['@context'];
     }
   });
+
   return {
     get: function() {
       if(typeof(data) === 'object') {

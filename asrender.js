@@ -1,9 +1,12 @@
 (function() {
   function renderContact(contact) {
-    if(contact.address && contact.name) {
-      return '"'+contact.name+'" &lt;'+contact.address+'&gt;';
+    if(typeof(contact) === 'object') {
+      if (contact.address && contact.name) {
+        return '"'+contact.name+'" &lt;'+contact.address+'&gt;';
+      }
+      return contact.address;
     }
-    return contact.address || JSON.stringify(contact);
+    return JSON.stringify(contact);
   }
   function renderActor(actor, platform) {
     var i, list = [];
@@ -33,11 +36,13 @@
   }
   
   function renderTarget(target, platform) {
-    if(target.to && target.cc) {
-      return '<b>to:</b>'+renderActor(target.to, platform)
-        + ', <b>cc:</b>'+renderActor(target.c, platform);
-    } else if(target.to) {
-      return renderActor(target.to, platform);
+    if(typeof(target) === 'object') {
+      if (target.to && target.cc) {
+        return '<b>to:</b>'+renderActor(target.to, platform)
+          + ', <b>cc:</b>'+renderActor(target.c, platform);
+      } else if(target.to) {
+        return renderActor(target.to, platform);
+      }
     }
     return renderActor(target, platform);
   }  

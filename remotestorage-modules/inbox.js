@@ -34,7 +34,6 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       getActivityInterval: function(first, num) {
         var i, ret = {}, keys = activity.getKeys();
         for(i=keys.length-first-1; i >= 0 && i > keys.length-first-num-1; i--) {
-          console.log(i, keys);
           ret[keys[i]] = activity.get(keys[i]);
         }
         return ret;
