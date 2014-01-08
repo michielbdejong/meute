@@ -36,11 +36,18 @@ document.messaging = (function() {
       storeContactsFromEmailObject(msg);
     }
   }
-  function sendEmail(recipients, subject, text, inReplyTo, preview) {
+  function sendEmail(recipient, subject, text, inReplyTo, preview) {
     var msg = {
-      target: {
-        email: recipients
+      platform: 'email',
+      actor: {
+        name: 'Michiel B. de Jong',
+        address: 'michiel@michielbdejong.com'
       },
+      target: [{
+        field: 'to',
+        address: recipient,
+        name: recipient
+      }],
       object: {
         inReplyTo: inReplyTo,
         subject: subject,
@@ -51,14 +58,9 @@ document.messaging = (function() {
     if(preview) {
       console.log(JSON.stringify(msg));
     } else {
+      console.log('sending');
       send(msg);
     }
-  }
-  function sendMsg(preview) {
-    var text = document.getElementById('compose').value,
-      enterPos = text.indexOf('\n'),
-      msg;
-    sendEmail(recipients, text.substring(0, enterPos), text.substring(enterPos+1), inReplyTo, preview);
   }
   var send = function() { console.log('not ready'); };
   remoteStorage.sockethub.getConfig().then(function(config) {
@@ -84,45 +86,66 @@ document.messaging = (function() {
           secret: config.secret
         }
       });
+      function setEmailConfig(config) {
+        document.sockethubClient.set('email', config).then(function(success) {
+          console.log('success', success);
+          if(document.onSockethubReady) {
+            document.onSockethubReady();
+          }
+          send = function(msg) {
+            document.sockethubClient.sendObject(msg);
+          };
+        }, function(failure) {
+          console.log('failure', failure);
+        });
+      }
+      document.setEmailPassword = function(pwd) {
+        var config = {
+          credentials: {
+            'anything@michielbdejong.com': {
+              actor: {
+                address: 'anything@michielbdejong.com',
+                name: 'Michiel de Jong'
+              },
+              smtp: {
+                host: 'mail.gandi.net',
+                username: 'anything@michielbdejong.com', 
+                password: pwd,
+                tls: false,
+                port: 25
+              },
+              imap: {
+                host: 'mail.gandi.net',
+                username: 'anything@michielbdejong.com', 
+                password: pwd,
+                tls: false,
+                port: 143
+              }
+            }
+          }
+        };
+        remoteStorage.email.writeConfig(config).then(function(success) {
+          console.log('success', success);
+          if(success) {
+            setEmailConfig(config);
+          } else {
+            console.log('setting email config failed');
+          }
+        });
+      
+      };
       document.sockethubClient.on('registered', function() {
         console.log('registered!');
         try {
-         var config = {
-           credentials: {
-             'anything@michielbdejong.com': {
-               actor: {
-                 address: 'anything@michielbdejong.com',
-                 name: 'Michiel de Jong'
-               },
-               smtp: {
-                 host: 'mail.gandi.net',
-                 username: 'anything@michielbdejong.com', 
-                 password: '...',
-                 tls: true,
-                 port: 465
-               },
-               imap: {
-                 host: 'mail.gandi.net',
-                 username: 'anything@michielbdejong.com', 
-                 password: '...',
-                 tls: true,
-                 port: 993
-               }
-             }
-           }
-         };
-         //remoteStorage.email.writeConfig(config).then(function() {
          remoteStorage.email.getConfig().then(function(config) {
-            if(typeof(config) === 'object' && object['@context']) {
+            if(typeof(config) === 'object' && config['@context']) {
               delete config['@context'];
             }
             console.log(config);
             if(config) {
-              document.sockethubClient.set('email', config).then(function(success) {
-                console.log('success', success);
-              }, function(failure) {
-                console.log('failure', failure);
-              });
+              setEmailConfig(config);
+            } else {
+              console.log('please call document.setEmailPassword(\'hunter2\');!');
             }
           });
         } catch(e) {
@@ -171,8 +194,8 @@ document.messaging = (function() {
       }
       return str + '</table>'; 
     },
-    storeMessage: storeMessage,   
-    send: function() {}//()
+    storeMessage: storeMessage,
+    sendEmail: sendEmail
   };
 
 })();

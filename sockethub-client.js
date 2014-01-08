@@ -823,6 +823,9 @@ define('sockethub/client',[
       // non-dectructively add 'rid' and send!
       this.jsonClient.send(object);
       return promise;
+      if(remoteStorage.inbox) {
+        remoteStorage.inbox.logActivity(object);
+      }
     },
 
     // _getDeepAttr / _setDeepAttr are used in declareType.

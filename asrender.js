@@ -23,6 +23,8 @@
       return '<b>Topic:</b> '+obj.topic;
     } else if(obj.subject) {
       return '<b>'+obj.subject+'</b>';
+    } else if(obj.text) {
+      return obj.text;
     }
     return JSON.stringify(obj);
   }

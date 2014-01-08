@@ -1,5 +1,5 @@
 RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
-  var activity, timestamp;
+  var activity, timestamp, activityHandlers = [];
 
   return {
     exports: {
@@ -8,13 +8,21 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         activity = new SyncedMap('activity', privateClient);
         timestamp = new Date().getTime();
       },
+      onActivity: function(cb) {
+        activityHandlers.push(cb);
+      },
       logActivity: function(obj) {
-        timestamp++;
-        var currTime = new Date().getTime();
+        var i, currTime = new Date().getTime();
         if(currTime > timestamp) {
           timestamp = currTime;
+        } else {
+          //use minimal increments until wall time catches up:
+          timestamp++;
         }
         activity.set(timestamp.toString(), obj);
+        for(i=0; i<activityHandlers.length; i++) {
+          activityHandlers[i](timestamp.toString(), obj);
+        }
       },
       getActivitySince: function() {
         var i, ret = {}, keys = activity.getKeys();

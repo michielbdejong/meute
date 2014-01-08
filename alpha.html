@@ -18,9 +18,16 @@
   <body>
     <article>
       <div id="homefeed"></div>
-      <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="load home feed" onmousedown="go(0);" />
+      <input style="float:right;margin-top:.75em;margin-right:15em" id="update-button" type="submit" value="load home feed" onmousedown="go(0);" />
       <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="fetch email" onmousedown="fetchEmail();" />
       <input style="float:right;margin-top:.75em;margin-right:15em" type="submit" value="join irc" onmousedown="joinIrc();" />
+    </article>
+    <article>
+      <h3>Some commands to try out:</h3>
+      <ul>
+        <li><code>ircMsg('#meute', 'hi!');</code></li>
+        <li><code>document.messaging.sendEmail('michiel@unhosted.org', 'hi!', 'the body'[, inReplyTo[, preview]]);</code></li>
+      </ul>
     </article>
   </body>
   <script src="sockethub-client.js"></script>
@@ -77,11 +84,20 @@
   <script src="expimp.js"> </script>
   <script src="tests.js"> </script>
   <script>
+    document.onSockethubReady = function() {
+      joinIrc();
+      fetchEmail();
+      go(0);
+    };
     function go(i) {
       remoteStorage.stopSync();
+      remoteStorage.inbox.onActivity(function(timestamp, obj) {
+        document.getElementById('update-button').style.background = 'green';
+      });
       document.getElementById('homefeed').innerHTML =
-        document.messaging.getFeedTable(i)
+        document.messaging.getFeedTable(0)
         + '<input type="submit" value="older..." onmousedown="go('+(i+1)+');" />';
+      document.getElementById('update-button').style.background = 'white';
   //    remoteStorage.displayWidget();
     }
     function fetchEmail() {
