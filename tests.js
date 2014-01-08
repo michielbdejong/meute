@@ -29,6 +29,9 @@ var tests = {
       platform: 'email',
       object: {
         messageId: 'some-message-id',
+        imapAccountName: 'imap@account.name',
+        imapBoxName: 'TESTMSG',
+        imapSeqNo: 13
       }
     });
 
@@ -56,6 +59,14 @@ var tests = {
       console.log('failure 56', map);
       return false;
     }
+
+    //check message store:
+    obj = remoteStorage.email.getMessage('some-message-id');
+    list = remoteStorage.email.getImapBoxIndex('imap@account.name', 'TESTMSG');
+    console.log('msg', obj);
+    console.log('imap',  list);
+
+    //check imap index:
     return true;
   }
 };

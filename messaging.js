@@ -117,11 +117,13 @@ document.messaging = (function() {
               delete config['@context'];
             }
             console.log(config);
-            document.sockethubClient.set('email', config).then(function(success) {
-              console.log('success', success);
-            }, function(failure) {
-              console.log('failure', failure);
-            });
+            if(config) {
+              document.sockethubClient.set('email', config).then(function(success) {
+                console.log('success', success);
+              }, function(failure) {
+                console.log('failure', failure);
+              });
+            }
           });
         } catch(e) {
           console.log(e.message);
