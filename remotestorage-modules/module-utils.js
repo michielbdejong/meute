@@ -102,6 +102,13 @@ var PrefixTree = function(baseClient) {
         console.log('getObject error', key, err.message);
       });
     },
+    remove: function(key) {
+      return tryDepth(key, minDepth, false).then(function(depth) {
+        return baseClient.remove(keyToPath(key, depth));
+      }, function(err) {
+        console.log('remove error', key, err.message);
+      });
+    },
     storeObject: storeObject,
     storeObjects: function(typeAlias, map) {
       for(key in map) {
@@ -168,6 +175,10 @@ function SyncedMap(name, baseClient) {
     set: function(key, val) {
       prefixTree.storeObject('SyncedMapItem', key, val);
       data[key]=val;
+    },
+    remove: function(key) {
+      prefixTree.remove(key);
+      delete data[key];
     },
     getKeys: function() {
       return Object.getOwnPropertyNames(data);

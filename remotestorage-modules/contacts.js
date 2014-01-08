@@ -23,6 +23,9 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
           }
         }
       },
+      remove: function(name) {
+        contacts.remove(name.toLowerCase());
+      },
       addFromList: function(list) {
         if(!Array.isArray(list)) {
           return;
