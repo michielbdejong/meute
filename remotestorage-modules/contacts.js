@@ -28,8 +28,9 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
       },
       addFromList: function(list) {
         if(!Array.isArray(list)) {
-          return;
+          list = [list];
         }
+        console.log('adding contacts', list);
         var i;
         for(i=0; i<list.length; i++) {
           this.add(list[i].name || list[i].address, list[i]);

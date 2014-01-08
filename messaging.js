@@ -1,5 +1,41 @@
 document.messaging = (function() {
-  
+  function storeContactsFromEmailObject(obj) {
+    remoteStorage.contacts.addFromList(obj.actor);
+    if(obj.target) {
+      remoteStorage.contacts.addFromList(obj.target.to);
+      remoteStorage.contacts.addFromList(obj.target.cc);
+    }
+  }
+  document.extractContacts = function(account, box) {
+    remoteStorage.email.getImapBoxIndex(account, box).then(
+      function(inbox) {
+        var a;
+        for(a in inbox) {
+          remoteStorage.email.getMessage(inbox[a].messageId).then(
+            storeContactsFromEmailObject,
+            (function(id) {
+              return function(err) {
+                console.log('error whil getting message', err, id);
+              };
+            })(inbox[a].messageId)
+          );
+        }
+      },
+      function(err) {
+        console.log('error getting imap box index', err);
+      }
+    );
+  }
+  function storeMessage(msg) {
+    console.log('msg', msg);
+    remoteStorage.inbox.logActivity(msg);
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
+      key = msg.object.messageId.split('?').join('??').split('/').join('?');
+      console.log('storing message', key, msg);
+      remoteStorage.email.storeMessage(key, msg);
+      storeContactsFromEmailObject(msg);
+    }
+  }
   function sendEmail(recipients, subject, text, inReplyTo, preview) {
     var msg = {
       target: {
@@ -111,44 +147,8 @@ document.messaging = (function() {
           console.log('failure', failure);
         });
       }
-      function storeContactsFromEmailObject(obj) {
-        //console.log('adding actor contacts from email', obj);
-        remoteStorage.contacts.addFromList(obj.actor);
-        //console.log('adding target.to contacts from email', obj);
-        remoteStorage.contacts.addFromList(obj.target.to);
-        //console.log('adding target.cc contacts from email', obj);
-        remoteStorage.contacts.addFromList(obj.target.cc);
-      }
-      document.extractContacts = function(account, box) {
-        remoteStorage.email.getImapBoxIndex(account, box).then(
-          function(inbox) {
-            var a;
-            for(a in inbox) {
-              remoteStorage.email.getMessage(inbox[a].messageId).then(
-                storeContactsFromEmailObject,
-                (function(id) {
-                  return function(err) {
-                    console.log('error whil getting message', err, id);
-                  };
-                })(inbox[a].messageId)
-              );
-            }
-          },
-          function(err) {
-            console.log('error getting imap box index', err);
-          }
-        );
-      }
-      document.sockethubClient.on('message', function(msg) {
-        console.log('msg', msg);
-        remoteStorage.inbox.logActivity(msg);
-        if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
-          key = msg.object.messageId.split('?').join('??').split('/').join('?');
-          console.log('storing message', key, msg);
-          remoteStorage.email.storeMessage(key, msg);
-          storeContactsFromEmailObject(msg);
-        }
-      });
+      
+      document.sockethubClient.on('message', storeMessage);
     } catch(e) {
       console.log(e.message);
     }
@@ -169,6 +169,7 @@ document.messaging = (function() {
       }
       return str + '</table>'; 
     },
+    storeMessage: storeMessage,   
     send: function() {}//()
   };
 
