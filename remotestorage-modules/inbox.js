@@ -15,7 +15,9 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
     }
     console.log('storing last', conversationName, id);
     last.set(conversationName, {last: id});
-    return previousId.last;
+    if(typeof(previousId) === 'object') {
+      return previousId.last;
+    }
   }
   
   function genNewId() {
@@ -131,8 +133,14 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       getActivity: function(key) {
         return activity.get(key);
       },
-      getEverything: function() { var promise = promising(); promise.fulfill(); return promise; },
-      setEverything: function() { }
+      getEverything: function() { var promise = promising(); promise.fulfill({
+        last: last.getEverything(),
+        activity: activity.getEverything()
+      }); return promise; },
+      setEverything: function(obj) {
+        last.setEverything(obj.last);
+        activity.setEverything(obj.activity);      
+      }
     }
   };
 });
