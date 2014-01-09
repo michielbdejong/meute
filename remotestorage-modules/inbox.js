@@ -62,19 +62,24 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       },
       logActivity: function(obj) {
         var i, id = getId(obj);
-        var conversationName = window.asrender.determineConversationName(obj);
-        obj.previous = addToConversation(conversationName, id);
+        obj.conversationName = window.asrender.determineConversationName(obj);
+        obj.previous = addToConversation(obj.conversationName, id);
         activity.set(id, obj);
         for(i=0; i<activityHandlers.length; i++) {
           activityHandlers[i](id, obj);
         }
       },
       addToConversation: addToConversation,
+      getConversationNames: function() {
+        return last.getKeys();
+      },
       regenerateConversations: function() {
         var thisConversationName, objs = remoteStorage.inbox.getActivitySince();
         for(id in objs) {
+          console.log(id, objs[id].conversationName);
           thisConversationName = window.asrender.determineConversationName(remoteStorage.inbox.getActivity(id));
           objs[id].previous = remoteStorage.inbox.addToConversation(thisConversationName, id);
+          objs[id].conversationName = thisConversationName;
           activity.set(id, objs[id]);
         }
       },
@@ -101,6 +106,10 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
             if (i >= first) {
               ret[thisId] = obj;
             }
+            if(typeof(obj.previous) === 'object') {
+              obj.previous = obj.previous.last;
+              activity.set(thisId, obj);
+            }
             thisId = obj.previous;
             if (!thisId) {
               return ret;
@@ -109,8 +118,12 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
           return ret;
         } else {
           keys = activity.getKeys();
-          for(i=keys.length-first-1; i >= 0 && i > keys.length-first-num-1; i--) {
+          for (i=keys.length-first-1; i >= 0 && i > keys.length-first-num-1; i--) {
             ret[keys[i]] = activity.get(keys[i]);
+            if (typeof(ret[keys[i]].conversationName) === 'undefined') {
+              ret[keys[i]].conversationName = window.asrender.determineConversationName(ret[keys[i]]);
+              activity.set(keys[i], ret[keys[i]]);
+            }
           }
           return ret;
         }

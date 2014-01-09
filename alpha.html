@@ -95,7 +95,8 @@
         document.getElementById('update-button').style.background = 'green';
       });
       document.getElementById('homefeed').innerHTML =
-        document.messaging.getFeedTable(0)
+        document.messaging.getConversationsTable()
+        +document.messaging.getFeedTable(0)
         + '<input type="submit" value="older..." onmousedown="go('+(i+1)+');" />';
       document.getElementById('update-button').style.background = 'white';
   //    remoteStorage.displayWidget();

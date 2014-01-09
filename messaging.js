@@ -194,6 +194,9 @@ document.messaging = (function() {
       }
       return str + '</table>'; 
     },
+    getConversationsTable: function() {
+      return '<table><tr><td>'+remoteStorage.inbox.getConversationNames().join('</td><td>')+'</td></tr></table>';
+    },
     storeMessage: storeMessage,
     sendEmail: sendEmail
   };

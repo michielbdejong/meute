@@ -24,31 +24,39 @@
   </body>
   <script>
     showEmail = (function() {
-      var pos, id = '';
+      var pos, conversationName = '';
       pos = window.location.href.indexOf('#');
       if (pos) {
-        id = window.location.href.substring(pos+1);
+        conversationName = decodeURIComponent(window.location.href.substring(pos+1));
       }
-      if (id.length) {
-        localStorage.id = id;
+      if (conversationName.length) {
+        localStorage.conversationName = conversationName;
       } else {
-        id = localStorage.id;
+        conversationName = localStorage.conversationName;
       }
       return function () {
-        var activity;
-        console.log('showing', id);
-        if(id && id.length) {
-          activity = remoteStorage.inbox.getActivity(localStorage.id);
-          if(activity && activity.object && activity.object.messageId) {
-            remoteStorage.email.getMessage(activity.object.messageId).then(function(obj) {
-              document.getElementById('view').innerHTML = window.asrender.toTable(obj);        
-            });
-          } else {
-             console.log('activity has no obj.object.messageId! Not retrieving real email message object.');
-             document.getElementById('view').innerHTML = window.asrender.toTable(activity);
+        var conversation, activity, i;
+        console.log('showing', conversationName);
+        if (conversationName && conversationName.length) {
+          conversation = remoteStorage.inbox.getActivityInterval(0, 10, localStorage.conversationName);
+          console.log('conversation', conversationName, conversation);
+          document.getElementById('view').innerHTML = '';
+          for(i in conversation) {
+            activity = conversation[i];
+            console.log('item', conversationName, i, activity);
+            if (activity && activity.object && activity.object.messageId) {
+              console.log('getting', activity.object.messageId);
+              remoteStorage.email.getMessage(activity.object.messageId).then(function(obj) {
+                console.log('got', activity.object.messageId);
+                document.getElementById('view').innerHTML += window.asrender.toTable(obj);        
+              });
+            } else {
+               console.log('activity has no obj.object.messageId! Not retrieving real email message object.');
+               document.getElementById('view').innerHTML += window.asrender.toTable(activity);
+            }
           }
         } else {
-          console.log('no id');
+          console.log('no conversationName');
         }
       };
     })();
@@ -106,13 +114,16 @@
   <script src="expimp.js"> </script>
   <script src="tests.js"> </script>
   <script>
-    var timer;
+    var timer, done = false;
     remoteStorage.scope('/').on('change', function() { 
       if(timer) {
         clearTimeout(timer);
       }
       timer = setTimeout(function() {
-        showEmail();
+        if (!done) {
+          showEmail();
+          done = true;
+        }
       }, 250);
     });
     document.onSockethubReady = function() {
