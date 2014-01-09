@@ -4,17 +4,51 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
   function addToConversation(conversationName, id) {
     var previousId = last.get(conversationName),
       previousActivity;
-    if (previousId) {
-      previousActivity = activity.get(previousId);
-      previousActivity.next = id;
-      console.log('storing previous', previousId, previousActivity);
-      activity.set(previousId, previousActivity);
+    if (previousId && previousId.last) {
+      previousActivity = activity.get(previousId.last);
+      console.log(previousId.last, previousActivity);
+      if (previousActivity) {
+        previousActivity.next = id;
+        console.log('storing previous', previousId.last, previousActivity);
+        activity.set(previousId.last, previousActivity);
+      }
     }
     console.log('storing last', conversationName, id);
     last.set(conversationName, {last: id});
-    return previousId;
+    return previousId.last;
   }
-
+  
+  function genNewId() {
+    var currTime = new Date().getTime();
+    if (currTime > timestamp) {
+      timestamp = currTime;
+    } else {
+      //use minimal increments until wall time catches up:
+      timestamp++;
+    }
+    return timestamp.toString();
+  }
+  function getId(obj) {
+    var currTime, existingObj, id;
+    if (obj.timestamp) {
+      id = obj.timestamp.toString();
+      existingObj = activity.get(id);
+      if (existingObj) {
+        for (field in existingObj) {
+          if (obj[field] && obj[field] != existingObj[field]) {
+            return genNewId();
+          }
+        }
+        for (field in obj) {
+          if (existingObj[field] && obj[field] != existingObj[field]) {
+            return genNewId();
+          }
+        }
+      }
+      return id;
+    }
+    return genNewId();
+  }
   return {
     exports: {
       _init: function() {
@@ -27,14 +61,7 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         activityHandlers.push(cb);
       },
       logActivity: function(obj) {
-        var i, id, currTime = new Date().getTime();
-        if(currTime > timestamp) {
-          timestamp = currTime;
-        } else {
-          //use minimal increments until wall time catches up:
-          timestamp++;
-        }
-        id = timestamp.toString();
+        var i, id = getId(obj);
         var conversationName = window.asrender.determineConversationName(obj);
         obj.previous = addToConversation(conversationName, id);
         activity.set(id, obj);
@@ -43,6 +70,14 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         }
       },
       addToConversation: addToConversation,
+      regenerateConversations: function() {
+        var thisConversationName, objs = remoteStorage.inbox.getActivitySince();
+        for(id in objs) {
+          thisConversationName = window.asrender.determineConversationName(remoteStorage.inbox.getActivity(id));
+          objs[id].previous = remoteStorage.inbox.addToConversation(thisConversationName, id);
+          activity.set(id, objs[id]);
+        }
+      },
       getConversations: function() {
         return last;
       },
@@ -53,12 +88,32 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
         }
         return ret;
       },
-      getActivityInterval: function(first, num) {
-        var i, ret = {}, keys = activity.getKeys();
-        for(i=keys.length-first-1; i >= 0 && i > keys.length-first-num-1; i--) {
-          ret[keys[i]] = activity.get(keys[i]);
+      getActivityInterval: function(first, num, conversationName) {
+        var i, thisId, ret = {}, obj, keys;
+        if (conversationName) {
+          thisId = last.get(conversationName);
+          if(thisId) {
+            thisId = thisId.last;
+          }
+          for (i=0; i<=first+num; i++) {
+            obj = activity.get(thisId);
+            console.log('adding', thisId, obj);
+            if (i >= first) {
+              ret[thisId] = obj;
+            }
+            thisId = obj.previous;
+            if (!thisId) {
+              return ret;
+            }
+          }
+          return ret;
+        } else {
+          keys = activity.getKeys();
+          for(i=keys.length-first-1; i >= 0 && i > keys.length-first-num-1; i--) {
+            ret[keys[i]] = activity.get(keys[i]);
+          }
+          return ret;
         }
-        return ret;
       },
       getActivity: function(key) {
         return activity.get(key);
