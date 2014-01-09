@@ -67,8 +67,16 @@
       +'</table>';
   }
 
+  function determineConversationName(obj) {
+    if(!obj) {
+      return 'no object';
+    }
+    return renderActor(obj.actor, obj.platform);
+  }
+  
   window.asrender = {
     toTableRow: toTableRow,
-    toTable: toTable
+    toTable: toTable,
+    determineConversationName: determineConversationName
   };
 })();

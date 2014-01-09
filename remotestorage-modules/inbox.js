@@ -1,28 +1,50 @@
 RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
-  var activity, timestamp, activityHandlers = [];
+  var activity, last, timestamp, activityHandlers = [];
+
+  function addToConversation(conversationName, id) {
+    var previousId = last.get(conversationName),
+      previousActivity;
+    if (previousId) {
+      previousActivity = activity.get(previousId);
+      previousActivity.next = id;
+      console.log('storing previous', previousId, previousActivity);
+      activity.set(previousId, previousActivity);
+    }
+    console.log('storing last', conversationName, id);
+    last.set(conversationName, {last: id});
+    return previousId;
+  }
 
   return {
     exports: {
       _init: function() {
         privateClient.cache('');
         activity = new SyncedMap('activity', privateClient);
+        last = new SyncedMap('last', privateClient);
         timestamp = new Date().getTime();
       },
       onActivity: function(cb) {
         activityHandlers.push(cb);
       },
       logActivity: function(obj) {
-        var i, currTime = new Date().getTime();
+        var i, id, currTime = new Date().getTime();
         if(currTime > timestamp) {
           timestamp = currTime;
         } else {
           //use minimal increments until wall time catches up:
           timestamp++;
         }
-        activity.set(timestamp.toString(), obj);
+        id = timestamp.toString();
+        var conversationName = window.asrender.determineConversationName(obj);
+        obj.previous = addToConversation(conversationName, id);
+        activity.set(id, obj);
         for(i=0; i<activityHandlers.length; i++) {
-          activityHandlers[i](timestamp.toString(), obj);
+          activityHandlers[i](id, obj);
         }
+      },
+      addToConversation: addToConversation,
+      getConversations: function() {
+        return last;
       },
       getActivitySince: function() {
         var i, ret = {}, keys = activity.getKeys();
