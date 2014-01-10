@@ -6,14 +6,14 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       previousActivity;
     if (previousId && previousId.last) {
       previousActivity = activity.get(previousId.last);
-      console.log(previousId.last, previousActivity);
+      //console.log(previousId.last, previousActivity);
       if (previousActivity) {
         previousActivity.next = id;
-        console.log('storing previous', previousId.last, previousActivity);
+        //console.log('storing previous', previousId.last, previousActivity);
         activity.set(previousId.last, previousActivity);
       }
     }
-    console.log('storing last', conversationName, id);
+    //console.log('storing last', conversationName, id);
     last.set(conversationName, {last: id});
     if(typeof(previousId) === 'object') {
       return previousId.last;

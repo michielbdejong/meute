@@ -819,7 +819,7 @@ define('sockethub/client',[
       var rid = ++this._ridCounter;
       this._ridPromises[rid] = promise;
       object = extend(object, { rid: rid });
-      console.log('SEND', object);
+      //console.log('SEND', object);
       // non-dectructively add 'rid' and send!
       this.jsonClient.send(object);
       return promise;
@@ -851,7 +851,7 @@ define('sockethub/client',[
       if(typeof(rid) !== 'undefined') {
         var promise = this._ridPromises[rid];
         if(promise) {
-          console.log('rid is known.');
+          //console.log('rid is known.');
           if(object.verb === 'confirm') {
             // exception: confirm results are ignored, unless their status is fals
             if(object.status) {

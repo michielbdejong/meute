@@ -1,4 +1,6 @@
 document.messaging = (function() {
+  var imapMsgRcvd = function() {};
+  
   function storeContactsFromEmailObject(obj) {
     remoteStorage.contacts.addFromList(obj.actor);
     if(obj.target) {
@@ -15,7 +17,7 @@ document.messaging = (function() {
             storeContactsFromEmailObject,
             (function(id) {
               return function(err) {
-                console.log('error whil getting message', err, id);
+                console.log('error while getting message', err, id);
               };
             })(inbox[a].messageId)
           );
@@ -27,11 +29,14 @@ document.messaging = (function() {
     );
   }
   function storeMessage(msg) {
-    console.log('msg', msg);
+    //console.log('msg', msg);
     remoteStorage.inbox.logActivity(msg);
-    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId=='string')) {
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.imapSeqNo === 'number')) {
+      imapMsgRcvd();
+    }
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId === 'string')) {
       key = msg.object.messageId.split('?').join('??').split('/').join('?');
-      console.log('storing message', key, msg);
+      //console.log('storing message', key, msg);
       remoteStorage.email.storeMessage(key, msg);
       storeContactsFromEmailObject(msg);
     }
@@ -182,8 +187,18 @@ document.messaging = (function() {
   });
   
   function fetchNextMessages(n) {
+    var timer = setTimeout("window.location = '';", 120000);
+    rcvd = 0;
     if (!n) {
       n = 100;
+    }
+    imapMsgRcvd = function() {
+      rcvd++;
+      if(rcvd === n) {
+        console.log('rcvd', rcvd);
+        clearTimeout(timer);
+        fetchNextMessages(n);
+      }
     }
     var i, a = remoteStorage.inbox.getActivitySince(),
       have = {};

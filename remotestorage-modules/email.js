@@ -128,7 +128,7 @@
         storeMessage: function(msgId, obj) {
           var existing = messages.getObject(msgId) || {},
             merge = JSON.parse(JSON.stringify(mergeObjects(existing, obj)));//to avoid DataCloneError
-          console.log('merged', existing, obj, merge);
+          //console.log('merged', existing, obj, merge);
           return messages.storeObject('message', msgId, merge).then(function() {
             return privateClient.storeObject('imapSeqno-to-messageId', 'imap/'+obj.object.imapAccountName+'/'+obj.object.imapBoxName+'/'+obj.object.imapSeqNo, {
               account: 'anything@michielbdejong.com',

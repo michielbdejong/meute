@@ -85,9 +85,11 @@
   <script src="tests.js"> </script>
   <script>
     document.onSockethubReady = function() {
-      joinIrc();
-      fetchEmail();
-      go(0);
+      console.log('document.onSockethubReady');
+      //joinIrc();
+      //fetchEmail();
+      //go(0);
+      //document.messaging.fetchNextMessages(100);
     };
     function go(i) {
       remoteStorage.stopSync();

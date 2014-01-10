@@ -30,7 +30,7 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
         if(!Array.isArray(list)) {
           list = [list];
         }
-        console.log('adding contacts', list);
+        //console.log('adding contacts', list);
         var i;
         for(i=0; i<list.length; i++) {
           if(typeof(list[i]) === 'object') {
