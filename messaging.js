@@ -180,11 +180,33 @@ document.messaging = (function() {
   }, function(err) {
     console.log('getConfig error', err.message);
   });
-
+  
+  function fetchNextMessages(n) {
+    if (!n) {
+      n = 100;
+    }
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      have = {};
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo) {
+        have[a[i].object.imapSeqNo] = true; 
+      }
+    }
+    for(i=2; true; i++) {
+      if (!have[i]) {
+       console.log(i, Math.floor(i / n));
+       document.fetchEmails(Math.floor(i / n), n, false);
+       break;
+      }
+    }
+  }
+  //setInterval("fetchNextMessages(100);", 60000);
+  
   return {
     getAccounts: function() {},//-> [{...}]
     setAccount: function() {},//(i, {...})
     onMessage: function() {},//(function(activity))
+    fetchNextMessages: fetchNextMessages,
     getFeedTable: function(pageNum) {
       window.items = remoteStorage.inbox.getActivityInterval(100*pageNum, 100),
         str = '<table border="1">';
