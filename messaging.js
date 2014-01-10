@@ -34,7 +34,7 @@ document.messaging = (function() {
     if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.imapSeqNo === 'number')) {
       imapMsgRcvd();
     }
-    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId === 'string')) {
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId) === 'string') {
       key = msg.object.messageId.split('?').join('??').split('/').join('?');
       //console.log('storing message', key, msg);
       remoteStorage.email.storeMessage(key, msg);
@@ -197,7 +197,8 @@ document.messaging = (function() {
       if(rcvd === n) {
         console.log('rcvd', rcvd);
         clearTimeout(timer);
-        fetchNextMessages(n);
+        if(document.stop) { return; } //maybe this can help avoid getting so many AbortErrors on page refresh
+        setTimeout('document.messaging.fetchNextMessages('+n+');', 500);//give it half a second to keep other tabs responsive (and maybe allow IndexedDB to complete updates?)
       }
     }
     var i, a = remoteStorage.inbox.getActivitySince(),

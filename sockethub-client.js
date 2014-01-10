@@ -846,7 +846,7 @@ define('sockethub/client',[
     },
 
     _processIncoming: function(object) {
-      console.log(object.verb === 'confirm' ? 'CONFIRM' : 'RECEIVE', object);
+      //console.log(object.verb === 'confirm' ? 'CONFIRM' : 'RECEIVE', object);
       var rid = object.rid;
       if(typeof(rid) !== 'undefined') {
         var promise = this._ridPromises[rid];
@@ -857,15 +857,15 @@ define('sockethub/client',[
             if(object.status) {
               return;
             } else {
-              console.log('rejecting promise '+rid, object.message);
+              //console.log('rejecting promise '+rid, object.message);
               promise.reject(object);
             }
           } else {
             if('status' in object) {
-              console.log('rejecting/fulfilling promise '+rid, object.message);
+              //console.log('rejecting/fulfilling promise '+rid, object.message);
               promise[object.status ? 'fulfill' : 'reject'](object);
             } else {
-              console.log('fulfilling promise '+rid, object.message);
+              //console.log('fulfilling promise '+rid, object.message);
               promise.fulfill(object);
             }
           }
