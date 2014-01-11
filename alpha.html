@@ -86,11 +86,11 @@
   <script>
     document.onSockethubReady = function() {
       console.log('document.onSockethubReady');
-      //joinIrc();
-      //fetchEmail();
-      //go(0);
       if(document.stop) { return; } //maybe this can help avoid getting so many AbortErrors on page refresh
-      setTimeout("document.messaging.fetchNextMessages(100);", 500);//give it half a second to keep other tabs responsive (and maybe allow IndexedDB to complete updates?)
+      joinIrc();
+      //fetchEmail();
+      go(0);
+      //setTimeout("document.messaging.fetchNextMessages(100);", 500);//give it half a second to keep other tabs responsive (and maybe allow IndexedDB to complete updates?)
     };
     function go(i) {
       remoteStorage.stopSync();

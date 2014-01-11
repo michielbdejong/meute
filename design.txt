@@ -33,6 +33,28 @@ and point to it from:
 * inbox/contact/[each contactId]/
 * inbox/unread/ can then point to contactIds
 
+ways in which meute breaks down when you try to deal with 5000 inbox msg:
+=========================================================================
+- it takes a long time to download headers over a flaky connection, although the current approach can store about 10 msg / second, so it would in theory complete in 9 minutes if uninterrupted. for just the headers, this is really slow, although it's only once.
+- it is totally impossible to use sync with > 100 outgoing changes. it will fire 100 OPTIONS requests, they will all time out, and that was it.
+- IndexedDB sometimes throws an UnknownError, and while storing messages, it turned out some just didn't get stored. disk I/O also got up to 40%.
+- Firefox freezes and crashes, and page loads can trigger 1000 AbortErrors, which take a long time to scroll over the console.
+- if incoming changes fail to fetch, they don't get retried.
+
+possible workarounds:
+=====================
+- don't cache all email headers. just pass them through to the server, and build good indexes
+- store much bigger objects in IndexedDB. instead of PrefixTree, use archive blocks and singles. if the singles add up to a reasonable archive block size, archive them.
+- or only dump snapshots of the memory state into big IndexedDB items.
+- keep track of how many sync actions are pending, and set a maximum.
+- when pushing changes, mark the parent folder as dirty
+- on local putDirectory, create the child items as dirty
+- three sync phases: pushChanges, fetchDirties, checkRoot
+- don't set the 'next' pointer, only the 'previous' pointer. that way activities is append-only and you don't need to write to the archive
+- try this with PouchDB
+- try this in Chrome and other browsers
+- ask Dominic
+
 plan:
 =====
 * develop with

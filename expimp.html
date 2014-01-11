@@ -94,7 +94,8 @@
   <script src="..\remotestorage.js/src/legacy.js"></script>
   <script src="..\remotestorage.js/src/googledrive.js"></script>
   <script src="..\remotestorage.js/src/dropbox.js"></script>
-  <script>remoteStorage = new RemoteStorage();</script>
+  <script>remoteStorage = new RemoteStorage();remoteStorage.stopSync();
+    </script>
 
 
 
@@ -111,9 +112,18 @@
   <script src="expimp.js"> </script>
   <script src="showviews.js"> </script>
   <script>
+    remoteStorage.stopSync();
+    remoteStorage.displayWidget();
+    remoteStorage.stopSync();
+    remoteStorage.claimAccess('export');
     function exp() {
-      document.expimp.get(function(a) {
-        document.body.innerHTML = JSON.stringify(a);
+      document.expimp.get(function(a) {console.log(JSON.stringify(a).length, 'export length');
+//        return;
+        remoteStorage.scope('/export/').storeFile('application/json', 'export', JSON.stringify(a)).then(function(a) {
+          console.log('stored', a);
+        }, function(a) {
+          console.log('not stored', a);
+        });
       });
     }
   </script>
