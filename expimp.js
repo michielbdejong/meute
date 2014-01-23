@@ -38,6 +38,9 @@ document.expimp = (function() {
       remoteStorage.contacts.setEverything(obj.contacts);
       console.log('setting mo');
       remoteStorage.money.setEverything(obj.money);
+      remoteStorage.on('conflict', function(obj) {
+        console.log('conflict - please resolve!', obj);
+      });
     },
     inspectIndexedDb: function(storeName) {
       if(!storeName) {
