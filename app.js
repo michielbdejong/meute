@@ -202,7 +202,7 @@ var messagesInMem={}, contactsInMem={}, inReplyTo, recipients={
 remoteStorage.setApiKeys('googledrive', {
   client_id: '709507725318-3mt4ke1d4tvkc7ktbjvru3csif4nsk67.apps.googleusercontent.com'
 });
-remoteStorage.stopSync();
+//remoteStorage.stopSync();
 remoteStorage.displayWidget();
 remoteStorage.access.claim('inbox', 'rw');
 remoteStorage.access.claim('email', 'rw');

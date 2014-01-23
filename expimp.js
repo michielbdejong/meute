@@ -27,6 +27,7 @@ document.expimp = (function() {
       });
     },
     set: function(obj) {
+      console.log('setting', obj);
       console.log('setting sh');
       remoteStorage.sockethub.setEverything(obj.sockethub);
       console.log('setting ib');

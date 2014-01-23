@@ -93,7 +93,7 @@
       //setTimeout("document.messaging.fetchNextMessages(100);", 500);//give it half a second to keep other tabs responsive (and maybe allow IndexedDB to complete updates?)
     };
     function go(i) {
-      remoteStorage.stopSync();
+//      remoteStorage.stopSync();
       remoteStorage.inbox.onActivity(function(timestamp, obj) {
         document.getElementById('update-button').style.background = 'green';
       });
