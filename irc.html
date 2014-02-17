@@ -25,7 +25,7 @@
     <article>
       <h3>Some commands to try out:</h3>
       <ul>
-        <li><code>ircMsg('#meute', 'hi!');</code> (but better do this on /irc.html in a separate tab)</li>
+        <li><code>ircMsg('#meute', 'hi!');</code></li>
         <li><code>document.messaging.sendEmail('michiel@unhosted.org', 'hi!', 'the body'[, inReplyTo[, preview]]);</code></li>
       </ul>
     </article>
@@ -78,7 +78,7 @@
   <script src="remotestorage-modules/money.js"> </script>
   <script src="remotestorage-modules/sockethub.js"> </script>
   <script src="irc.js"></script>
-  <script src="app.js"> </script>
+<!--  <script src="app.js"> </script> -->
   <script src="asrender.js"> </script>
   <script src="messaging.js"> </script>
   <script src="expimp.js"> </script>
@@ -87,7 +87,7 @@
     document.onSockethubReady = function() {
       console.log('document.onSockethubReady');
       if(document.stop) { return; } //maybe this can help avoid getting so many AbortErrors on page refresh
-      //joinIrc(); - moved to /irc.html
+      joinIrc();
       //fetchEmail();
       go(0);
       //setTimeout("document.messaging.fetchNextMessages(100);", 500);//give it half a second to keep other tabs responsive (and maybe allow IndexedDB to complete updates?)
