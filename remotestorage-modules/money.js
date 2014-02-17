@@ -296,7 +296,7 @@ RemoteStorage.defineModule('money', function(privateClient, publicClient) {
           tl: 0.36,
           kdong: 0.03,
           usd: 0.8,
-          inr: 0.01226
+          inr: 0.012331
         }, i, effect, sums= {};
         for(claimId in tabs.get(tabName)) {//take the latest version of each claim
           claim=tabs.get(tabName)[claimId][tabs.get(tabName)[claimId].length-1];

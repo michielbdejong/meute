@@ -115,8 +115,10 @@
     remoteStorage.stopSync();
     remoteStorage.displayWidget();
     remoteStorage.stopSync();
-    remoteStorage.claimAccess('export');
+    remoteStorage.access.claim('export', 'rw');
+    
     function exp() {
+      remoteStorage.access.claim('export', 'rw');
       document.expimp.get(function(a) {console.log(JSON.stringify(a).length, 'export length');
 //        return;
         remoteStorage.scope('/export/').storeFile('application/json', 'export', JSON.stringify(a)).then(function(a) {

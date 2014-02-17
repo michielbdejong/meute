@@ -12,11 +12,11 @@ document.expimp = (function() {
               console.log('getting everything from module money');
               return remoteStorage.money.getEverything().then(function(moEverything) {
                 cb({
-             //     sockethub: shEverything,
-                  inbox: ibEverything//,
-               //   email: emEverything,
-                  //contacts: ctEverything,
-                 // money: moEverything
+                  sockethub: shEverything,
+                  inbox: ibEverything,
+                  email: emEverything,
+                  contacts: ctEverything,
+                  money: moEverything
                 });
               });
             });
