@@ -541,7 +541,7 @@ define('sockethub/extend',[], function() {
  *
  */
 
-define('sockethub/event_handling',[], function() {
+define('sockethub/event_handling',[], function () {
 
   var methods = {
     /**
@@ -549,32 +549,32 @@ define('sockethub/event_handling',[], function() {
      *
      * Install an event handler for the given event name.
      */
-    on: function(eventName, handler) {
+    on: function (eventName, handler) {
       this._validateEvent(eventName);
       this._handlers[eventName].push(handler);
     },
 
-    _emit: function(eventName) {
+    _emit: function (eventName) {
       this._validateEvent(eventName);
       var args = Array.prototype.slice.call(arguments, 1);
-      this._handlers[eventName].forEach(function(handler) {
+      this._handlers[eventName].forEach(function (handler) {
         handler.apply(this, args);
       });
     },
 
-    _validateEvent: function(eventName) {
+    _validateEvent: function (eventName) {
       if(! (eventName in this._handlers)) {
         throw "Unknown event: " + eventName;
       }
     },
 
-    _delegateEvent: function(eventName, target) {
-      target.on(eventName, function(event) {
+    _delegateEvent: function (eventName, target) {
+      target.on(eventName, function (event) {
         this._emit(eventName, event);
       }.bind(this));
     },
 
-    _addEvent: function(eventName) {
+    _addEvent: function (eventName) {
       this._handlers[eventName] = [];
     }
   };
@@ -590,7 +590,7 @@ define('sockethub/event_handling',[], function() {
    *
    * Example:
    *   (start code)
-   *   var MyConstructor = function() {
+   *   var MyConstructor = function () {
    *     eventHandling(this, 'connected', 'disconnected');
    *
    *     this._emit('connected');
@@ -600,20 +600,20 @@ define('sockethub/event_handling',[], function() {
    *   };
    *
    *   var myObject = new MyConstructor();
-   *   myObject.on('connected', function() { console.log('connected'); });
-   *   myObject.on('disconnected', function() { console.log('disconnected'); });
+   *   myObject.on('connected', function () { console.log('connected'); });
+   *   myObject.on('disconnected', function () { console.log('disconnected'); });
    *   // this would throw an exception as well:
-   *   //myObject.on('something-else', function() {});
+   *   //myObject.on('something-else', function () {});
    *
    *   (end code)
    */
-  return function(object) {
+  return function (object) {
     var eventNames = Array.prototype.slice.call(arguments, 1);
-    for(var key in methods) {
+    for (var key in methods) {
       object[key] = methods[key];
     }
     object._handlers = {};
-    eventNames.forEach(function(eventName) {
+    eventNames.forEach(function (eventName) {
       object._addEvent(eventName);
     });
   };
@@ -643,7 +643,7 @@ define('sockethub/client',[
   './extend',
   '../vendor/promising',
   './event_handling'
-], function(extend, promising, eventHandling) {
+], function (extend, promising, eventHandling) {
 
   /**
    * Class: SockethubClient
@@ -657,20 +657,23 @@ define('sockethub/client',[
    * Constructor parameters:
    *   jsonClient - a <JSONClient> instance
    */
-  var SockethubClient = function(jsonClient, options) {
+  var SockethubClient = function (jsonClient, options) {
     this.jsonClient = jsonClient;
     this.options = options;
 
     this._ridPromises = {};
 
-    eventHandling(this, 'connected', 'disconnected', 'failed', 'message', 'unexpected-response');
+    eventHandling(this, 'connected', 'disconnected', 'failed', 'message',
+                        'unexpected-response', 'reconnecting', 'reconnected');
 
     jsonClient.on('message', this._processIncoming.bind(this));
     this._delegateEvent('connected', jsonClient);
     this._delegateEvent('disconnected', jsonClient);
     this._delegateEvent('failed', jsonClient);
+    this._delegateEvent('reconnecting', jsonClient);
+    this._delegateEvent('reconnected', jsonClient);
 
-    this.__defineGetter__('connected', function() {
+    this.__defineGetter__('connected', function () {
       return this.jsonClient.connected;
     });
   };
@@ -763,15 +766,15 @@ define('sockethub/client',[
      *
      *   (end code)
      */
-    declareVerb: function(verb, attributeNames, template, decorator) {
-      this[verb] = function() {
-        // 
+    declareVerb: function (verb, attributeNames, template, decorator) {
+      this[verb] = function () {
+        //
         var args = Array.prototype.slice.call(arguments);
         var object = extend({}, template, { verb: verb });
-        attributeNames.forEach(function(attrName, index) {
+        attributeNames.forEach(function (attrName, index) {
           var value = args[index];
           var current = this._getDeepAttr(object, attrName);
-          if(typeof(current) === 'undefined' && typeof(value) === 'undefined') {
+          if (typeof(current) === 'undefined' && typeof(value) === 'undefined') {
             throw new Error(
               "Expected a value for parameter " + attrName + ", but got undefined!"
             );
@@ -779,21 +782,21 @@ define('sockethub/client',[
           this._setDeepAttr(object, attrName, value);
         }.bind(this));
         var extensionArg = args[attributeNames.length];
-        if(typeof(extensionArg) === 'object') {
+        if (typeof(extensionArg) === 'object') {
           extend(object, extensionArg);
         }
         return this.sendObject(object);
       };
-      if(decorator) {
+      if (decorator) {
         this[verb] = decorator(this[verb].bind(this));
       }
     },
 
-    declareEvent: function(eventName) {
+    declareEvent: function (eventName) {
       this._addEvent(eventName);
     },
 
-    disconnect: function() {
+    disconnect: function () {
       this.jsonClient.disconnect();
     },
 
@@ -813,31 +816,27 @@ define('sockethub/client',[
      * declare a verb using <declareVerb>, which will then call sendObject for you.
      *
      */
-    sendObject: function(object) {
-      console.log('sockethubClient.sendObject', object);
+    sendObject: function (object) {
       var promise = promising();
       // generate a new rid and store promise reference:
       var rid = ++this._ridCounter;
       this._ridPromises[rid] = promise;
       object = extend(object, { rid: rid });
-      //console.log('SEND', object);
+      console.log('SEND', object);
       // non-dectructively add 'rid' and send!
       this.jsonClient.send(object);
       return promise;
-      if(remoteStorage.inbox) {
-        remoteStorage.inbox.logActivity(object);
-      }
     },
 
     // _getDeepAttr / _setDeepAttr are used in declareType.
 
-    _getDeepAttr: function(object, path, _parts) {
+    _getDeepAttr: function (object, path, _parts) {
       var parts = _parts || path.split('.');
       var next = object[parts.shift()];
       return parts.length ? this._getDeepAttr(next, undefined, parts) : next;
     },
 
-    _setDeepAttr: function(object, path, value, _parts) {
+    _setDeepAttr: function (object, path, value, _parts) {
       var parts = _parts || path.split('.');
       if(parts.length > 1) {
         this._setDeepAttr(object[parts.shift()], undefined, value, parts);
@@ -846,34 +845,29 @@ define('sockethub/client',[
       }
     },
 
-    _processIncoming: function(object) {
-      console.log('sockethubClient._processIncoming', object);
-      //console.log(object.verb === 'confirm' ? 'CONFIRM' : 'RECEIVE', object);
+    _processIncoming: function (object) {
+      console.log(object.verb === 'confirm' ? 'CONFIRM' : 'RECEIVE', object);
       var rid = object.rid;
-      if(typeof(rid) !== 'undefined') {
+      if (typeof(rid) !== 'undefined') {
         var promise = this._ridPromises[rid];
-        if(promise) {
-          //console.log('rid is known.');
-          if(object.verb === 'confirm') {
+        if (promise) {
+          // rid is known.
+          if (object.verb === 'confirm') {
             // exception: confirm results are ignored, unless their status is fals
-            if(object.status) {
+            if (object.status) {
               return;
             } else {
-              //console.log('rejecting promise '+rid, object.message);
               promise.reject(object);
             }
           } else {
-            if('status' in object) {
-              //console.log('rejecting/fulfilling promise '+rid, object.message);
+            if ('status' in object) {
               promise[object.status ? 'fulfill' : 'reject'](object);
             } else {
-              //console.log('fulfilling promise '+rid, object.message);
               promise.fulfill(object);
             }
           }
           delete this._ridPromises[rid];
         } else {
-          console.log('rid not known '+rid, object.message);
           // rid is not known. -> unexpected response!
           this._emit('unexpected-response', object);
         }
@@ -886,9 +880,7 @@ define('sockethub/client',[
   };
 
   return SockethubClient;
-
 });
-
 /**
  * This file is part of sockethub-client.
  *
@@ -909,7 +901,7 @@ define('sockethub/client',[
  *
  */
 
-define('sockethub/json_client',['./event_handling'], function(eventHandling) {
+define('sockethub/json_client',['./event_handling'], function (eventHandling) {
 
   /**
    * Class: JSONClient
@@ -920,8 +912,11 @@ define('sockethub/json_client',['./event_handling'], function(eventHandling) {
    *   socket - a WebSocket object
    *
    */
-  var JSONClient = function(socket) {
-    this.socket = socket;
+  var JSONClient = function (uri, protocol, reconnect) {
+
+    this.uri = uri;
+    this.protocol = protocol;
+    this.reconnect = reconnect || false;
 
     eventHandling(
       this,
@@ -945,6 +940,22 @@ define('sockethub/json_client',['./event_handling'], function(eventHandling) {
       'connected',
 
       /**
+       * Event: reconnecting
+       *
+       * Emitted when the websocket is closed but reconnecting.
+       */
+      'reconnecting',
+
+      /**
+       * Event: reconnected
+       *
+       * Emitted when the websocket is opened after a reconnect (old handlers
+       * still active).
+       *
+       */
+      'reconnected',
+
+      /**
        * Event: disconnected
        *
        * Emitted when the websocket is closed.
@@ -959,18 +970,26 @@ define('sockethub/json_client',['./event_handling'], function(eventHandling) {
       'failed'
     );
 
-    // start listening.
-    this._listen();
+    this.wsConnect();
   };
 
   JSONClient.prototype = {
+
+    wsConnect: function () {
+      this.socket = null;
+      delete this.socket;
+      var ws = new WebSocket(this.uri, this.protocol);
+      this.socket = ws;
+      // start listening.
+      this._listen();
+    },
 
     /**
      * Method: send
      *
      * Serialize given object and send it.
      */
-    send: function(object) {
+    send: function (object) {
       this.socket.send(JSON.stringify(object));
     },
 
@@ -979,30 +998,54 @@ define('sockethub/json_client',['./event_handling'], function(eventHandling) {
      *
      * Close the socket.
      */
-    disconnect: function() {
+    disconnect: function () {
       this.socket.close();
     },
 
     // Start listening on socket
-    _listen: function() {
+    _listen: function () {
       this.socket.onmessage = this._processMessageEvent.bind(this);
       this.connected = false;
-      this.socket.onopen = function() {
+      var _this = this;
+
+      this.socket.onopen = function () {
         this.connected = true;
-        this._emit('connected');
+        if (this.reconnecting) {
+          this._emit('reconnected');
+          this.reconnecting = false;
+        } else {
+          this._emit('connected');
+        }
       }.bind(this);
-      this.socket.onclose = function() {
-        if(this.connected) {
+
+      this.socket.onclose = function () {
+        if ((this.connected) &&
+            (!this.reconnect)) {
+          console.log('sockethub-client disconnected, not reconnecting...');
           this._emit('disconnected');
           this.connected = false;
+        } else if ((this.connected) &&
+                   (this.reconnect)) {
+          this._emit('reconnecting');
+          this.connected = false;
+          this.reconnecting = true;
+          console.log('sockethub-client disconnected, attempting reconnect...');
+          this.wsConnect();
+        } else if ((this.reconnecting) &&
+                   (!this.connected)) {
+          // failed reconnecting...
+          setTimeout(function () {
+            console.log('sockethub-client attempting reconnect after 5s');
+            _this.wsConnect();
+          }, 5000);
         } else {
           this._emit('failed');
         }
       }.bind(this);
     },
 
-    // Emit "message" event 
-    _processMessageEvent: function(event) {
+    // Emit "message" event
+    _processMessageEvent: function (event) {
       this._emit('message', JSON.parse(event.data));
     }
 
@@ -1036,7 +1079,7 @@ define('sockethub/connect',[
   './extend',
   './json_client',
   './client'
-], function(extend, JSONClient, SockethubClient) {
+], function (extend, JSONClient, SockethubClient) {
 
   var DEFAULT_PORT = 10550;
   var DEFAULT_PATH = '/sockethub';
@@ -1051,46 +1094,51 @@ define('sockethub/connect',[
    * Returns a new <SockethubClient> instance, connected to a WebSocket through a
    * <JSONClient>.
    */
-  var connect = function(uriOrOptions, options) {
+  var connect = function (uriOrOptions, options) {
     var uri;
-    if(typeof(options) !== 'object') {
-      options = {};
+    if (typeof(options) !== 'object') {
+      options = {
+        reconnect: true
+      };
     }
 
-    if(typeof(uriOrOptions) === 'string' &&
+    if (typeof(uriOrOptions) === 'string' &&
        ! uriOrOptions.match(/wss?\:\/\//)) {
       uriOrOptions = { host: uriOrOptions };
     }
 
-    if(typeof(uriOrOptions) === 'string') {
+    if (typeof(uriOrOptions) === 'string') {
       uri = uriOrOptions;
-    } else if(typeof(uriOrOptions) === 'object') {
+    } else if (typeof(uriOrOptions) === 'object') {
       extend(options, uriOrOptions);
-      if(! options.host) {
+      if (! options.host) {
         throw "Required 'host' option not present";
       }
-      if(! options.port) {
+      if (! options.port) {
         options.port = DEFAULT_PORT;
       }
-      if(! options.path) {
+      if (! options.path) {
         options.path = DEFAULT_PATH;
       }
+
+      // by default we reconnect
+      options.reconnect = (typeof options.reconnect === 'boolean') ? options.reconnect : true;
+
       uri = (
-        (options.ssl ? 'wss' : 'ws')
-          + '://'
-          + options.host
-          + ':'
-          + options.port
-          + options.path
+        (options.ssl ? 'wss' : 'ws') +
+            '://' +
+            options.host +
+            ':' +
+            options.port +
+            options.path
       );
     } else {
       throw "SockethubClient.connect expects a URI, specified via a String or Object.";
     }
-    return new SockethubClient(new JSONClient(new WebSocket(uri, DEFAULT_PROTOCOL)), options);
+    return new SockethubClient(new JSONClient(uri, DEFAULT_PROTOCOL, options.reconnect), options);
   };
 
   return connect;
-
 });
 
 /**
@@ -1176,7 +1224,7 @@ define('sockethub/remoteStorage',[], function() {
         storageInfo: storageInfo,
         bearerToken: token,
         scope: scope
-      }
+      };
     }
   }
 
@@ -1203,9 +1251,9 @@ define('sockethub/remoteStorage',[], function() {
  *
  */
 
-define('verbs/core',[], function() {
+define('verbs/core',[], function () {
 
-  var coreVerbs = function(client) {
+  var coreVerbs = function (client) {
 
     // Verb: ping
     //
@@ -1251,22 +1299,22 @@ define('verbs/core',[], function() {
 
     // Verb: register
     client.declareVerb('register', ['object'], {
-      platform: 'dispatcher',
-    }, function(method) {
-      return function() {
-        if(client.registered) {
+      platform: 'dispatcher'
+    }, function (method) {
+      return function () {
+        if (client.registered) {
           console.log('WARNING: already registered!');
           console.trace();
         }
-        return method.apply(this, arguments).then(function(response) {
+        return method.apply(this, arguments).then(function (response) {
           client.registered = response.status;
-          if(! response.status) {
-            setTimeout(function() {
+          if (! response.status) {
+            setTimeout(function () {
               client._emit('registration-failed', response);
             }, 0);
-            throw "Registration failed: " + response.message;
+            throw "registration failed: " + response.message;
           }
-          setTimeout(function() { client._emit('registered'); }, 0);
+          setTimeout(function () { client._emit('registered'); }, 0);
           return response;
         });
       };
@@ -1284,16 +1332,18 @@ define('verbs/core',[], function() {
     // Fired when registration failed.
     client.declareEvent('registration-failed');
 
-    // Automatic registration, when 'register' option was passed during 'connect'.
-    client.on('connected', function() {
+    function initRegister() {
       console.log('options passed to connect:', client.options);
-      if(client.options.register) {
+      if (client.options.register) {
         console.log('automatic registration!');
         client.register(client.options.register);
       }
-    });
+    }
+    // Automatic registration, when 'register' option was passed during 'connect'.
+    client.on('connected', initRegister);
+    client.on('reconnected', initRegister);
 
-    client.on('disconnected', function() {
+    client.on('disconnected', function () {
       // make sure 'registered' flag is not set, in case the client is re-used.
       delete client.registered;
     });
@@ -1341,7 +1391,7 @@ define('sockethub-client',[
     // extend the client with core verbs
     coreVerbs(client);
     return client;
-  }
+  };
 
   SockethubClient.prototype.connectStorage = connectRemoteStorage;
 
