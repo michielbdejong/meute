@@ -5,7 +5,7 @@
       console.log('alpha sync hit');
     </script>
     <meta charset="utf-8" />
-    <title>Meute - an unhosted messages/contacts/search app</title>
+    <title>irc part of Meute</title>
     <style>
       body { font:15px sans-serif; line-height:1.4em; color:#222 }
       nav {float:left; margin:3em}
@@ -26,6 +26,7 @@
       <h3>Some commands to try out:</h3>
       <ul>
         <li><code>ircMsg('#meute', 'hi!');</code></li>
+        <li><code>joinRooms('michielbdejong', ['#meute']);</code></li>
         <li><code>document.messaging.sendEmail('michiel@unhosted.org', 'hi!', 'the body'[, inReplyTo[, preview]]);</code></li>
       </ul>
     </article>
@@ -129,5 +130,7 @@
       }
       document.body.innerHTML = str+'</table>';
     });
-*/  </script>
+*/
+      remoteStorage.displayWidget();
+  </script>
 </html>
