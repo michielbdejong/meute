@@ -14,9 +14,15 @@ function joinRooms(nick, channels) {
             name: nick
           }
         };
-
-        document.sockethubClient.set('irc', {
-          credentials: credentialObject
+//        document.sockethubClient.set(['irc', {
+//         credentials: credentialObject
+        document.sockethubClient.sendObject({
+          object: {
+           credentials: credentialObject
+          },
+          verb: 'set',
+          target: [{platform: 'irc'}],
+          platform: 'dispatcher'
         }).then(function () {
           // successful set credentials
           console.log('set irc credentials!');

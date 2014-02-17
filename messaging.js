@@ -67,19 +67,21 @@ document.messaging = (function() {
       send(msg);
     }
   }
+  console.log('in messaging.js, getting sh config');
   var send = function() { console.log('not ready'); };
   remoteStorage.sockethub.getConfig().then(function(config) {
+  console.log('in messaging.js, got sh config');
     if(!config) {
       config = {
-        host: '3pp.io',
+        host: 'michielbdejong.com',
         path: '/sockethub',
-        port: 10551,
+        port: 10550,
         tls: true,
-        secret: "3rd party people"
+        secret: "1234567890"
       };
       remoteStorage.sockethub.writeConfig(config);
     }
-    console.log(config);
+    console.log(config, 'trying to set up sockethubClient!');
     try {
       document.sockethubClient = SockethubClient.connect({
         host: config.host,

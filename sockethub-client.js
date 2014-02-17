@@ -814,6 +814,7 @@ define('sockethub/client',[
      *
      */
     sendObject: function(object) {
+      console.log('sockethubClient.sendObject', object);
       var promise = promising();
       // generate a new rid and store promise reference:
       var rid = ++this._ridCounter;
@@ -846,6 +847,7 @@ define('sockethub/client',[
     },
 
     _processIncoming: function(object) {
+      console.log('sockethubClient._processIncoming', object);
       //console.log(object.verb === 'confirm' ? 'CONFIRM' : 'RECEIVE', object);
       var rid = object.rid;
       if(typeof(rid) !== 'undefined') {
