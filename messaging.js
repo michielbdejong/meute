@@ -46,7 +46,7 @@ document.messaging = (function() {
       platform: 'email',
       actor: {
         name: 'Michiel B. de Jong',
-        address: 'michiel@michielbdejong.com'
+        address: 'anything@michielbdejong.com'
       },
       target: [{
         field: 'to',
@@ -159,9 +159,7 @@ document.messaging = (function() {
           console.log(e.message);
         }
       });
-      document.fetchEmails = function (page, perPage, includeBody) {
-        if(!page) { page = 0; }
-        if(!perPage) { perPage = 10; }
+      document.fetchEmailsFromTo = function (from, to, includeBody) {
         document.sockethubClient.sendObject({
           platform: 'email',
           verb: 'fetch',
@@ -169,8 +167,8 @@ document.messaging = (function() {
             address: 'anything@michielbdejong.com'
           },
           object: {
-            page: page,
-            perPage: perPage,
+            from: from,
+            to: to,
             includeBody: includeBody
           }
         }).then(function(success) {
@@ -187,7 +185,81 @@ document.messaging = (function() {
   }, function(err) {
     console.log('getConfig error', err.message);
   });
-  
+
+  function findGaps() {  
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      have = {}
+      max = 0;
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo) {
+        have[a[i].object.imapSeqNo] = true; 
+        if (a[i].object.imapSeqNo > max) {
+          max = a[i].object.imapSeqNo;
+        }
+      }
+    }
+    for(i=2; i<max; i++) {
+      if (!have[i]) {
+        console.log('do not have', i);
+      }
+    }
+  }
+  function getSubjects() {
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      have = {}
+      max = 0;
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo) {
+        have[a[i].object.imapSeqNo] = a[i].object.subject; 
+        if (a[i].object.imapSeqNo > max) {
+          max = a[i].object.imapSeqNo;
+        }
+      }
+    }
+    return have;
+  }
+  function getFullMessage(msg) {
+    if (msg.object.text || msg.object.html) {
+      console.log('getFullMessage - 1');
+      return msg;
+    } else if (msg.object.messageId) {
+      console.log('getFullMessage - 2');
+      return remoteStorage.email.getMessage(msg.object.messageId).then(function(success) {
+        console.log('success', success);
+      }, function(failure) {
+        console.log('failure', failure);
+      });
+    } else {
+      console.log('getFullMessage - 3');
+      console.log('retrieving full body', a[i]);
+      document.sockethubClient.sendObject({
+        platform: 'email',
+        verb: 'fetch',
+        actor: {
+          address: 'anything@michielbdejong.com'
+        },
+        object: {
+          from: imapSeqNo,
+          to: imapSeqNo,
+          includeBody: true
+        }
+      }).then(function(success) {
+        console.log('success', success);
+      }, function(failure) {
+        console.log('failure', failure);
+      });
+      return;
+    }
+  }
+  function getMessage(imapSeqNo) {
+    var i, a = remoteStorage.inbox.getActivitySince();
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo === imapSeqNo) {
+        return getFullMessage(a[i]);
+      }
+    }
+  }
+    
   function fetchNextMessages(n) {
     var timer = setTimeout("window.location = '';", 120000);
     rcvd = 0;
@@ -224,6 +296,9 @@ document.messaging = (function() {
     getAccounts: function() {},//-> [{...}]
     setAccount: function() {},//(i, {...})
     onMessage: function() {},//(function(activity))
+    findGaps: findGaps,
+    getSubjects: getSubjects,
+    getMessage: getMessage,
     fetchNextMessages: fetchNextMessages,
     getFeedTable: function(pageNum) {
       window.items = remoteStorage.inbox.getActivityInterval(100*pageNum, 100),
