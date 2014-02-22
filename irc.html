@@ -22,6 +22,8 @@
         <li><code>ircMsg('#meute', 'hi!');</code></li>
       </ul>
     </article>
+    <br>
+    <table id="astable"></table>
   </body>
   <script src="sockethub-client.js"></script>
 
@@ -126,7 +128,7 @@
       remoteStorage.displayWidget();
 
   document.ircIncoming = function(msg) {
-    document.body.innerHTML += JSON.stringify(msg)+'<br>';
+    document.getElementById('astable').innerHTML += window.asrender.toTableRow(msg);
   }
   </script>
 </html>
