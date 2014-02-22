@@ -16,9 +16,12 @@ function joinRooms(nick, channels) {
         };
         document.sockethubClient.set('irc', {
          credentials: credentialObject
-        }).then(function () {
+        }).then(function (obj) {
           // successful set credentials
           console.log('set irc credentials!');
+          if(document.ircIncoming) {
+            document.ircIncoming(obj);
+          }
           return document.sockethubClient.sendObject({
             verb: 'update',
             platform: 'irc',
@@ -28,7 +31,10 @@ function joinRooms(nick, channels) {
             },
             target: []
           });
-        }).then(function () {
+        }).then(function (obj2) {
+          if(document.ircIncoming) {
+            document.ircIncoming(obj);
+          }
           console.log('irc connected to ', channels);
           var channelAddresses = [], i;
           for(i=0; i<channels.length; i++) {
@@ -69,8 +75,11 @@ function ircMsg(channel, message) {
     };
 
     console.log('sendMessage called: ', obj);
-    document.sockethubClient.sendObject(obj).then(function () {
-      console.log('message sent');
+    document.sockethubClient.sendObject(obj).then(function (obj2) {
+      console.log('message sent', obj, obj2);
+      if(document.ircIncoming) {
+        document.ircIncoming(obj);
+      }
     }, function (err) {
       console.log('error sending message', err);
     });
@@ -93,8 +102,11 @@ function changeNick(nick) {
       }
     };
 
-    document.sockethubClient.sendObject(obj).then(function () {
+    document.sockethubClient.sendObject(obj).then(function (obj2) {
       console.log('changeNick success', obj);
+      if(document.ircIncoming) {
+        document.ircIncoming(obj2);
+      }
     }, function (err) {
       console.log('changeNick return as error: ', err);
     });
@@ -117,8 +129,11 @@ function getAttendants(channel) {
       }
     };
 
-    document.sockethubClient.sendObject(obj).then(function () {
+    document.sockethubClient.sendObject(obj).then(function (obj2) {
       console.log('getAttendants success', obj);
+      if(document.ircIncoming) {
+        document.ircIncoming(obj2);
+      }
     }, function (err) {
       console.log('getAttendants return as error: ', err);
     });

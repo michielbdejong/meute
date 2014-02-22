@@ -29,7 +29,10 @@ document.messaging = (function() {
     );
   }
   function storeMessage(msg) {
-    //console.log('msg', msg);
+    console.log('msg', msg, JSON.stringify(msg));
+    if (msg.platform === 'irc' && document.ircIncoming) {
+      document.ircIncoming(msg);
+    }
     remoteStorage.inbox.logActivity(msg);
     if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.imapSeqNo === 'number')) {
       imapMsgRcvd();
