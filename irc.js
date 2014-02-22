@@ -99,3 +99,27 @@ function changeNick(nick) {
       console.log('changeNick return as error: ', err);
     });
 }
+
+function getAttendants(channel) {
+    var self = this;
+    if (!channel) {
+      return false;
+    }
+    var obj = {
+      verb: 'observe',
+      platform: 'irc',
+      actor: { name: ircNick, address: ircNick},
+      target: [{
+        address: channel
+      }],
+      object: {
+        objectType: 'attendance'
+      }
+    };
+
+    document.sockethubClient.sendObject(obj).then(function () {
+      console.log('getAttendants success', obj);
+    }, function (err) {
+      console.log('getAttendants return as error: ', err);
+    });
+}

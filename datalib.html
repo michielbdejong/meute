@@ -88,10 +88,50 @@
   <script src="..\remotestorage.js/src/legacy.js"></script>
   <script src="..\remotestorage.js/src/googledrive.js"></script>
   <script src="..\remotestorage.js/src/dropbox.js"></script>
-  <script>remoteStorage = new RemoteStorage();remoteStorage.stopSync();
+  <script>remoteStorage = new RemoteStorage();
     </script>
   <script>
+    var data = {}, foldersPending = 0, documentsPending = 0, modules = {
+      "articles":true,"bookmarks":true,"binaryTest":true,"credentials-sockethub":true,"code":true,"contacts":true,"email":true,"credentials-twitter":true,
+      "documents":true,"events":true,"feeds":true,"gruppenkasse":true,"money":true,"inbox":true,"messages":true,"notes":true,"myfavoritedrinks":true,
+      "pictures":true,"playlists":true,"presentations":true,"rss":true,"public":true,"sandwiches":true,"sharedstuff":true,"sockethub":true,"songs":true,
+      "tasks":true,"todomvc":true,"todo-list":true,"tutorial":true
+    };
+    function getEverything(prefix) {
+      foldersPending++;
+      remoteStorage.scope('/').getListing(prefix).then(function(listing) {
+        console.log(prefix, listing);
+        for (i in listing) {
+          if(i.substr(-1) === '/') {
+            console.log('descending into', prefix+i);
+            getEverything(prefix+i);
+          } else {
+            documentsPending++;
+            remoteStorage.scope('/').getFile(prefix+i).then((function(closurePath) {
+              return function(obj) {
+                documentsPending--;
+                data[closurePath] = obj;
+              };
+            })(prefix+i), function(err) {
+              console.log('error in getEverything', err);
+              documentsPending--;
+            });
+          }
+        }
+        foldersPending--;
+      }, function(err) {
+        console.log('error in getEverything', err);
+        foldersPending--;
+      });
+    }
     remoteStorage.displayWidget();
-    remoteStorage.access.claim('*', 'rw');
+    //remoteStorage.access.claim('*', 'rw');
+    //getEverything('');
+    //remoteStorage.scope('/').cache('');
+    for(i in modules) {
+      remoteStorage.access.claim(i, 'rw');
+      remoteStorage.scope('/'+i+'/').cache('');
+      getEverything(i+'/');
+    }
   </script>
 </html>
