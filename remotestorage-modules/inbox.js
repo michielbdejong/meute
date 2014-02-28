@@ -54,13 +54,16 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
   return {
     exports: {
       _init: function() {
-        privateClient.cache('');
+//        privateClient.cache('');
         activity = new SyncedMap('activity', privateClient);
         last = new SyncedMap('last', privateClient);
         timestamp = new Date().getTime();
       },
       onActivity: function(cb) {
         activityHandlers.push(cb);
+        privateClient.on('change', function(e) {
+          cb(e.newValue);
+        });
       },
       logActivity: function(obj) {
         var i, id = getId(obj);
@@ -140,6 +143,30 @@ RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
       setEverything: function(obj) {
         last.setEverything(obj.last);
         activity.setEverything(obj.activity);      
+      },
+      fetchLastEntries: function(prefix) {
+        if (typeof(prefix) != 'string') {
+          prefix = 'activity/';
+        }
+        privateClient.getListing(prefix, 0).then(function(listing) {
+          var i, max = -1;
+          console.log('fetched', prefix, listing);
+          for (i in listing) {
+            if (i.substr(-1) === '/') {
+              if (parseInt(i.substring(0, i.length-1)) > max) {
+                max = parseInt(i.substring(0, i.length-1));
+              }
+            } else {
+              privateClient.getFile(prefix + i, 0);//will cause an incoming change event
+            }
+          }
+          if (max > -1) {
+            console.log('got max', max);
+            this.fetchLastEntries(prefix + max + '/');
+          }
+        }.bind(this), function(e) {
+          console.log('error retrieving listing for', prefix);
+        });
       }
     }
   };
