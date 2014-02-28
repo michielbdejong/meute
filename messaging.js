@@ -241,6 +241,21 @@ document.messaging = (function() {
     }
     return have;
   }
+  function findEmailsFrom(address) {
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      matches = {},
+      num = 0;
+    for (i in a) {
+      if (a[i].actor && Array.isArray(a[i].actor) && a[i].actor[0] && a[i].actor[0].address && a[i].actor[0].address === address) {
+        if (a[i].object && a[i].object.imapSeqNo) {
+          matches[a[i].object.imapSeqNo] = a[i];
+        } else {
+          matches[num++] = a[i];
+        }
+      }
+    }
+    return matches;
+  }
   function getFullMessage(msg) {
     if (msg.object.text || msg.object.html) {
       console.log('getFullMessage - 1');
@@ -322,6 +337,7 @@ document.messaging = (function() {
     onMessage: function() {},//(function(activity))
     findGaps: findGaps,
     getSubjects: getSubjects,
+    findEmailsFrom: findEmailsFrom,
     getMessage: getMessage,
     fetchNextMessages: fetchNextMessages,
     getFeedTable: function(pageNum) {

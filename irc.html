@@ -129,6 +129,8 @@
 
   document.ircIncoming = function(msg) {
     document.getElementById('astable').innerHTML += window.asrender.toTableRow(msg);
+    console.log(msg.object, JSON.stringify(msg));
+    document.title = (msg.object ? (msg.object.text ? msg.object.text : JSON.stringify(msg.object)) : JSON.stringify(msg));
   }
   </script>
 </html>

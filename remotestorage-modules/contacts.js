@@ -47,6 +47,15 @@ RemoteStorage.defineModule('contacts', function(privateClient, publicClient) {
       getNames: function() {
         return contacts.getKeys();
       },
+      find: function(str) {
+        var results = {}, i, names = this.getNames();
+        for (i=0; i<names.length; i++) {
+          if (names[i].toLocaleLowerCase().indexOf(str.toLocaleLowerCase()) !== -1) {
+            results[names[i]] = this.get(names[i]);
+          }
+        }
+        return results;
+      },
       getEverything: function() {
         var promise = promising();
         promise.fulfill({
