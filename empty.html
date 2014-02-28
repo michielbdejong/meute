@@ -50,6 +50,7 @@
     remoteStorage.remote.on('connected', function() { console.log('connected'); });
     remoteStorage.remote.on('not-connected', function() { console.log('not-connected'); });
     remoteStorage.on('ready', function() { console.log('ready'); });
+    remoteStorage.access.claim('test', 'rw');
     remoteStorage.displayWidget();
   </script>
 </html>

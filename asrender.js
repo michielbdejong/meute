@@ -49,7 +49,7 @@
     return renderActor(target, platform);
   }  
   function toTableRow(obj) {
-    console.log(obj);
+    //console.log(obj);
     return '<tr onmousedown="window.open(\'viewemail.html#'+encodeURIComponent(obj.conversationName)+'\');" ><td>'+renderActor(obj.actor, obj.platform)
       +'</td><td>'+renderVerb(obj.verb)
       +'</td><td>'+renderObject(obj.object)

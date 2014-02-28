@@ -50,7 +50,9 @@
         },
 
         writeConfig: function (data) {
-          return privateClient.storeObject('config', 'config.json', data);
+          return privateClient.storeObject('config', 'config.json', data).then(function() {
+            console.log('returned from storing config!');
+          });
         },
         
         getEverything: function () {

@@ -84,6 +84,7 @@
   <script src="expimp.js"> </script>
   <script src="tests.js"> </script>
   <script>
+    RemoteStorage._log = true;
     document.onSockethubReady = function() {
       console.log('document.onSockethubReady');
       if(document.stop) { return; } //maybe this can help avoid getting so many AbortErrors on page refresh

@@ -189,30 +189,50 @@ document.messaging = (function() {
     console.log('getConfig error', err.message);
   });
 
-  function findGaps() {  
+  function findGaps(fix) {  
     var i, a = remoteStorage.inbox.getActivitySince(),
       have = {}
-      max = 0;
+      max = 0,
+      min = 99999999999999999,
+      gapStart = false;
     for (i in a) {
       if (a[i].object && a[i].object.imapSeqNo) {
         have[a[i].object.imapSeqNo] = true; 
         if (a[i].object.imapSeqNo > max) {
           max = a[i].object.imapSeqNo;
         }
+        if (a[i].object.imapSeqNo < min) {
+          min = a[i].object.imapSeqNo;
+        }
       }
     }
-    for(i=2; i<max; i++) {
-      if (!have[i]) {
-        console.log('do not have', i);
+    for(i=min; i<max; i++) {
+      if (have[i]) {
+        if (gapStart) {
+          console.log('gap', gapStart, i-1);
+          if (fix) {
+            document.fetchEmailsFromTo(gapStart, gapStart + fix);
+            fix = 0;
+          }
+          gapStart = false;
+        }
+      } else {
+        if (!gapStart) {
+          gapStart = i;
+        }
       }
     }
+    if (fix) {
+      document.fetchEmailsFromTo(max, max + fix);
+    }
+    console.log('min,max', min, max);
   }
-  function getSubjects() {
+  function getSubjects(min) {
     var i, a = remoteStorage.inbox.getActivitySince(),
       have = {}
       max = 0;
     for (i in a) {
-      if (a[i].object && a[i].object.imapSeqNo) {
+      if (a[i].object && a[i].object.imapSeqNo && (!min || a[i].object.imapSeqNo > min)) {
         have[a[i].object.imapSeqNo] = a[i].object.subject; 
         if (a[i].object.imapSeqNo > max) {
           max = a[i].object.imapSeqNo;
@@ -248,6 +268,7 @@ document.messaging = (function() {
         }
       }).then(function(success) {
         console.log('success', success);
+        document.result = success;
       }, function(failure) {
         console.log('failure', failure);
       });
