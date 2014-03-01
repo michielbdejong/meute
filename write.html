@@ -75,6 +75,18 @@
     </script>
 
   <script>
+    var templates = {}, posts = [];
+    function getTemplate(name) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'template/'+name);
+      xhr.onload = function() {
+        if (xhr.status == 200) {
+          templates[name]=xhr.responseText;
+          console.log('loaded template', name);
+        }
+      };
+      xhr.send();
+    }
     function d(promise) {
       promise.then(function(a) {
         console.log('success', a);
@@ -100,9 +112,16 @@
     });
 
     function getHighestId() {
-      return 2;
+      return posts.length;
     }
-    function publish(str) {
+    function generateHomePage() {
+      var str = templates['homepage.html'], i;
+      for (i=posts.length-1; i>=0; i--) {
+        str += '<article id="'+i+'"><a style="float:right" href="#'+i+'">michielbdejong.com/#'+i+'</a><h1>'+posts[i]+'</h1></article>\n';
+      }
+      return str+'</body></html>';
+    }
+    function publish(str, syndicate) {
       var str1 = '<!DOCTYPE html><html><head><title>',
         str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
           + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
@@ -112,8 +131,16 @@
         str3 = '</h1></header></body></html>';
       var id = getHighestId() + 1;
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
-      tweet(str+' https://michielbdejong.com/live/'+id);
-      fbpost(str+' https://michielbdejong.com/live/'+id);
+      posts.push(str);
+      if (syndicate) {
+        tweet(str+' https://michielbdejong.com/live/'+id);
+        fbpost(str+' https://michielbdejong.com/live/'+id);
+      }
+      remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', generateHomePage());
     }
+    getTemplate('homepage.html');
+    posts.push('post zero!');
+    posts.push('I\'m in the process of setting up POSSE. Let\'s see if I can syndicate this post into a tweet.');
+    posts.push('testing POSSE posting with http://meute.5apps.com  + reSite');
   </script>
 </html>
