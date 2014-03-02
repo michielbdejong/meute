@@ -112,7 +112,7 @@
     });
 
     function getHighestId() {
-      return posts.length;
+      return posts.length-1;
     }
     function generateHomePage() {
       var str = templates['homepage.html'], i;
@@ -137,10 +137,19 @@
         fbpost(str+' https://michielbdejong.com/live/'+id);
       }
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', generateHomePage());
+      savePosts();
+    }
+    function savePosts() {
+      remoteStorage.scope('/public/www/').storeFile('application/json', 'michielbdejong.com/posts.json', JSON.stringify(posts));
+    }
+    function loadPosts() {
+      remoteStorage.scope('/public/www/').getFile('michielbdejong.com/posts.json', 0).then(function(a) {
+        posts = JSON.parse(a.data);
+      }, function(err) {
+        console.log('err', err); 
+      });
     }
     getTemplate('homepage.html');
-    posts.push('post zero!');
-    posts.push('I\'m in the process of setting up POSSE. Let\'s see if I can syndicate this post into a tweet.');
-    posts.push('testing POSSE posting with http://meute.5apps.com  + reSite');
+    loadPosts();
   </script>
 </html>
