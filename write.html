@@ -119,24 +119,55 @@
     function generateHomePage() {
       var str = templates['homepage.html'], i;
       for (i=posts.length-1; i>=0; i--) {
-        str += '<article id="'+i+'"><a style="float:right" href="#'+i+'">michielbdejong.com/#'+i+'</a><h1>'+posts[i]+'</h1></article>\n';
+        str += '<article id="'+i+'" class="h-entry"><a style="float:right" href="#'+i+'">michielbdejong.com/#'+i+'</a><h1 class="e-content">'
+          + posts[i].text
+          + hEntryMarkup(posts[i].date)
+          + '</h1></article>\n';
       }
       return str+'</body></html>';
     }
+    function twoPos(a) {
+      if (a>9) {
+        return a;
+      } else {
+        return '0'+a;
+      }
+    }
+    function hEntryDate(a) {
+      a = new Date(a);
+      return a.getUTCFullYear()+'-'+twoPos(a.getUTCMonth()+1)+'-'+twoPos(a.getUTCDate())
+        +' '+twoPos(a.getUTCHours())+':'+twoPos(a.getUTCMinutes())+':'+twoPos(a.getUTCSeconds());
+    }
+    function hEntryMarkup(date) {
+      return '<span style="display:none"><time class="dt-published" datetime="'+hEntryDate(date)+'"></time>'
+        + '<a rel="author" class="p-author h-card" href="https://michielbdejong.com/">'
+        + '<img class="u-photo" src="https://michielbdejong.com:8000/storage/michiel/public/shares/140301-0750-DSC06558.png" />'
+        + 'Michiel B. de Jong</a></span>';
+    }
     function publish(str, syndicate) {
-      var str1 = '<!DOCTYPE html><html><head><title>',
+      var date, str1, str2, str3, id;
+      if (str) {
+        date = new Date().toISOString();
+        str1 = '<!DOCTYPE html><html><head><title>';
         str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
           + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
           + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
           + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
-          + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header><h1>',
-        str3 = '</h1></header></body></html>';
-      var id = getHighestId() + 1;
-      remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
-      posts.push(str);
-      if (syndicate) {
-        tweet(str+' https://michielbdejong.com/#'+id);
-        fbpost(str+' https://michielbdejong.com/#'+id);
+          + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header class="h-entry"><h1 class="e-content">';
+        str3 = '</h1>'+hEntryMarkup(date)+'</header></body></html>';
+        id = getHighestId() + 1;
+        remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
+        posts.push({
+          text: str,
+          date: date
+        });
+        if (syndicate) {
+          fbpost(str+' https://michielbdejong.com/#'+id);
+          if ((str+' https://michielbdejong.com/#'+id).length > 140) {
+            str = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999
+          }
+          tweet(str+' https://michielbdejong.com/#'+id);
+        }
       }
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', generateHomePage());
       savePosts();
