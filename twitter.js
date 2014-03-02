@@ -13,11 +13,17 @@ function setTwitterCreds(setNick, a, b, c, d) {
     access_token: c,
     access_token_secret: d
   };
-  document.sockethubClient.set('twitter', {
-   credentials: credentialObject
-  }).then(function (obj) {
-    // successful set credentials
-    console.log('set twitter credentials!');
+  remoteStorage.scope('/twitter-credentials/').storeFile('application/json', 'twitter-creds', JSON.stringify(credentialObject));
+}
+function sendTwitterCreds() {
+  remoteStorage.scope('/twitter-credentials/').getFile('twitter-creds').then(function(a) {
+    console.log('twitter-creds', a);
+    document.sockethubClient.set('twitter', {
+     credentials: JSON.parse(a.data)
+    }).then(function (obj) {
+      // successful set credentials
+      console.log('set twitter credentials!');
+    });
   });
 }
 function tweet(str) {

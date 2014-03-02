@@ -6,11 +6,17 @@ function setFacebookCreds(setNick, a, b) {
   credentialObject[nick] = {
     access_token: b
   };
-  document.sockethubClient.set('facebook', {
-   credentials: credentialObject
-  }).then(function (obj) {
-    // successful set credentials
-    console.log('set facebook credentials!');
+  remoteStorage.scope('/facebook-credentials/').storeFile('application/json', 'facebook-creds', JSON.stringify(credentialObject));
+}
+function sendFacebookCreds() {
+  remoteStorage.scope('/facebook-credentials/').getFile('facebook-creds').then(function(a) {
+    console.log('facebook-creds', a);
+    document.sockethubClient.set('facebook', {
+     credentials: JSON.parse(a.data)
+    }).then(function (obj) {
+      // successful set credentials
+      console.log('set facebook credentials!');
+    });
   });
 }
 function fbpost(str) {

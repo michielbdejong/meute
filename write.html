@@ -99,6 +99,8 @@
     remoteStorage._log = true;
     remoteStorage.displayWidget();
     remoteStorage.access.claim('www', 'rw');
+    remoteStorage.access.claim('facebook-credentials', 'rw');
+    remoteStorage.access.claim('twitter-credentials', 'rw');
     remoteStorage.stopSync();
     document.sockethubClient = SockethubClient.connect({
       host: 'michielbdejong.com',
@@ -133,8 +135,8 @@
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
       posts.push(str);
       if (syndicate) {
-        tweet(str+' https://michielbdejong.com/live/'+id);
-        fbpost(str+' https://michielbdejong.com/live/'+id);
+        tweet(str+' https://michielbdejong.com/#'+id);
+        fbpost(str+' https://michielbdejong.com/#'+id);
       }
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', generateHomePage());
       savePosts();
