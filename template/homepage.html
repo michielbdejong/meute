@@ -82,3 +82,23 @@
         skype and irc. You can send email to <a rel="me" class="u-email" href="mailto:webmaster@michielbdejong.com">Michiel B. de Jong &lt;webmaster@michielbdejong.com&gt;</a></p>
     </nav>
       <a style="margin-left:5em" href="http://wwf.panda.org/how_you_can_help/live_green/"><img src="img/468_60_banner_footprint.jpg" alt="Reduce your environmental footprint" width="468" height="60" border="0"></a>
+       <article>
+         <p>
+           <textarea id="msg" style="width:100%; border-radius:1em;margin:0em;padding:0em">Leave me a message...</textarea>
+         </p>
+         <p>
+           <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em">
+         </p>
+         <script>
+           function snd() {
+             var xhr = new XMLHttpRequest();
+             xhr.open('POST', 'https://michielbdejong.com:7678/via homepage');
+             xhr.onload = function() {
+               if (xhr.status === 200 || xhr.status === 202) {
+                 alert('Message dropped directly into Michiel\'s inbox.');
+               }
+             };
+             xhr.send(document.getElementById('msg').value);
+           }
+         </script>
+       </article>
