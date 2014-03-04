@@ -5,6 +5,9 @@
     <meta charset="utf-8" />
     <meta name="description" content="Michiel B. de Jong" />
     <link rel="author" href="https://michielbdejong.com/" />
+    <link rel="shortcut icon" href="img/120px.jpg" />
+    <link rel="apple-touch-icon-precomposed" href="img/120px.jpg"/>
+    <link rel="alternate" type="application/rss+xml" href="feed.rss"/>
     <style>
       body { background-color: #404040 }
       header { width: 40em; margin-left: 8em; margin-top: 0em; margin-bottom: 0em; color: #D3FDFF; font-size: 50px }
@@ -54,8 +57,16 @@
       <h1 class="p-name">Michiel B. de Jong</h1>
     </header>
     <nav>
+      <!--<img src="http://i.imgur.com/IvTrM.png">-->
+      <input id="search" style="border-radius:.5em" placeholder="Search..."><input style="border-radius:.5em" type="submit" value="Duck it!" onclick="search()">
+      <script>
+        function search() {
+          window.open('https://duckduckgo.com/?q='+encodeURIComponent(document.getElementById('search').value+' site:michielbdejong.com'),
+            'Search Michiel\'s site');
+        }
+      </script>
       <h1>This is my Indie Web site...</h1>
-      Meaning I hacked it together myself - both the html content, and the <a href="https://github.com/michielbdejong/resite">software it runs on</a>.
+      Meaning I hacked it together myself - not only the content, but also the html code (excuse the clunky layout!), and the <a href="https://github.com/michielbdejong/resite">software it runs on</a>.
       I've only just started IndieWebbing, so it still doesn't support a lot of types of interactions. Please be patient! :)</p>
       
       <p>My current main project is an <a href="https://unhosted.org/">unhosted web app</a> called Meute. It leverages <a href="http://remotestorage.io/">remotestorage.js</a>, <a href="http://sockethub.org/">sockethub</a>, and <a href="https://5apps.com/">5apps</a> to create an email+irc+POSSE blogging tool in the browser.
@@ -85,12 +96,15 @@
     </nav>
       <a style="margin-left:5em" href="http://wwf.panda.org/how_you_can_help/live_green/"><img src="img/468_60_banner_footprint.jpg" alt="Reduce your environmental footprint" width="468" height="60" border="0"></a>
        <article>
+         <p style="float:right;margin:0em;padding:0em">
+           <img src='https://michielbdejong.com/img/lock_icon.gif'/> (encrypted with TLS between you and my server)
+         </p>
          <p>
            <textarea id="msg" style="width:100%; border-radius:1em;margin:0em;padding:0em">Leave me a message...
 (include your name please, so I know who it's from)</textarea>
          </p>
          <p>
-           <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em; background-color:">
+            <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em; background-color:">
          </p>
          <script>
            function snd() {
