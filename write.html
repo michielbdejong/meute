@@ -138,9 +138,11 @@
       return a.getUTCFullYear()+'-'+twoPos(a.getUTCMonth()+1)+'-'+twoPos(a.getUTCDate())
         +' '+twoPos(a.getUTCHours())+':'+twoPos(a.getUTCMinutes())+':'+twoPos(a.getUTCSeconds());
     }
-    function hEntryMarkup(date) {
-      return '<span style="display:none"><time class="dt-published" datetime="'+hEntryDate(date)+'"></time>'
-        + '<a rel="author" class="p-author h-card" href="https://michielbdejong.com/">'
+    function hEntryMarkup(date, showDetails) {
+      return '<span '+(showDetails?'':'style="display:none"')+'><time class="dt-published" datetime="'+hEntryDate(date)+'">'
+        + hEntryDate(date)
+        + '</time>'
+        + 'by <a rel="author" class="p-author h-card" href="https://michielbdejong.com/">'
         + '<img class="u-photo" src="https://michielbdejong.com:8000/storage/michiel/public/shares/140301-0750-DSC06558.png" />'
         + 'Michiel B. de Jong</a></span>';
     }
@@ -154,7 +156,8 @@
           + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
           + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
           + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header class="h-entry"><h1 class="e-content">';
-        str3 = '</h1>'+hEntryMarkup(date)+'</header></body></html>';
+        str3 = '</h1>'+hEntryMarkup(date, true)
+          + ' this message on my wall: <a href="https://michielbdejong.com/#'+id+'">https://michielbdejong.com/#'+id+'</a></header></body></html>';
         id = getHighestId() + 1;
         remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
         posts.push({
@@ -162,11 +165,11 @@
           date: date
         });
         if (syndicate) {
-          fbpost(str+' https://michielbdejong.com/#'+id);
-          if ((str+' https://michielbdejong.com/#'+id).length > 140) {
+          fbpost(str+' https://michielbdejong.com/live/'+id);
+          if ((str+' https://michielbdejong.com/live/'+id).length > 140) {
             str = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999
           }
-          tweet(str+' https://michielbdejong.com/#'+id);
+          tweet(str+' https://michielbdejong.com/live/'+id);
         }
       }
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', generateHomePage());
@@ -182,6 +185,25 @@
         console.log('err', err); 
       });
     }
+        function doSomething(what) {
+      document.sockethubClient.sendObject({
+        platform: 'experimental',
+        verb: 'post',
+        actor: { address: 'a', name: ''},
+        object: { text: '', what: what },
+        target: []
+      });
+    }
+    function webmention(source, target) {
+      doSomething({
+        action: 'webmention',
+        source: source,
+        target: target
+      });
+    }
+
+    
+    //...    
     getTemplate('homepage.html');
     loadPosts();
   </script>

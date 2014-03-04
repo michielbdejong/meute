@@ -15,12 +15,14 @@
       footer div { background-color: white; padding: 1em; border-radius: 3em; height: 21.2em; margin-bottom: 2em; margin-left: 1em; margin-right: 1em }
       article a { color: #404040 }
       footer a { color: #D3FDFF }
+      input {background-color: #6FAFFF; color: white; font-size: 20px}
+      textarea {background-color: #FFEFFF}
     </style>
   </head>
   <body>
     <footer>
       <div class="h-card">
-        <img class="u-photo" src="https://michielbdejong.com:8000/storage/michiel/public/shares/140301-0750-DSC06558.png" style="float:left" />
+        <img class="u-photo" src="img/agonda.png" style="float:left" />
         <div style="display:none">
           <h1 class="p-name">Michiel B. de Jong</h1>
           <p class="p-note">I travel while working on technological inventions from my laptop.
@@ -84,10 +86,11 @@
       <a style="margin-left:5em" href="http://wwf.panda.org/how_you_can_help/live_green/"><img src="img/468_60_banner_footprint.jpg" alt="Reduce your environmental footprint" width="468" height="60" border="0"></a>
        <article>
          <p>
-           <textarea id="msg" style="width:100%; border-radius:1em;margin:0em;padding:0em">Leave me a message...</textarea>
+           <textarea id="msg" style="width:100%; border-radius:1em;margin:0em;padding:0em">Leave me a message...
+(include your name please, so I know who it's from)</textarea>
          </p>
          <p>
-           <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em">
+           <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em; background-color:">
          </p>
          <script>
            function snd() {

@@ -63,6 +63,17 @@ document.messaging = (function() {
       },
       verb: 'send'
     };
+    if (typeof(recipient) === 'object') {
+      msg.target = [];
+      for (i in recipient) {
+        msg.target.push({
+          field: i,
+          address: recipient[i],
+          name: recipient[i]
+        });
+      }
+      console.log('msg', msg);
+    }
     if(preview) {
       console.log(JSON.stringify(msg));
     } else {
