@@ -127,10 +127,7 @@
         if(posts[i].type === 'note') {
           str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
             + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
-            + (posts[i].tweetId ? ' <a href="https://twitter.com/intent/favorite?tweet_id='+posts[i].tweetId+'">Favorite</a>' 
-               + ' <a href="https://twitter.com/intent/retweet?tweet_id='+posts[i].tweetId+'">Retweet</a>'
-               + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+posts[i].tweetId+'">Reply</a>'
-              : '')
+            + twitterActions(posts[i].tweetId, i)
             + '</span><h1 class="e-content">'
             + posts[i].text
             + hEntryMarkup(posts[i].date)
@@ -184,8 +181,40 @@
         + '<img class="u-photo" src="/img/60px.jpg" style="border-radius:4em" />'
         + 'Michiel B. de Jong</a></span>';
     }
+    function twitterActions(tweetId, id) {
+      if (tweetId) {
+        return ' <action do="props" with="https://michielbdejong.com/live/'+id+'">'
+           + '<a href="https://twitter.com/intent/favorite?tweet_id='+tweetId+'">Favorite</a></action>'
+           + ' <action do="repost" with="https://michielbdejong.com/live/'+id+'">'
+           + ' <a href="https://twitter.com/intent/retweet?tweet_id='+tweetId+'">Retweet</a></action>'
+           + ' <action do="reply" with="https://michielbdejong.com/live/'+id+'">'
+           + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a></action>';
+      } else {
+        return '';
+      }
+    }
+
+    function createLivePost(postObj) {
+      var str1 = '<!DOCTYPE html><html><head><title>',
+          str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
+            + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
+            + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
+            + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
+            + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><nav><a href="1">first</a> '
+            + (postObj.id === 0 ? '' : '<a href="'+(postObj.id-1)+'">previous</a> ')
+            + (postObj.id === posts.length-1 ? '' : '<a href="'+(postObj.id+1)+'">next</a> ')
+            + '</nav><header class="h-entry"><h1 class="e-content">',
+          str3 = '</h1>'+hEntryMarkup(postObj.date, true)
+            + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+postObj.id+'">https://michielbdejong.com/#'+postObj.id+'</a>'
+            + twitterActions(postObj.tweetId, postObj.id)
+            + '</p></header></body></html>';
+      return str1+postObj.text+str2+postObj.text+str3;
+    }
+    function publishNote(id) {
+      remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(posts[id]));
+    }
     function publish(str, syndicate, tweetId) {
-      var date, str1, str2, str3, id, backlink, page, tweetStr;
+      var id, backlink, page, tweetStr, postObj;
       id = getHighestId() + 1;//not threadsafe at all!    
       if (posts.length === 0) {
         return 'refusing to publish zero posts! try comparing `posts` to `backup` in the console';
@@ -209,27 +238,19 @@
         });
       } else {
         if (str) {
-          date = new Date().toISOString();
-          str1 = '<!DOCTYPE html><html><head><title>';
-          str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
-            + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
-            + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
-            + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
-            + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header class="h-entry"><h1 class="e-content">';
-          str3 = '</h1>'+hEntryMarkup(date, true)
-            + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+id+'">https://michielbdejong.com/#'+id+'</a>'
-            + (tweetId ? ' <a href="https://twitter.com/intent/favorite?tweet_id='+tweetId+'">Favorite</a>'
-               + ' <a href="https://twitter.com/intent/retweet?tweet_id='+tweetId+'">Retweet</a>'
-               + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a>'
-              : '')
-            + '</p></header></body></html>';
-          remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
-          posts.push({
+          postObj = {
             text: str,
-            date: date,
+            date: new Date().toISOString(),
             type: 'note',
-            tweetId: tweetId
-          });
+            tweetId: tweetId,
+            id: id
+          };
+          posts.push(postObj);
+          if (posts.length != id+1) {
+            console.log('new note is not the last post - race condition?');
+            return;
+          }
+          publishNote(id);
         }
         page = generateHomePage();
         remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', page.home);
