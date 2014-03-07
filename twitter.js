@@ -30,7 +30,8 @@ function sendTwitterCreds() {
     });
   });
 }
-function tweet(str, cb) {
+function tweet(str, inReplyTo, cb) {
+  console.log('tweet', str, inReplyTo);
   d(document.sockethubClient.sendObject({
     platform: 'twitter',
     actor: {
@@ -39,12 +40,32 @@ function tweet(str, cb) {
     },
     verb: 'post',
     object: {
-      text: str
+      text: str,
+      in_reply_to_status_id_str: inReplyTo
     },
     target: []
   }).then(function(obj) {
     console.log(JSON.stringify(obj.object));
     cb(obj.object.id_str);
+    return obj;
+  }));
+}
+function retweet(id, cb) {
+  d(document.sockethubClient.sendObject({
+    platform: 'twitter',
+    actor: {
+      address: nick,
+      name: nick
+    },
+    verb: 'post',
+    object: {
+      retweet: id,
+      text: 'this text is only here to get past the sockethub schema and should not get tweeted!'
+    },
+    target: []
+  }).then(function(obj) {
+    console.log(JSON.stringify(obj.object));
+    cb(obj.object);
     return obj;
   }));
 }

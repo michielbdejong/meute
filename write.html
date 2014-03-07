@@ -131,7 +131,7 @@
             + twitterActions(posts[i].tweetId, i)
             + '</span><h1 class="e-content">'
             + aggregateMedia(posts[i].text)
-            + hEntryMarkup(posts[i].date)
+            + hEntryMarkup(posts[i].date, false, posts[i].tweetId)
             + '</h1></article>\n';
           posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
           feedStr += '    <item>\n'
@@ -145,7 +145,7 @@
           str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
             + hEntryDate(posts[i].date)+', <a href="/blog/'+posts[i].blogPostId+'.html">michielbdejong.com/blog/'+posts[i].blogPostId+'.html</a></span><h1 class="e-content">'
             + posts[i].text
-            + hEntryMarkup(posts[i].date)
+            + hEntryMarkup(posts[i].date, false, posts[i].tweetId)
             + '</h1></article>\n';
           posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
           feedStr += '    <item>\n'
@@ -174,12 +174,13 @@
       return a.getUTCFullYear()+'-'+twoPos(a.getUTCMonth()+1)+'-'+twoPos(a.getUTCDate())
         +' '+twoPos(a.getUTCHours())+':'+twoPos(a.getUTCMinutes())+':'+twoPos(a.getUTCSeconds());
     }
-    function hEntryMarkup(date, showDetails) {
+    function hEntryMarkup(date, showDetails, tweetId) {
       return '<span '+(showDetails?'':'style="display:none"')+'><time class="dt-published" datetime="'+hEntryDate(date)+'">'
         + hEntryDate(date)
         + '</time>'
         + '<p>By <a rel="author" class="p-author h-card" href="https://michielbdejong.com/">'
         + '<img class="u-photo" src="/img/60px.jpg" style="border-radius:4em" />'
+        + ' <a href="https://twitter.com/michielbdejong/status/'+tweetId+' class="u-syndication" rel="syndication">view on Twitter</a>';
         + 'Michiel B. de Jong</a></span>';
     }
     function twitterActions(tweetId, id) {
@@ -189,7 +190,8 @@
            + ' <action do="repost" with="https://michielbdejong.com/live/'+id+'">'
            + ' <a href="https://twitter.com/intent/retweet?tweet_id='+tweetId+'">Retweet</a></action>'
            + ' <action do="reply" with="https://michielbdejong.com/live/'+id+'">'
-           + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a></action>';
+           + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a></action>'
+           + ' <a href="https://twitter.com/michielbdejong/status/'+tweetId+' rel="syndication">view on Twitter</a>';
       } else {
         return '';
       }
@@ -223,7 +225,7 @@
             + (postObj.id === 0 ? '' : '<a href="'+(postObj.id-1)+'">previous</a> ')
             + (postObj.id === posts.length-1 ? '' : '<a href="'+(postObj.id+1)+'">next</a> ')
             + '</nav><header class="h-entry"><h1 class="e-content">',
-          str3 = '</h1>'+hEntryMarkup(postObj.date, true)
+          str3 = '</h1>'+hEntryMarkup(postObj.date, true, postObj.tweetId)
             + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+postObj.id+'">https://michielbdejong.com/#'+postObj.id+'</a>'
             + twitterActions(postObj.tweetId, postObj.id)
             + '</p></header></body></html>';
@@ -232,13 +234,22 @@
     function publishNote(id) {
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(posts[id]));
     }
-    function publish(str, syndicate, tweetId, likeUrl) {
+    function extractTwitterId(url) {
+      var urlParts = (url ? url.split('/') : []);
+      console.log('extracting twitter id', urlParts);
+      if (urlParts.length === 6 && urlParts[0] === 'https:' && urlParts[1] === '' && urlParts[2] === 'twitter.com' && urlParts[4] === 'status') {
+        //str = 'RT '+urlParts[3]+': '+....;
+        return urlParts[5];
+      }
+    }
+    function publish(str, syndicate, tweetId, likeUrl, inReplyTo) {
       var id, backlink, page, tweetStr, postObj;
       id = getHighestId() + 1;//not threadsafe at all!    
       if (posts.length === 0) {
         return 'refusing to publish zero posts! try comparing `posts` to `backup` in the console';
       }
       if (syndicate) {
+        console.log('publish syndicate');
         sendFacebookCreds();
         sendTwitterCreds();
         //backlink = ' (perma: /live/'+id+')';
@@ -256,9 +267,23 @@
         } else {
           tweetStr = str;
         }
-        tweet(tweetStr+backlink, function(tweetId) {
-          publish(str, false, tweetId);
-        });
+        
+        retweeting = extractTwitterId(likeUrl);
+        if (retweeting) {
+          console.log('retweeting', retweeting);
+          retweet(retweeting, function(obj) {
+            publish(obj.text, false, retweeting);//link to original tweet, not to my retweet which would be obj.id_str
+          });
+        } else {
+          if (inReplyTo) {
+            webmention('https://michielbdejong.com/live/'+id, inReplyTo);
+          }
+          tweetReply = extractTwitterId(inReplyTo);
+          console.log('tweeting', inReplyTo, tweetReply);
+          tweet(tweetStr+backlink, tweetReply, function(tweetId) {
+            publish(str, false, tweetId);
+          });
+        }
       } else {
         if (str) {
           postObj = {
@@ -292,7 +317,7 @@
         console.log('err', err); 
       });
     }
-        function doSomething(what) {
+    function doSomething(what) {
       document.sockethubClient.sendObject({
         platform: 'experimental',
         verb: 'post',
