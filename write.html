@@ -16,6 +16,7 @@
     </style>
   </head>
   <body>
+    bookmarklet: <a href="javascript:void(window.open('http://write.lolcathost.de:4242/meute/write.html?reblog='+encodeURIComponent(window.location.href)+'&title='+encodeURIComponent(document.title)));">Reblog</a>
     <textarea id="editor"></textarea>
   </body>
   <script src="sockethub-client.js"></script>
@@ -129,7 +130,7 @@
             + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
             + twitterActions(posts[i].tweetId, i)
             + '</span><h1 class="e-content">'
-            + posts[i].text
+            + aggregateMedia(posts[i].text)
             + hEntryMarkup(posts[i].date)
             + '</h1></article>\n';
           posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
@@ -194,6 +195,24 @@
       }
     }
 
+    function aggregateMedia(str) {
+      var i, words = str.split(' '), http = 'http://', https = 'https://', handle = '@', base;
+      for (i=0; i<words.length; i++) {
+        if (['"', '.', ',', ':', '!'].indexOf(words[i][words[i].length-1]) === -1) {
+          base = words[i];
+          rest = '';
+        } else {
+          base = words[i].substring(0, words[i].length-1);
+          rest = words[i].substring(words[i].length-1);
+        }
+        if(words[i].substring(0, http.length) === http || words[i].substring(0, https.length) === https) {
+          words[i] = '<a href="'+base+'">'+base+'</a>'+rest;
+        } else if(words[i].substring(0, handle.length) === handle) {
+          words[i] = '<a href="https://twitter.com/'+base.substring(1)+'">'+base+'</a>'+rest;
+        }
+      }
+      return words.join(' ');
+    }
     function createLivePost(postObj) {
       var str1 = '<!DOCTYPE html><html><head><title>',
           str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
@@ -208,7 +227,7 @@
             + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+postObj.id+'">https://michielbdejong.com/#'+postObj.id+'</a>'
             + twitterActions(postObj.tweetId, postObj.id)
             + '</p></header></body></html>';
-      return str1+postObj.text+str2+postObj.text+str3;
+      return str1+postObj.text+str2+aggregateMedia(postObj.text)+str3;
     }
     function publishNote(id) {
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(posts[id]));
@@ -366,6 +385,21 @@
     setTimeout(function() {
       sendFacebookCreds();
       sendTwitterCreds();
+      if (window.location.search.length) {
+        var parts, str, prefix = '?reblog=';
+        if (window.location.search.substring(0, prefix.length) === prefix) {
+          parts = window.location.search.substring(prefix.length).split('&title=');
+          str = '"'+decodeURIComponent(parts[1])+'" '+decodeURIComponent(parts[0]);
+          console.log('will autoreblog in 10 secs', str);
+          setTimeout(function() {
+            publish(str);
+            console.log('autoreblogged. will close window in 10 secs');
+            setTimeout(function() {
+              window.close();
+            }, 10000);
+          }, 10000);
+        }
+      }
     }, 5000);
 
     getTemplate('homepage.html');
