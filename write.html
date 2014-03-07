@@ -124,19 +124,35 @@
         + '    <link>https://michielbdejong.com/</link>\n'
         + '    <description>Michiel\'s POSSE feed</description>\n';
       for (i=posts.length-1; i>=0; i--) {
-        str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
-          + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a></span><h1 class="e-content">'
-          + posts[i].text
-          + hEntryMarkup(posts[i].date)
-          + '</h1></article>\n';
-        posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
-        feedStr += '    <item>\n'
-          + '      <title>'+posts[i].saferText+'</title>\n'
-          + '      <link>https://michielbdejong/live/'+i+'</link>\n'
-          + '      <guid>https://michielbdejong/live/'+i+'</guid>\n'
-          + '      <pubDate>'+posts[i].date.toString()+'</pubDate>\n'
-          + '      <description>'+posts[i].saferText+'</description>\n'
-          + '    </item>\n'
+        if(posts[i].type === 'note') {
+          str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
+            + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a></span><h1 class="e-content">'
+            + posts[i].text
+            + hEntryMarkup(posts[i].date)
+            + '</h1></article>\n';
+          posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
+          feedStr += '    <item>\n'
+            + '      <title>'+posts[i].saferText+'</title>\n'
+            + '      <link>https://michielbdejong/live/'+i+'</link>\n'
+            + '      <guid>https://michielbdejong/live/'+i+'</guid>\n'
+            + '      <pubDate>'+posts[i].date.toString()+'</pubDate>\n'
+            + '      <description>'+posts[i].saferText+'</description>\n'
+            + '    </item>\n';
+        } else if(posts[i].type === 'article') {
+          str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
+            + hEntryDate(posts[i].date)+', <a href="/blog/'+posts[i].blogPostId+'.html">michielbdejong.com/blog/'+posts[i].blogPostId+'.html</a></span><h1 class="e-content">'
+            + posts[i].text
+            + hEntryMarkup(posts[i].date)
+            + '</h1></article>\n';
+          posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
+          feedStr += '    <item>\n'
+            + '      <title>'+posts[i].saferText+'</title>\n'
+            + '      <link>https://michielbdejong/blog/'+posts[i].blogPostId+'.html</link>\n'
+            + '      <guid>https://michielbdejong/blog/'+posts[i].blogPostId+'.html</guid>\n'
+            + '      <pubDate>'+posts[i].date.toString()+'</pubDate>\n'
+            + '      <description>'+posts[i].saferText+'</description>\n'
+            + '    </item>\n';
+         }
       }
       return {
         home: str+'</body></html>',
@@ -164,7 +180,7 @@
         + 'Michiel B. de Jong</a></span>';
     }
     function publish(str, syndicate) {
-      var date, str1, str2, str3, id, backlink;
+      var date, str1, str2, str3, id, backlink, page;
       if (posts.length === 0) {
         return 'refusing to publish zero posts! try comparing `posts` to `backup` in the console';
       }
@@ -199,7 +215,7 @@
           tweet(str+backlink);
         }
       }
-      var page = generateHomePage();
+      page = generateHomePage();
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', page.home);
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/feed.rss', page.feed);
       savePosts();
@@ -234,32 +250,78 @@
     var backup = [
       {
         date: "2014-03-01T09:53:53.811Z",
+        type: "note",
         text: "post zero!"
       },
       {
         date: "2014-03-01T10:53:53.811Z",
+        type: "note",
         text: "I'm in the process of setting up POSSE. Let's see if I can syndicate this post into a tweet."
       },
       {
         date: "2014-03-01T11:53:53.811Z",
+        type: "note",
         text: "testing POSSE posting with http://meute.5apps.com  + reSite"
       },
       {
         date: "2014-03-01T12:53:53.811Z",
+        type: "note",
         text: "three movies in the imdb top 10 http://www.imdb.com/chart/top which i haven't seen yet; time to borrow them from a peer!"
       },
       {
         date: "2014-03-01T13:53:53.811Z",
+        type: "note",
         text: "the Quattro Formaggi pizza i just had was more like nachos & cheese, but tasty nonetheless"
       },
       {
         date: "2014-03-02T09:53:17.226Z",
+        type: "note",
         text: "fascinating interview with @leashless - from open source, to world hunger, to bitcoin, to genocides, to lady gaga in space https://www.youtube.com/watch?v=9rys_saLiDA"
       },
       {
         date: "2014-03-04T04:13:59.012Z",
+        type: "note",
         text: "just got #indieweb private messaging working using just a https textarea (ref http://www.sandeep.io/178)"
-      }
+      },
+     {
+       "text":"It's fun to indiewebify.me! just added a discoverable /feed.rss to my site",
+       "date":"2014-03-04T05:26:10.868Z",
+       "saferText":"It's fun to indiewebify.me! just added a discoverable /feed.rss to my site",
+       "type":"note"
+     },
+     {
+       "text":"\"if you can't curl it, it's not on the web.\" http://indiewebcamp.com/IndieMark#Level_1",
+       "date":"2014-03-04T07:01:35.042Z",
+       "saferText":"\"if you can't curl it, it's not on the web.\" http://indiewebcamp.com/IndieMark#Level_1",
+       "type":"note"
+     },
+     {
+       "text":"I think I reached an IndieMark score of 1.5 (level 1 completed, cherry-picked from level 2) #indieweb",
+       "date":"2014-03-04T07:17:09.351Z",
+       "saferText":"I think I reached an IndieMark score of 1.5 (level 1 completed, cherry-picked from level 2) #indieweb",
+       "type":"note"
+     },
+     {
+       "text":"experimenting with parenthetical permashortlink citation","date":"2014-03-04T08:39:56.245Z","saferText":"experimenting with parenthetical permashortlink citation","type":"note"},{"text":"Testing out minimalistic variation on (ttk.me t4Pc2) style POSSE backlink","date":"2014-03-04T08:47:05.168Z","saferText":"Testing out minimalistic variation on (ttk.me t4Pc2) style POSSE backlink","type":"note"
+     },{
+       "text":"maybe try what that looks like with parenthesis around it - is the POSSE original of this tweet easily discoverable?","date":"2014-03-04T08:50:00.190Z","saferText":"maybe try what that looks like with parenthesis around it - is the POSSE original of this tweet easily discoverable?","type":"note"
+     },{
+       "text":"Joern Drever about why he works for ownCloud: http://www.butonic.de/2013/12/17/why-i-work-on-owncloud/","date":"2014-03-07T03:57:01.793Z","saferText":"Joern Drever about why he works for ownCloud: http://www.butonic.de/2013/12/17/why-i-work-on-owncloud/","type":"note"
+     },{
+       "date":"2011-07-01T00:00:00.000Z","type":"article","text":"Software freedom on the web https://michielbdejong.com/blog/1.html","saferText":"Software freedom on the web https://michielbdejong.com/blog/1.html","blogPostId":1
+     },{
+       "date":"2011-08-01T00:00:00.000Z","type":"article","text":"Why browsers should offer login https://michielbdejong.com/blog/2.html","blogPostId":2,"saferText":"Why browsers should offer login https://michielbdejong.com/blog/2.html"
+     },{
+       "date":"2012-02-01T00:00:00.000Z","type":"article","text":"On the origin of computational complexity https://michielbdejong.com/blog/3.html","blogPostId":3,"saferText":"On the origin of computational complexity https://michielbdejong.com/blog/3.html"
+     },{
+       "date":"2012-08-01T00:00:00.000Z","type":"article","text":"The countries and Crime https://michielbdejong.com/blog/4.html","blogPostId":4,"saferText":"The countries and Crime https://michielbdejong.com/blog/4.html"
+     },{
+       "date":"2013-02-01T00:00:00.000Z","type":"article","text":"Reboot to virtual prosperity https://michielbdejong.com/blog/5.html","blogPostId":5,"saferText":"Reboot to virtual prosperity https://michielbdejong.com/blog/5.html"
+     },{
+       "date":"2013-12-01T00:00:00.000Z","type":"article","text":"Wifi 4 Change https://michielbdejong.com/blog/6.html","blogPostId":6,"saferText":"Wifi 4 Change https://michielbdejong.com/blog/6.html"
+     },{
+       "date":"2013-07-01T00:00:00.000Z","type":"article","text":"Four simple tips for web page providers https://michielbdejong.com/blog/7.html","blogPostId":7,"saferText":"Four simple tips for web page providers https://michielbdejong.com/blog/7.html"
+     }
     ];
     
     //...

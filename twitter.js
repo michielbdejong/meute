@@ -42,5 +42,8 @@ function tweet(str) {
       text: str
     },
     target: []
+  }).then(function(obj) {
+    console.log(JSON.stringify(obj));
+    return obj;
   }));
 }
