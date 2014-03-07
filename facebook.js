@@ -37,3 +37,18 @@ function fbpost(str) {
     target: []
   }));
 }
+function fblike(likeUrl) {
+  d(document.sockethubClient.sendObject({
+    platform: 'facebook',
+    actor: {
+      address: nick,
+      name: nick
+    },
+    verb: 'post',
+    object: {
+      text: likeUrl,
+      url: likeUrl
+    },
+    target: []
+  }));
+}

@@ -232,7 +232,7 @@
     function publishNote(id) {
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(posts[id]));
     }
-    function publish(str, syndicate, tweetId) {
+    function publish(str, syndicate, tweetId, likeUrl) {
       var id, backlink, page, tweetStr, postObj;
       id = getHighestId() + 1;//not threadsafe at all!    
       if (posts.length === 0) {
@@ -246,7 +246,11 @@
         backlink = ' (/live/'+id+')';
         //backlink = ' (michielbdejong.com /live/'+id+')';
         
-        fbpost(str+backlink);
+        //if (likeUrl) {
+        //  fblike(likeUrl);
+        //} else {
+          fbpost(str+backlink);
+        //}
         if ((str+backlink).length > 140) {
           tweetStr = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999
         } else {
@@ -262,7 +266,8 @@
             date: new Date().toISOString(),
             type: 'note',
             tweetId: tweetId,
-            id: id
+            id: id,
+            likeUrl: likeUrl
           };
           posts.push(postObj);
           if (posts.length != id+1) {
@@ -392,7 +397,7 @@
           str = '"'+decodeURIComponent(parts[1])+'" '+decodeURIComponent(parts[0]);
           console.log('will autoreblog in 10 secs', str);
           setTimeout(function() {
-            publish(str);
+            publish(str, true, undefined, decodeURIComponent(parts[1]));
             console.log('autoreblogged. will close window in 10 secs');
             setTimeout(function() {
               window.close();
