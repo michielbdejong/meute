@@ -126,7 +126,12 @@
       for (i=posts.length-1; i>=0; i--) {
         if(posts[i].type === 'note') {
           str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
-            + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a></span><h1 class="e-content">'
+            + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
+            + (posts[i].tweetId ? ' <a href="https://twitter.com/intent/favorite?tweet_id='+posts[i].tweetId+'">Favorite</a>' 
+               + ' <a href="https://twitter.com/intent/retweet?tweet_id='+posts[i].tweetId+'">Retweet</a>'
+               + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+posts[i].tweetId+'">Reply</a>'
+              : '')
+            + '</span><h1 class="e-content">'
             + posts[i].text
             + hEntryMarkup(posts[i].date)
             + '</h1></article>\n';
@@ -179,46 +184,58 @@
         + '<img class="u-photo" src="/img/60px.jpg" style="border-radius:4em" />'
         + 'Michiel B. de Jong</a></span>';
     }
-    function publish(str, syndicate) {
-      var date, str1, str2, str3, id, backlink, page;
+    function publish(str, syndicate, tweetId) {
+      var date, str1, str2, str3, id, backlink, page, tweetStr;
+      id = getHighestId() + 1;//not threadsafe at all!    
       if (posts.length === 0) {
         return 'refusing to publish zero posts! try comparing `posts` to `backup` in the console';
       }
-      if (str) {
-        date = new Date().toISOString();
-        str1 = '<!DOCTYPE html><html><head><title>';
-        str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
-          + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
-          + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
-          + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
-          + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header class="h-entry"><h1 class="e-content">';
-        id = getHighestId() + 1;
-        str3 = '</h1>'+hEntryMarkup(date, true)
-          + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+id+'">https://michielbdejong.com/#'+id+'</a></p></header></body></html>';
-        remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
-        posts.push({
-          text: str,
-          date: date
-        });
-        if (syndicate) {
-          sendFacebookCreds();
-          sendTwitterCreds();
-          //backlink = ' (perma: /live/'+id+')';
-          backlink = ' /live/'+id;
-          backlink = ' (/live/'+id+')';
-          //backlink = ' (michielbdejong.com /live/'+id+')';
-          
-          fbpost(str+backlink);
-          if ((str+backlink).length > 140) {
-            str = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999
-          }
-          tweet(str+backlink);
+      if (syndicate) {
+        sendFacebookCreds();
+        sendTwitterCreds();
+        //backlink = ' (perma: /live/'+id+')';
+        backlink = ' /live/'+id;
+        backlink = ' (/live/'+id+')';
+        //backlink = ' (michielbdejong.com /live/'+id+')';
+        
+        fbpost(str+backlink);
+        if ((str+backlink).length > 140) {
+          tweetStr = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999
+        } else {
+          tweetStr = str;
         }
+        tweet(tweetStr+backlink, function(tweetId) {
+          publish(str, false, tweetId);
+        });
+      } else {
+        if (str) {
+          date = new Date().toISOString();
+          str1 = '<!DOCTYPE html><html><head><title>';
+          str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
+            + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
+            + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
+            + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
+            + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><header class="h-entry"><h1 class="e-content">';
+          str3 = '</h1>'+hEntryMarkup(date, true)
+            + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+id+'">https://michielbdejong.com/#'+id+'</a>'
+            + (tweetId ? ' <a href="https://twitter.com/intent/favorite?tweet_id='+tweetId+'">Favorite</a>'
+               + ' <a href="https://twitter.com/intent/retweet?tweet_id='+tweetId+'">Retweet</a>'
+               + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a>'
+              : '')
+            + '</p></header></body></html>';
+          remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, str1+str+str2+str+str3);
+          posts.push({
+            text: str,
+            date: date,
+            type: 'note',
+            tweetId: tweetId
+          });
+        }
+        page = generateHomePage();
+        remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', page.home);
+        remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/feed.rss', page.feed);
+        savePosts();
       }
-      page = generateHomePage();
-      remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', page.home);
-      remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/feed.rss', page.feed);
-      savePosts();
     }
     function savePosts() {
       remoteStorage.scope('/public/www/').storeFile('application/json', 'michielbdejong.com/posts.json', JSON.stringify(posts));

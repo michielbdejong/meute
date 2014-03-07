@@ -30,7 +30,7 @@ function sendTwitterCreds() {
     });
   });
 }
-function tweet(str) {
+function tweet(str, cb) {
   d(document.sockethubClient.sendObject({
     platform: 'twitter',
     actor: {
@@ -43,7 +43,8 @@ function tweet(str) {
     },
     target: []
   }).then(function(obj) {
-    console.log(JSON.stringify(obj));
+    console.log(JSON.stringify(obj.object));
+    cb(obj.object.id_str);
     return obj;
   }));
 }
