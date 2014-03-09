@@ -18,6 +18,10 @@
   <body>
     bookmarklet: <a href="javascript:void(window.open('http://write.lolcathost.de:4242/meute/write.html?reblog='+encodeURIComponent(window.location.href)+'&title='+encodeURIComponent(document.title)));">Reblog</a>
     <textarea id="editor"></textarea>
+    <ul>
+      <li>retweet: publish('', true, undefined, 'https://twitter.com/t/status/442187357958455296')</li>
+      <li>doSomething({action:'microformats', url:'http://werd.io/2014/homebrew-website-club-meeting-1', options:{baseUrl:'http://werd.io/2014/'}}).then(function(a) { console.log('success', a); }); (...wait...) rsvp('no');</li>
+    </ul>
   </body>
   <script src="sockethub-client.js"></script>
   <script src="twitter.js"></script>
@@ -125,13 +129,13 @@
         + '    <link>https://michielbdejong.com/</link>\n'
         + '    <description>Michiel\'s POSSE feed</description>\n';
       for (i=posts.length-1; i>=0; i--) {
-        if(posts[i].type === 'note') {
+        if (posts[i].type === 'note' || posts[i].type === 'h-rsvp') {
           str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
             + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
             + twitterActions(posts[i].tweetId, i)
             + '</span><h1 class="e-content">'
             + aggregateMedia(posts[i].text)
-            + hEntryMarkup(posts[i].date, false, posts[i].tweetId)
+            + hEntryMarkup(posts[i], false)
             + '</h1></article>\n';
           posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
           feedStr += '    <item>\n'
@@ -145,7 +149,7 @@
           str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
             + hEntryDate(posts[i].date)+', <a href="/blog/'+posts[i].blogPostId+'.html">michielbdejong.com/blog/'+posts[i].blogPostId+'.html</a></span><h1 class="e-content">'
             + posts[i].text
-            + hEntryMarkup(posts[i].date, false, posts[i].tweetId)
+            + hEntryMarkup(posts[i], false)
             + '</h1></article>\n';
           posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
           feedStr += '    <item>\n'
@@ -174,14 +178,19 @@
       return a.getUTCFullYear()+'-'+twoPos(a.getUTCMonth()+1)+'-'+twoPos(a.getUTCDate())
         +' '+twoPos(a.getUTCHours())+':'+twoPos(a.getUTCMinutes())+':'+twoPos(a.getUTCSeconds());
     }
-    function hEntryMarkup(date, showDetails, tweetId) {
-      return '<span '+(showDetails?'':'style="display:none"')+'><time class="dt-published" datetime="'+hEntryDate(date)+'">'
-        + hEntryDate(date)
+    function hEntryMarkup(obj, showDetails) {
+      return '<span '+(showDetails?'':'style="display:none"')+'><time class="dt-published" datetime="'+hEntryDate(obj.date)+'">'
+        + hEntryDate(obj.date)
         + '</time>'
         + '<p>By <a rel="author" class="p-author h-card" href="https://michielbdejong.com/">'
         + '<img class="u-photo" src="/img/60px.jpg" style="border-radius:4em" />'
-        + ' <a href="https://twitter.com/michielbdejong/status/'+tweetId+' class="u-syndication" rel="syndication">view on Twitter</a>';
-        + 'Michiel B. de Jong</a></span>';
+        + 'Michiel B. de Jong</a> '
+        + (obj.rsvp ? '<p class="p-rsvp" value="'+obj.rsvp+'"><!-- rsvp: '+obj.rsvp+' --></p>' : '')
+        + (obj.tweetId ? ' <a href="https://twitter.com/michielbdejong/status/'+obj.tweetId+'" class="u-syndication" rel="syndication">view on Twitter</a>' : '')
+        + (typeof(obj.inReplyTo) === 'string' ? ' <a href="'+obj.inReplyTo+'" class="u-in-reply-to" rel="in-reply-to"><!--parent--></a>' : '')
+        + (typeof(obj.inReplyTo) === 'object' ?
+            '<p style="background-color:grey;color:white">in reply to <a href="'+obj.inReplyTo.url+'" class="u-in-reply-to" rel="in-reply-to">'+obj.inReplyTo.name+'</a>'+ (obj.inReplyTo.author ? 'by <img src="'+obj.inReplyTo.author.logo+'" style="width:128px" /> <a href="'+obj.inReplyTo.author.url+'">'+obj.inReplyTo.author.name+'</a>' : '') : '')
+        + '</span>';
     }
     function twitterActions(tweetId, id) {
       if (tweetId) {
@@ -191,7 +200,7 @@
            + ' <a href="https://twitter.com/intent/retweet?tweet_id='+tweetId+'">Retweet</a></action>'
            + ' <action do="reply" with="https://michielbdejong.com/live/'+id+'">'
            + ' <a href="https://twitter.com/intent/tweet?in_reply_to='+tweetId+'">Reply</a></action>'
-           + ' <a href="https://twitter.com/michielbdejong/status/'+tweetId+' rel="syndication">view on Twitter</a>';
+           + ' <a href="https://twitter.com/michielbdejong/status/'+tweetId+'" rel="syndication">view on Twitter</a>';
       } else {
         return '';
       }
@@ -217,7 +226,7 @@
     }
     function createLivePost(postObj) {
       var str1 = '<!DOCTYPE html><html><head><title>',
-          str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/" />\n'
+          str2 = '</title>\n<link rel="webmention" href="https://michielbdejong.com:7678/webmention/live/'+postObj.id+'" />\n'
             + '<link rel="author" href="https://michielbdejong.com/" />\n<meta charset="utf-8">\n'
             + '<style>\nbody { background-color: #A3DDDF }\nheader { width: 40em; margin: 5em auto; color: #903030; font-size: 20px }\n'
             + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
@@ -225,9 +234,11 @@
             + (postObj.id === 0 ? '' : '<a href="'+(postObj.id-1)+'">previous</a> ')
             + (postObj.id === posts.length-1 ? '' : '<a href="'+(postObj.id+1)+'">next</a> ')
             + '</nav><header class="h-entry"><h1 class="e-content">',
-          str3 = '</h1>'+hEntryMarkup(postObj.date, true, postObj.tweetId)
+          str3 = '</h1>'+hEntryMarkup(postObj, true)
             + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+postObj.id+'">https://michielbdejong.com/#'+postObj.id+'</a>'
             + twitterActions(postObj.tweetId, postObj.id)
+            + (typeof(postObj.inReplyTo) === 'object' ? ' <a href="'+postObj.inReplyTo.url+'">parent</a>' : '')
+            + (typeof(postObj.inReplyTo) === 'string' ? ' <a href="'+postObj.inReplyTo+'">parent</a>' : '')
             + '</p></header></body></html>';
       return str1+postObj.text+str2+aggregateMedia(postObj.text)+str3;
     }
@@ -275,13 +286,10 @@
             publish(obj.text, false, retweeting);//link to original tweet, not to my retweet which would be obj.id_str
           });
         } else {
-          if (inReplyTo) {
-            webmention('https://michielbdejong.com/live/'+id, inReplyTo);
-          }
           tweetReply = extractTwitterId(inReplyTo);
           console.log('tweeting', inReplyTo, tweetReply);
           tweet(tweetStr+backlink, tweetReply, function(tweetId) {
-            publish(str, false, tweetId);
+            publish(str, false, tweetId, likeUrl, inReplyTo);
           });
         }
       } else {
@@ -292,7 +300,8 @@
             type: 'note',
             tweetId: tweetId,
             id: id,
-            likeUrl: likeUrl
+            likeUrl: likeUrl,
+            inReplyTo: inReplyTo
           };
           posts.push(postObj);
           if (posts.length != id+1) {
@@ -305,6 +314,9 @@
         remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/index.html', page.home);
         remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/feed.rss', page.feed);
         savePosts();
+        if (inReplyTo) {
+          webmention('https://michielbdejong.com/live/'+id, inReplyTo);
+        }
       }
     }
     function savePosts() {
@@ -318,7 +330,7 @@
       });
     }
     function doSomething(what) {
-      document.sockethubClient.sendObject({
+      return document.sockethubClient.sendObject({
         platform: 'experimental',
         verb: 'post',
         actor: { address: 'a', name: ''},
@@ -327,6 +339,7 @@
       });
     }
     function webmention(source, target) {
+      console.log('sending out webmention', source, target);
       doSomething({
         action: 'webmention',
         source: source,
@@ -334,6 +347,56 @@
       });
     }
     
+    function extractEvent() {
+      if (!document.msg || document.msg.platform !== 'experimental') {
+        console.log('retrieve the event first, e.g. doSomething({action:\'microformats\','
+           + ' url:\'http://werd.io/2014/homebrew-website-club-meeting-1\',options:{baseUrl:\'http://werd.io/2014/\'}});');
+        return;
+      }
+      for (i=0; i<document.msg.data.items.length; i++) {
+        if (document.msg.data.items[i].type[0] === 'h-event') {
+          return document.msg.data.items[i];
+        }
+      }
+    }
+    function publishComplex(obj) {
+      obj.id = posts.length;
+      obj.date = new Date().toISOString();
+      obj.url = 'https://michielbdejong.com/live/'+obj.id;
+      posts.push(obj);
+      publishNote(obj.id);
+      publish();
+      if (obj.inReplyTo) {
+        console.log('webmention in 10... 9... 8...', obj.url, obj.inReplyTo.url);
+        setTimeout(function() {
+          //webmention(obj.url, obj.inReplyTo.url);
+        }, 10000);//give it time to push the changes out to the live site first
+      }
+    }
+    function rsvp(going, syndicate) {
+      var event = extractEvent();
+      if (!event) {
+        console.log('no event');
+        return;
+      }
+      publishComplex({
+        inReplyTo: {
+          type: 'h-event',
+          name: event.properties.name[0],
+          url: event.properties.url[event.properties.url.length-1],
+          author: (event.properties.author ? {
+            name: event.properties.author[0].properties.name[0],
+            logo: event.properties.author[0].properties.logo[0],
+            photo: event.properties.author[0].properties.photo[0],
+            url: event.properties.author[0].properties.url[0]
+          } : undefined)
+        },
+        type: 'h-rsvp',
+        rsvp: going,
+        text: 'I RSVPed "'+going+'" for '+event.properties.url[event.properties.url.length-1],
+        syndicate: syndicate
+      });
+    }
     var backup = [
       {
         date: "2014-03-01T09:53:53.811Z",
@@ -432,6 +495,7 @@
       }
     }, 5000);
 
+    document.sockethubClient.on('message', function(msg) {document.msg=msg;});
     getTemplate('homepage.html');
     loadPosts();
   </script>

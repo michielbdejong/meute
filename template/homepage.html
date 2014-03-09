@@ -8,6 +8,7 @@
     <link rel="shortcut icon" href="img/120px.jpg" />
     <link rel="apple-touch-icon-precomposed" href="img/120px.jpg"/>
     <link rel="alternate" type="application/rss+xml" href="feed.rss"/>
+    <link rel="webmention" href="https://michielbdejong.com:7678/webmention/home"/>
     <style>
       body { background-color: #404040 }
       header { width: 40em; margin-left: 8em; margin-top: 0em; margin-bottom: 0em; color: #D3FDFF; font-size: 50px }
@@ -94,10 +95,11 @@
         <a rel="me" href="https://facebook.com/michielbdejong">facebook</a>, <a rel="me" href="http://michielbdejong.tumblr.com/">tumblr</a>,
         skype and irc. You can send email to <a rel="me" class="u-email" href="mailto:webmaster@michielbdejong.com">Michiel B. de Jong &lt;webmaster@michielbdejong.com&gt;</a></p>
         
-      <h2 style="clear:right"><a href="http://indiewebcamp.com/IndieMark">IndieMark</a> level: 1.4</h2>
+      <h2 style="clear:right"><a href="http://indiewebcamp.com/IndieMark">IndieMark</a> level: 3.0</h2>
       <p>
         <ul style="margin-left:1em;padding-left:0em">
-          <li>Level 1 (<strong>full 1.0 pts</strong>)</li>
+          <li>
+            Level 1 (<strong>full 1.0 pts</strong>)
             <ul style="margin-left:1em;padding-left:0em">
               <li>identity: https://michielbdejong.com/ (<strong>0.2</strong>)</li>
               <li>authentication: IndieAuth-github working, <a href="http://indiewebcamp.com/User:Michielbdejong.com">user page</a> created, 8 silo rel-me's (<strong>0.2</strong>)</li>
@@ -106,7 +108,8 @@
               <li>search: no robots.txt; content curlable (<strong>0.2</strong>)</li>
             </ul>
           </li>
-          <li>Level 2 (<strong>full 1.0 (0.9?) pts</strong>)</li>
+          <li>
+            Level 2 (<strong>full 1.0 (0.9?) pts</strong>)
             <ul style="margin-left:1em;padding-left:0em">
               <li>identity: hCard and icon (<strong>0.1</strong>)</li>
               <li>posts: first post type: notes (<strong>0.1</strong>)</li>
@@ -120,7 +123,22 @@
               <li>web actions (<strong>0.1</strong>)</li>
             </ul>
           </li>
-          <li>(it goes up to <a href="http://indiewebcamp.com/IndieMark#Level_6">level 6</a>, so lots to do!)</li>
+          <li>
+            Level 3 (<strong>full 1.0? pts</strong>)
+            <ul style="margin-left:1em;padding-left:0em">
+              <li>publish reply posts: implemented (<strong>0.2</strong>?)</li>
+              <li>webmention: sent a webmention reply to
+                 <a href="http://werd.io/2014/4d-79-20-6c-6f-76-65-20-69-73">http://werd.io/2014/4d-79-20-6c-6f-76-65-20-69-73</a>
+                 (<strong>0.2</strong>?)</li>
+              <li>POSSE replies: syndicated a twitter-reply to twitter
+                 <a href="https://twitter.com/michielbdejong/status/441903649451552768">https://twitter.com/michielbdejong/status/441903649451552768</a>.
+                 Also received a webmention for that self-directed twitter reply btw (to my inbox, not displaying) (<strong>0.2</strong>?)</li>
+              <li>multiple reply types: retweets, reply notes, rsvp's (<strong>0.2</strong>?)</li>
+              <li>reply context: e.g. <a href="/live/39">/live/39</a> (<strong>0.2</strong>?)</li>
+            </ul>
+          </li>
+          <li>Levels 4 and 5 are about displaying and removing replies, comments and mentions. I currently receive those into my inbox, and since I want to keep <a href="https://github.com/michielbdejong/resite">reSite</a> to stay as minimal as possible, with all CMS functionality in my unhosted web app <a href="https://meute.5apps.com/">Meute</a>, I haven't yet found a good way to do server-side auto-posting.</li>
+          <li>So I'm working on <a href="http://indiewebcamp.com/IndieMark#Level_6">level 6</a> (making Meute into a polyglot Indie Reader), first. I will be reusing work from two other unhosted web apps there: <a href="https://dogfeed.5apps.com/">DogFeed</a> by <a href="https://silverbucket.net/">Nick Jennings (silverbucket.net)</a>, and <a href="https://webmarks.5apps.com/">Webmarks</a> by <a href="http://sebastian.kip.pe/">Sebastian Kippe (sebastian.kip.pe)</a>. </li>
         </ul>
       </p>
     </nav>
@@ -129,12 +147,12 @@
          <p style="float:right;margin:0em;padding:0em">
            <img src='https://michielbdejong.com/img/lock_icon.gif'/> (encrypted with TLS between you and my server)
          </p>
-         <p>
+         <p id="leavemsg">
            <textarea id="msg" style="width:100%; border-radius:1em;margin:0em;padding:0em">Leave me a message...
 (include your name please, so I know who it's from)</textarea>
          </p>
          <p>
-            <input type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em; background-color:">
+            <input id="leavemsgbtn" type="button" value="Send private message" onclick="snd();" style="float:right; border-radius:1em; padding:2em; background-color:">
          </p>
          <script>
            function snd() {
@@ -147,5 +165,23 @@
              };
              xhr.send(document.getElementById('msg').value);
            }
+           function checkOnline() {
+             var xhr = new XMLHttpRequest();
+             xhr.open('GET', 'https://michielbdejong.com:8484');
+             xhr.onload = function() {
+               if (xhr.status === 200 || xhr.status === 202) {
+                 console.log('presence', xhr.responseText);
+                 if (xhr.responseText === '1') {
+                   document.getElementById('leavemsg').style.display = 'none';
+                   document.getElementById('leavemsgbtn').value = 'Chat';
+                   document.getElementById('leavemsgbtn').onclick = function() {
+                     window.location = '/simplewebrtc.html';
+                   };
+                 }
+               }
+             };
+             xhr.send(document.getElementById('msg').value);
+           }
+           checkOnline()
          </script>
        </article>
