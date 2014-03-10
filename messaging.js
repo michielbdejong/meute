@@ -190,7 +190,19 @@ document.messaging = (function() {
         }, function(failure) {
           console.log('failure', failure);
         });
-      }
+      };
+      document.fetch1 = function(arr) {
+        var i;
+        for(i=0; i<arr.length; i++) {
+          document.fetchEmailsFromTo(arr[i], arr[i], true);
+        }
+      };
+      document.fetch2 = function(arr) {
+        var i;
+        for(i=0; i<arr.length; i++) {
+          document.messaging.getMessage(arr[i]);
+        }
+      };
       
       document.sockethubClient.on('message', storeMessage);
     } catch(e) {
