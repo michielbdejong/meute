@@ -26,7 +26,7 @@ function sendTwitterCreds() {
       console.log('your Twitter nick is '+nick);
     }
     document.sockethubClient.set('twitter', {
-     credentials: JSON.parse(a.data)
+     credentials: a.data
     }).then(function (obj) {
       // successful set credentials
       console.log('set twitter credentials!');

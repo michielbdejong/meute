@@ -19,7 +19,7 @@ function sendFacebookCreds() {
       console.log('your Facebook nick is '+nick);
     }
     document.sockethubClient.set('facebook', {
-     credentials: JSON.parse(a.data)
+     credentials: a.data
     }).then(function (obj) {
       // successful set credentials
       console.log('set facebook credentials!');
