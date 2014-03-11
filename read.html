@@ -89,7 +89,8 @@
     remoteStorage.access.claim('articles', 'rw');
     
     remoteStorage.stopSync();
-/*    document.sockethubClient = SockethubClient.connect({
+
+    /*remoteStorage.sockethub.writeConfig('default', {
       host: 'michielbdejong.com',
       path: '/sockethub',
       port: 10550,
@@ -99,6 +100,9 @@
         secret: '1234567890'
       }
     });*/
+    remoteStorage.sockethub.getConfig('default').then(function(config) {
+      document.sockethubClient = SockethubClient.connect(config);
+    });
 
     function doSomething(what) {
       return document.sockethubClient.sendObject({
@@ -132,11 +136,18 @@
     }
     
     //...
-    setTimeout(function() {
+
+  //this shouldn't be necessary but when opening the read part of meute (read.html) for the first time, it somehow didn't
+  //correctly receive the creds from the write part (write.html), so putting this in here just to be sure:
+  remoteStorage.scope('/twitter-credentials/').getFile('twitter-creds', 0);
+  remoteStorage.scope('/facebook-credentials/').getFile('facebook-creds', 0);
+
+
+  setTimeout(function() {
+      document.sockethubClient.on('message', function(msg) {document.msg=msg;});
       sendFacebookCreds();
       sendTwitterCreds();
     }, 5000);
 
-    document.sockethubClient.on('message', function(msg) {document.msg=msg;});
   </script>
 </html>

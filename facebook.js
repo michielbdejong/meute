@@ -11,7 +11,10 @@ function setFacebookCreds(setNick, a, b) {
 function sendFacebookCreds() {
   remoteStorage.scope('/facebook-credentials/').getFile('facebook-creds').then(function(a) {
     console.log('facebook-creds', a);
-    for (i in JSON.parse(a.data)) {
+    if(typeof(a.data) === 'string') {
+      a.data = JSON.parse(a.data);
+    }
+    for (i in a.data) {
       nick =i;
       console.log('your Facebook nick is '+nick);
     }

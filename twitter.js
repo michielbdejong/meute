@@ -18,7 +18,10 @@ function setTwitterCreds(setNick, a, b, c, d) {
 function sendTwitterCreds() {
   remoteStorage.scope('/twitter-credentials/').getFile('twitter-creds').then(function(a) {
     console.log('twitter-creds', a);
-    for (i in JSON.parse(a.data)) {
+    if(typeof(a.data) === 'string') {
+      a.data = JSON.parse(a.data);
+    }
+    for (i in a.data) {
       nick =i;
       console.log('your Twitter nick is '+nick);
     }
