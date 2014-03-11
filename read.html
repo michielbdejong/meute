@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>
+      console.log('alpha sync hit');
+    </script>
+    <meta charset="utf-8" />
+    <title>read part of Meute</title>
+    <style>
+      body { font:15px sans-serif; line-height:1.4em; color:#222 }
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+  </body>
+  <script src="sockethub-client.js"></script>
+  <script src="twitter.js"></script>
+  <script src="facebook.js"></script>
+
+  <!-- core -->
+  <script src="../remotestorage.js/lib/promising.js"></script>
+  <script src="../remotestorage.js/src/remotestorage.js"></script>
+  <script src="../remotestorage.js/src/eventhandling.js"></script>
+  <script src="../remotestorage.js/src/wireclient.js"></script>
+  <script src="../remotestorage.js/src/discover.js"></script>
+  <script src="../remotestorage.js/src/authorize.js"></script>
+  <script src="../remotestorage.js/src/access.js"></script>
+  <script src="../remotestorage.js/src/env.js"></script>
+
+  <!-- widget -->
+  <script src="../remotestorage.js/src/i18n.js"></script>
+  <script src="../remotestorage.js/src/assets.js"></script>
+  <script src="../remotestorage.js/src/widget.js"></script>
+  <script src="../remotestorage.js/src/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="../remotestorage.js/lib/tv4.js"></script>
+  <script src="../remotestorage.js/lib/Math.uuid.js"></script>
+  <script src="../remotestorage.js/src/baseclient.js"></script>
+  <script src="../remotestorage.js/src/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="../remotestorage.js/src/caching.js"></script>
+  <script src="../remotestorage.js/src/sync.js"></script>
+  <script src="../remotestorage.js/src/cachinglayer.js"></script>
+  <script src="../remotestorage.js/src/indexeddb.js"></script>
+  <script src="../remotestorage.js/src/localstorage.js"></script>
+  <script src="../remotestorage.js/src/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="../remotestorage.js/src/modules.js"></script>
+  <script src="../remotestorage.js/src/debug/inspect.js"></script>
+  <script src="../remotestorage.js/src/legacy.js"></script>
+  <script src="../remotestorage.js/src/googledrive.js"></script>
+  <script src="../remotestorage.js/src/dropbox.js"></script>
+  <script>remoteStorage = new RemoteStorage();</script>
+
+  <script src="remotestorage-modules/module-utils.js"> </script>
+  <script src="remotestorage-modules/inbox.js"> </script>
+  <script src="asrender.js"> </script>
+
+
+  <script src="remotestorage-modules/remotestorage-sockethub.js"> </script>
+  <script src="remotestorage-modules/remotestorage-feeds.js"> </script>
+  <script src="remotestorage-modules/remotestorage-articles.js"> </script>
+  <script src="remotestorage-modules/remotestorage-bookmarks.js"> </script>
+
+  <script>
+    function d(promise) {
+      promise.then(function(a) {
+        console.log('success', a);
+        document.dResult = a;
+      }, function(a) {
+        console.log('failure', a);
+        document.dResult = a;
+      });
+    }
+    remoteStorage._log = true;
+    remoteStorage.displayWidget();
+    remoteStorage.access.claim('twitter-credentials', 'rw');
+    remoteStorage.access.claim('facebook-credentials', 'rw');
+    remoteStorage.access.claim('sockethub', 'rw');
+    remoteStorage.access.claim('bookmarks', 'rw');
+    remoteStorage.access.claim('feeds', 'rw');
+    remoteStorage.access.claim('articles', 'rw');
+    
+    remoteStorage.stopSync();
+/*    document.sockethubClient = SockethubClient.connect({
+      host: 'michielbdejong.com',
+      path: '/sockethub',
+      port: 10550,
+      ssl: true,
+      tls: true,
+      register: {
+        secret: '1234567890'
+      }
+    });*/
+
+    function doSomething(what) {
+      return document.sockethubClient.sendObject({
+        platform: 'experimental',
+        verb: 'post',
+        actor: { address: 'a', name: ''},
+        object: { text: '', what: what },
+        target: []
+      });
+    }
+    function webmention(source, target) {
+      console.log('sending out webmention', source, target);
+      doSomething({
+        action: 'webmention',
+        source: source,
+        target: target
+      });
+    }
+    
+    function extractEvent() {
+      if (!document.msg || document.msg.platform !== 'experimental') {
+        console.log('retrieve the event first, e.g. doSomething({action:\'microformats\','
+           + ' url:\'http://werd.io/2014/homebrew-website-club-meeting-1\',options:{baseUrl:\'http://werd.io/2014/\'}});');
+        return;
+      }
+      for (i=0; i<document.msg.data.items.length; i++) {
+        if (document.msg.data.items[i].type[0] === 'h-event') {
+          return document.msg.data.items[i];
+        }
+      }
+    }
+    
+    //...
+    setTimeout(function() {
+      sendFacebookCreds();
+      sendTwitterCreds();
+    }, 5000);
+
+    document.sockethubClient.on('message', function(msg) {document.msg=msg;});
+  </script>
+</html>
