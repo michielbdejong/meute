@@ -14,6 +14,7 @@
   </head>
   <body>
     <article>
+      <h3>when you get "Unknown event 'not-connected'", do remoteStorage.reset(), refresh, click GD connect (you'll get "TypeError: this.rs[options.special] is undefined"), refresh again, click GD connect again, it will work the second time after a reset.</h3> 
       <input type="file" id="files" name="files[]" multiple />
       <output id="list"></output>
 
@@ -124,6 +125,18 @@
         foldersPending--;
       });
     }
+    function d(p) {
+      p.then(function(a) {
+        console.log(a);
+      }, function(a) {
+        console.log(a);
+      });
+    }
+    remoteStorage.setApiKeys('googledrive', {
+      //see https://console.developers.google.com/project/appunhosted/apiui/credential
+      //and https://code.google.com/apis/console/b/0/?noredirect&pli=1#project:709507725318:overview
+      client_id: '709507725318-3mt4ke1d4tvkc7ktbjvru3csif4nsk67.apps.googleusercontent.com'
+    });
     remoteStorage.displayWidget();
     //remoteStorage.access.claim('*', 'rw');
     //getEverything('');
