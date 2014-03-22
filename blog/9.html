@@ -1,0 +1,108 @@
+<!-- minimal branch systems -->
+<p>As a hobby, I try to understand why computation takes time. In mechanical physics, time is related to space, mass, and (kinetic) energy: travel takes time. But computation does not involve travel. It involves iterative logical steps, but these can often be collapsed into a single step by rewriting a formula. It is therefore not at all clear why (in the metaphysics sense) computation takes time.</p>
+<p>This is a brainstorm with some sparsely related concepts that may help to talk about the relationship between computation and time.</p>
+
+<h2>Branch systems</h2>
+<p>A branch system is one of:</p>
+<ul>
+  <li>a variable x_i (for integer i)</li>
+  <li>false</li>
+  <li>true</li>
+  <li>an expression <code>if (a) then (b) else (c)</code> (for a, b, c branch systems)</li>
+</ul>
+
+Here, false and true are the familiar atomic Boolean expressions that are always false or always true, respectively, and the variables represent inputs
+of the expression. The meaning of the ternary if-then-else operator is defined as <code>((a AND b) OR (NOT(a) AND c))</code>; in a truth table (0=false, 1=true):
+
+<table><tr><td>x_1</td><td>x_2</td><td>x_3</td><td>if (x_1) then (x_2) else (x3)</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+</table>
+
+Intuitively, it takes on the value of x_2 if x_1 is true, and that of x_3 otherwise. A NAND port <code>(x_1 NAND x_2)</code> can be expressed as the branch system <code>if(x_1) then (if (x_2) then (false) else (true)) else (true)</code>
+
+Lemma: We can write any Boolean expression as a branch system
+Proof: Any Boolean expression can be expressed using only the NAND operator [ref: ?]. Each NAND operator <code>(x_1 NAND x_2)</code> in this expression can then be replaced by two if-then-else operators <code>if(x_1) then (if (x_2) then (false) else (true)) else (true)</code>. The following truth table confirms that this will lead to the same outcome for all four combinations of possible values of x_1 and x_2. Defining A as the subexpression <code>if (x_2) then (false) else (true)</code>,
+
+<table><tr><td>x_1</td><td>x_2</td><td>if (x_2) then (false) else (true) - "A"</td><td>if(x_1) then (A) else (true)</td><td>(x1 NAND x2)</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+</table>
+
+QED.
+
+<h2>Minimal finite branch systems</h2>
+<p>I'm defining the size of a branch system as the number of if-then-else operators it contains (occurences of true, false, and variables come for free and don't count towards the system's size). Now we can ask what the minimum size is of a branch system that is equivalent to a given Boolean expression. Here are all branch systems of size 1, and the Boolean expression they compute. Variations by switching around the variable names are omitted; only the variations in which variables are numbered x_1, x_2, x_3 in order of appearance are shown:
+
+<table><tr><td>branch system</td><td>expression</td></tr>
+<tr><td>if (false) then (false) else (false)</td><td>false</td></tr>
+<tr><td>if (false) then (false) else (true)</td><td>true</td></tr>
+<tr><td>if (false) then (false) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (false) then (true) else (false)</td><td>false</td></tr>
+<tr><td>if (false) then (true) else (true)</td><td>true</td></tr>
+<tr><td>if (false) then (true) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (false) then (x_1) else (false)</td><td>false</td></tr>
+<tr><td>if (false) then (x_1) else (true)</td><td>true</td></tr>
+<tr><td>if (false) then (x_1) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (false) then (x_1) else (x_2)</td><td>x_2</td></tr>
+<tr><td>if (true) then (false) else (false)</td><td>false</td></tr>
+<tr><td>if (true) then (false) else (true)</td><td>false</td></tr>
+<tr><td>if (true) then (false) else (x_1)</td><td>false</td></tr>
+<tr><td>if (true) then (true) else (false)</td><td>true</td></tr>
+<tr><td>if (true) then (true) else (true)</td><td>true</td></tr>
+<tr><td>if (true) then (true) else (x_1)</td><td>true</td></tr>
+<tr><td>if (true) then (x_1) else (false)</td><td>x_1</td></tr>
+<tr><td>if (true) then (x_1) else (true)</td><td>x_1</td></tr>
+<tr><td>if (true) then (x_1) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (true) then (x_1) else (x_2)</td><td>x_1</td></tr>
+<tr><td>if (x_1) then (false) else (false)</td><td>false</td></tr>
+<tr><td>if (x_1) then (false) else (true)</td><td>NOT(x_1)</td></tr>
+<tr><td>if (x_1) then (false) else (x_1)</td><td>false</td></tr>
+<tr><td>if (x_1) then (false) else (x_2)</td><td>(NOT(x_1) AND x_2)</td></tr>
+<tr><td>if (x_1) then (true) else (false)</td><td>x_1</td></tr>
+<tr><td>if (x_1) then (true) else (true)</td><td>true</td></tr>
+<tr><td>if (x_1) then (true) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (x_1) then (true) else (x_2)</td><td>(x_1 OR x_2)</td></tr>
+<tr><td>if (x_1) then (x_1) else (false)</td><td>x_1</td></tr>
+<tr><td>if (x_1) then (x_2) else (false)</td><td>(x_1 AND x_2)</td></tr>
+<tr><td>if (x_1) then (x_1) else (true)</td><td>true</td></tr>
+<tr><td>if (x_1) then (x_2) else (true)</td><td>(NOT(x_1) OR x_2)</td></tr>
+<tr><td>if (x_1) then (x_1) else (x_1)</td><td>x_1</td></tr>
+<tr><td>if (x_1) then (x_2) else (x_1)</td><td>(x_1 AND x_2)</td></tr>
+<tr><td>if (x_1) then (x_1) else (x_2)</td><td>(x_1 OR x_2)</td></tr>
+<tr><td>if (x_1) then (x_2) else (x_3)</td><td>((x_1 AND x_2) OR (NOT(x_1) AND x_3))</td></tr>
+</table>
+
+And here are some minimal expression sizes for Boolean functions in two variables:
+
+0000 0 false
+0001 1 x1 ? x2 : false
+0010 1 x2 ? false : x1
+0011 0 x1
+0100 1 x1 ? false : x2
+0101 0 x2
+0110 2 x1 ? (x2 ? false : true) : x2
+0111 1 x1 ? true : x2
+1000 2 x1 ? false : (x2 ? false : true)
+1001 2 x1 ? x2 : (x2 ? false : true)
+1011 2 x1 ? true : (x2 ? false : true)
+1100 1 x1 ? false : true
+1101 1 x1 ? x2 : true
+1110 2 x1 ? (x2 ? false : true) : true
+1111 0 true
+
+In three variables, there are already 256 Boolean functions, so let's write a program to enumerate minimal branch systems for them.
+
+<h2>Finite problems</h2>
+<p>Traditionally, theoretical computer science talks about problems whose instances have unlimited size, and which are solved by computers with infinite memory space. Here, I want to look at finite computers solving finite problems. In particular, branch systems calculating Boolean functions, like the ones above. A program that solves a problem only for instances of one given input length is still interesting - even if you don't have a generic 3-SAT solver, one that works for an input size of 100 clauses would still be a powerful tool in practice. Especially if you fill up real-world problems that have, say, 87 clauses with tautological clauses to turn them into 100-clause problems this solver understands, then for all practical intents and purposes, you can say you have a 3-SAT solver.</p>
+<p>And the nice thing about those finite computers is that we can write them as branch systems expressions, and prove things about their optimality by counting the number of operators in them. This is much more concise than counting the number of steps needed by a Turing machine to halt, since there are way fewer concepts involved. The if-then-else operators are related closely to the structure of the solution space.</p>
+
+<p>Computation takes time because no finite circuit exists that computes that same finite function with less operators.</p>
