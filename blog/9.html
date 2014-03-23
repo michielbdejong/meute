@@ -191,3 +191,26 @@ so cost is 3 when starting with x1, e.g.:
     x1 ? (x1 ? !x2 : true) : (x1 ? x2 : false)
 or 2 when starting with x2 or x3, e.g.:
     x2 ? (x1 ? !x3 : x3) : x1
+
+<script>
+function Truthtable(str) {
+  var i, nodes = [];
+  for (i=0; i<str.length; i++) {
+    nodes.push(str[i] === '1');
+  }
+  this.reduce(nodes);
+}
+
+Truthtable.prototype.reduce = function(nodes) {
+  var i, reduced;
+  if (nodes.length === 1) {
+    this.tree = nodes;
+  } else {
+    reduced = [];
+    for (i=0; i<nodes.length; i+=2) {
+      reduced.push([nodes[i], nodes[i+1]]);
+    }
+    this.reduce(reduced);
+  }
+}
+</script>
