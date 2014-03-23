@@ -14,5 +14,6 @@ RemoteStorage.defineModule('facebook-credentials', function(privClient, pubClien
     exports: {
       setCreds: setCreds,
       getCreds: getCreds
+    }
   };
 });

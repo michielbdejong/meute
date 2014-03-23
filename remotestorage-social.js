@@ -35,7 +35,11 @@ remoteStorage.social = (function() {
         register: {
           secret: config.secret
         }
-      });
+      })
+      setTimeout(function() {
+        sendTwitterCreds();
+        sendFacebookCreds();
+      }, 1000);
     });
     emit('status', { sockethub: 'awaiting config' });
   }
@@ -52,7 +56,7 @@ remoteStorage.social = (function() {
         nick =i;
         console.log('your Twitter nick is '+nick);
       }
-      document.sockethubClient.set('twitter', {
+      remoteStorage.social._shClient.set('twitter', {
        credentials: a.data
       }).then(function (obj) {
         // successful set credentials
@@ -62,7 +66,7 @@ remoteStorage.social = (function() {
   }
   function tweet(str, inReplyTo, cb) {
     console.log('tweet', str, inReplyTo);
-    d(document.sockethubClient.sendObject({
+    d(remoteStorage.social._shClient.sendObject({
       platform: 'twitter',
       actor: {
         address: nick,
@@ -81,7 +85,7 @@ remoteStorage.social = (function() {
     }));
   }
   function retweet(id, cb) {
-    d(document.sockethubClient.sendObject({
+    d(remoteStorage.social._shClient.sendObject({
       platform: 'twitter',
       actor: {
         address: nick,
@@ -111,7 +115,7 @@ remoteStorage.social = (function() {
         nick =i;
         console.log('your Facebook nick is '+nick);
       }
-      document.sockethubClient.set('facebook', {
+      remoteStorage.social._shClient.set('facebook', {
        credentials: a.data
       }).then(function (obj) {
         // successful set credentials
@@ -120,7 +124,7 @@ remoteStorage.social = (function() {
     });
   }
   function fbpost(str) {
-    d(document.sockethubClient.sendObject({
+    d(remoteStorage.social._shClient.sendObject({
       platform: 'facebook',
       actor: {
         address: nick,
@@ -134,7 +138,7 @@ remoteStorage.social = (function() {
     }));
   }
   function fblike(likeUrl) {
-    d(document.sockethubClient.sendObject({
+    d(remoteStorage.social._shClient.sendObject({
       platform: 'facebook',
       actor: {
         address: nick,
@@ -173,13 +177,24 @@ remoteStorage.social = (function() {
     },
     addAccount: function(platform, cred1, cred2, cred3, cred4, cred5) {
       if (platform === 'twitter') {
-      console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
+        remoteStorage['twitter-credentials'].setCreds(cred1, cred2, cred3, cred4, cred5);
+      } else if (platform === 'facebook') {
+        remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
+      } else {
+        console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
+      }
     },
     removeAccount: function(platform, cred1, cred2, cred3, cred4, cred5) {
       console.log('remoteStorage.social.removeAccount', platform, cred1, cred2, cred3, cred4, cred5);
     },
     send: function(platform, param1, param2, param3, param4) {
-      console.log('remoteStorage.social.send', platform, param1, param2, param3, param4);
+      if (platform === 'twitter') {
+        tweet(param1);
+      } else if (platform === 'facebook') {
+        fbpost(param1);
+      } else {
+        console.log('remoteStorage.social.send', platform, param1, param2, param3, param4);
+      }
     },
     on: function(event, cb) {
       if (!eventHandlers[event]) {
@@ -197,10 +212,16 @@ remoteStorage.social = (function() {
       console.log('remoteStorage.social.publish', text, syndicate);
     },
     reply: function(text, url) {
-      console.log('remoteStorage.social.reply', text, url);
+      if (platform === 'twitter') {
+        tweet(text, url);
+      } else {
+        console.log('remoteStorage.social.reply', text, url);
+      }
     },
     retweet: function(url) {
-      console.log('remoteStorage.social.retweet', url);
+      var parts = url.split('/');
+      retweet(parts[parts.length-1]);
+      //console.log('remoteStorage.social.retweet', url);
     },
     favorite: function(url) {
       console.log('remoteStorage.social.favorite', url);

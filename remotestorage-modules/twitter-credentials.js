@@ -20,5 +20,6 @@ RemoteStorage.defineModule('twitter-credentials', function(privClient, pubClient
     exports: {
       setCreds: setCreds,
       getCreds: getCreds
+    }
   };
 });
