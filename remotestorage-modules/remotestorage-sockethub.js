@@ -53,6 +53,23 @@
           }
           name = 'config.' + name + '.json';
           return privateClient.storeObject('config', name, data);
+        },
+        
+        onFirstConfig: function(cb) {
+          var done = false;
+          privateClient.on('change', function(e) {
+            console.log('change event', e);
+            if (!done && e.relativePath === 'config.default.json') {
+              cb(e.newValue);
+              done = true;
+            }
+          });
+          privateClient.getObject('config.default.json').then(function(obj) {
+            if (!done && obj) {
+              cb(obj);
+              done = true;
+            }
+          }); 
         }
       }
     };

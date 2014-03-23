@@ -5,7 +5,7 @@ remoteStorage.social.addAccount('twitter', 'michielbdejong', '*****', '*****', '
 remoteStorage.social.addAccount('facebook', 'michielbdejong', '*****');
 remoteStorage.social.addAccount('www', 'https://michielbdejong.com/', 'templates/blue/', '/live/');
 
-remoteStorage.social.listAccounts();
+remoteStorage.social.on('status', function(obj));
 remoteStorage.social.removeAccount('www', 'https://michielbdejong.com/', 'templates/homepage.html');
 
 remoteStorage.social.send('irc', '#remotestorage', 'hi');
