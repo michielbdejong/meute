@@ -31,3 +31,21 @@ remoteStorage.social.addContact('Michiel de Jong', 'twitter:michielbdejong');
 remoteStorage.social.addContact('Michiel de Jong', 'facebook:michielbdejong');
 remoteStorage.social.addContact('Michiel de Jong', 'https://michielbdejong.com/');
 remoteStorage.social.findContact('mic', function(obj));
+
+modules:
+* sockethub
+* twitter-credentials
+* facebook-credentials
+* email
+* inbox
+* contacts
+* feeds
+* articles
+
+bootstrap:
+* remoteStorage loading, claiming access, modules filling up memory
+* get sockethub and platforms config
+* connect to sockethub
+* set credentials
+* join irc rooms
+* check for mail

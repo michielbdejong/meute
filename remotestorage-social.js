@@ -407,22 +407,6 @@ document.messaging = (function() {
         document.dResult = a;
       });
     }
-    remoteStorage._log = true;
-    remoteStorage.displayWidget();
-    remoteStorage.access.claim('www', 'rw');
-    remoteStorage.access.claim('facebook-credentials', 'rw');
-    remoteStorage.access.claim('twitter-credentials', 'rw');
-    remoteStorage.stopSync();
-    document.sockethubClient = SockethubClient.connect({
-      host: 'michielbdejong.com',
-      path: '/sockethub',
-      port: 10550,
-      ssl: true,
-      tls: true,
-      register: {
-        secret: '1234567890'
-      }
-    });
 
     function getHighestId() {
       return posts.length-1;
@@ -788,6 +772,13 @@ document.messaging = (function() {
     ];
     
     //...
+    remoteStorage._log = true;
+    remoteStorage.displayWidget();
+    remoteStorage.access.claim('www', 'rw');
+    remoteStorage.access.claim('facebook-credentials', 'rw');
+    remoteStorage.access.claim('twitter-credentials', 'rw');
+    remoteStorage.stopSync();
+
     setTimeout(function() {
       sendFacebookCreds();
       sendTwitterCreds();
