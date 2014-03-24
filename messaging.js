@@ -92,6 +92,24 @@ document.messaging = (function() {
       register: {
         secret: "1234567890"
       }
+    });  
+    document.sockethubClient.on('registered', function() {
+      console.log('registered!');
+      try {
+       remoteStorage.email.getConfig().then(function(config) {
+          if(typeof(config) === 'object' && config['@context']) {
+            delete config['@context'];
+          }
+          console.log(config);
+          if(config) {
+            setEmailConfig(config);
+          } else {
+            console.log('please call document.setEmailPassword(\'hunter2\');!');
+          }
+        });
+      } catch(e) {
+        console.log(e.message);
+      }
     });
   }
   
