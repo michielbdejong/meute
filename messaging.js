@@ -87,7 +87,7 @@ document.messaging = (function() {
       host: 'michielbdejong.com',
       path: '/sockethub',
       port: 10550,
-      SsL: true,
+      ssl: true,
       tls: true,
       register: {
         secret: "1234567890"
