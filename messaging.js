@@ -82,6 +82,19 @@ document.messaging = (function() {
     }
   }
   console.log('in messaging.js, getting sh config');
+  document.reconnect = function() {
+    document.sockethubClient = SockethubClient.connect({
+      host: 'michielbdejong.com',
+      path: '/sockethub',
+      port: 10550,
+      SsL: true,
+      tls: true,
+      register: {
+        secret: "1234567890"
+      }
+    });
+  }
+  
   var send = function() { console.log('not ready'); };
   remoteStorage.sockethub.getConfig().then(function(config) {
   console.log('in messaging.js, got sh config');
@@ -353,6 +366,41 @@ document.messaging = (function() {
     }
   }
   //setInterval("fetchNextMessages(100);", 60000);
+
+  function tosdrFetch1 () {
+    var i, a = remoteStorage.inbox.getActivitySince();
+    document.notext = [];
+    document.tosdr = [];
+    document.tosdrMsgIds = {};
+    for (i in a) {
+      if (a[i] && a[i].target && a[i].target.to && a[i].target.to[0] && a[i].target.to[0].address === 'tosdr@googlegroups.com') {
+        document.tosdrMsgIds[a[i].object.messageId] = a[i];
+      }
+    }
+    for (i in document.tosdrMsgIds) {
+      remoteStorage.email.getMessage(i).then(function(success) {
+        if (success) {
+          if (!success.object.text) {
+            document.notext.push(success.object.imapSeqNo);
+          } else {
+            document.tosdr.push(success);
+          }
+        }
+      });
+    }
+  }
+  function tosdrFetch2(max) {
+    document.i=0; document.timer = setInterval(function() {
+     if (i >= document.notext.length || (max && i >= max)) {
+       console.log('clearing timer');
+       clearInterval(document.timer);
+     } else {
+      console.log('fetching', i);
+      document.fetch1([document.notext[i]]);
+      i++
+     }
+    }, 10000);
+  }
   
   return {
     getAccounts: function() {},//-> [{...}]
@@ -376,7 +424,9 @@ document.messaging = (function() {
       return '<table><tr><td>'+remoteStorage.inbox.getConversationNames().join('</td><td>')+'</td></tr></table>';
     },
     storeMessage: storeMessage,
-    sendEmail: sendEmail
+    sendEmail: sendEmail,
+    tosdrFetch1: tosdrFetch1,
+    tosdrFetch2: tosdrFetch2
   };
 
 })();
