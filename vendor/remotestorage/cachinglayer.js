@@ -319,7 +319,7 @@
           misses.push(paths[i]);
         }
       }
-      return this.getNodes(paths, results)l
+      return this.getNodes(paths, results);
     },
 
     setNodesCached: function(objs) {
