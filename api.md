@@ -55,8 +55,9 @@ bootstrap:
 ways to make tosdr export faster, first phase:
 
 - allow to disable fireInitial and add load function to SyncedMap and SyncedVar
-- make it use dirty flags and then storeFiles
-
+- baseClient.askMeFor(path, cb)
+- make sure remoteStorage.social  is 100% event driven (no "getX" functions)
+- make sure all remoteStorage.social functions call SyncedMap:load as necessary.
 
 
 the push version is useless if not stored immediately, you would get race conditions
@@ -72,3 +73,13 @@ maybe have a local cache, a push cache, etcetera.
 caching control methods:
 readFromDisk loads local values for a subtree into memory
 flushToDisk saves any unsaved changes and unloads
+
+
+
+
+askMeForObject with a callback is silly: you may as well already pass the values, and then they can be stored in the baseclient until flush, that doesn't require
+an API change.
+
+adding an in-memory-cache to the baseClient is quite trivial, just check it on gets as well, and flush it each 10 seconds so that it doesn't grow.
+next step would then be syncing straight from there, and keeping push versions in memory as well, but that doesn't need to be the same PR.
+in any case, you can easily stopSync while doing stuff, and sync afterwards when the tab is not in focus.

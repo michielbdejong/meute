@@ -309,6 +309,38 @@
       }
       return node;
     },
+    nodesCache: {},
+    getNodesCached: function(paths) {
+      var i, results = {}, misses = [];
+      for (i=0; i<paths.length; i++) {
+        if (this.nodesCache[path[i]]) {
+          results[path[i]] = this.nodesCache[path[i]];
+        } else {
+          misses.push(paths[i]);
+        }
+      }
+      return this.getNodes(paths, results)l
+    },
+
+    setNodesCached: function(objs) {
+      var i;
+      for (i in objs) {
+        this.nodesCache[i] = objs[i];
+      }
+      if (!this.flushTimer) {
+        this.flushTimer = setTimeout(function() {
+          clearTimeout(this.flushTimer);
+          this.setNodes(this.nodesCache);
+          this.nodesCache = {};
+        }, 10000);
+      }
+      return Promising().fulfill();
+    },
+    //issues:
+    //* what if the write fails? what if it takes more than 10 seconds?
+    //* forAllNodes should also take into account both puts and deletes
+    //* check if pending deletes are correctly omitted from gets (is that this.nodesCache[path] === undefined?)
+
     _getInternals: function() {
       return {
         _isFolder: _isFolder,
