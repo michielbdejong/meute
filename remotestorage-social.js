@@ -40,20 +40,23 @@ remoteStorage.social = (function() {
         sendTwitterCreds();
         sendFacebookCreds();
       }, 1000);
+      remoteStorage.social._shClient.on('message', function(msg) {
+        emit('message', msg);
+      });
     });
     emit('status', { sockethub: 'awaiting config' });
   }
 
   //irc
   var ircNick;
-  function joinRooms(nick, channels) {
+  function joinRooms(server, nick, channels) {
     ircNick = nick;
     // set our credentials for the sockethub platform
     // (does not activate the IRC session, just stores the data)
     var credentialObject = {};
     credentialObject[nick] = {
       nick: nick,
-      server: 'irc.freenode.net',
+      server: server,
       password: '',
       channels: channels,
       actor: {
@@ -61,14 +64,12 @@ remoteStorage.social = (function() {
         name: nick
       }
     };
+    console.log(credentialObject);
     remoteStorage.social._shClient.set('irc', {
      credentials: credentialObject
     }).then(function (obj) {
       // successful set credentials
       console.log('set irc credentials!');
-      if(document.ircIncoming) {
-        document.ircIncoming(obj);
-      }
       return remoteStorage.social._shClient.sendObject({
         verb: 'update',
         platform: 'irc',
@@ -79,9 +80,6 @@ remoteStorage.social = (function() {
         target: []
       });
     }).then(function (obj2) {
-      if(document.ircIncoming) {
-        document.ircIncoming(obj);
-      }
       console.log('irc connected to ', channels);
       var channelAddresses = [], i;
       for(i=0; i<channels.length; i++) {
@@ -322,7 +320,7 @@ remoteStorage.social = (function() {
       } else if (platform === 'facebook') {
         remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
       } else if (platform === 'irc') {
-        joinRooms(cred1, cred2);
+        joinRooms(cred1, cred2, cred3);
       } else {
         console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
       }
