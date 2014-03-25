@@ -57,9 +57,12 @@
   <script src="vendor/remotestorage/dropbox.js"></script>
   <script>remoteStorage = new RemoteStorage(); RemoteStorage._log = true;</script>
 
+  <script src="remotestorage-modules/module-utils.js"> </script>
+
   <script src="remotestorage-modules/remotestorage-sockethub.js"> </script>
   <script src="remotestorage-modules/twitter-credentials.js"> </script>
   <script src="remotestorage-modules/facebook-credentials.js"> </script>
+  <script src="remotestorage-modules/email.js"> </script>
   <script src="sockethub-client.js"></script>
   
   <script src="remotestorage-social.js"></script>
@@ -73,12 +76,12 @@
     });
     remoteStorage.social.setSockethub('wss://michielbdejong.com:10550', '1234567890');
     
-    setTimeout(function() {
-      remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
-    }, 5000);
-    setTimeout(function() {
-      remoteStorage.social.send('irc', '#meute', 'hi');
-    }, 15000);
+    //setTimeout(function() {
+    //  remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
+    //}, 5000);
+    //setTimeout(function() {
+    //  remoteStorage.social.send('irc', '#meute', 'hi');
+    //}, 15000);
     
     document.getElementsByTagName('pre')[0].innerHTML = document.getElementsByTagName('script')[34].innerHTML;
   </script>
