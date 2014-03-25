@@ -1,5 +1,5 @@
 remoteStorage.social.setSockethub('wss://michielbdejong.com:10550');
-remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong');
+remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
 remoteStorage.social.addAccount('email', 'mail.gandi.net', 'mail.gandi.net', 'anything@michielbdejong.com', '*****');
 remoteStorage.social.addAccount('twitter', 'michielbdejong', '*****', '*****', '*****', '*****');
 remoteStorage.social.addAccount('facebook', 'michielbdejong', '*****');

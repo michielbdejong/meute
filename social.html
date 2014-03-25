@@ -15,8 +15,9 @@
       article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
     </style>
   </head>
-  <body>
-  </body>
+  <body><pre>
+    document.getElementsByTagName('pre')[0].innerHTML = document.getElementsByTagName('script')[34].innerHTML;
+  </pre></body>
 
   <!-- core -->
   <script src="vendor/remotestorage/lib/promising.js"></script>
@@ -54,7 +55,7 @@
   <script src="vendor/remotestorage/legacy.js"></script>
   <script src="vendor/remotestorage/googledrive.js"></script>
   <script src="vendor/remotestorage/dropbox.js"></script>
-  <script>remoteStorage = new RemoteStorage();</script>
+  <script>remoteStorage = new RemoteStorage(); RemoteStorage._log = true;</script>
 
   <script src="remotestorage-modules/remotestorage-sockethub.js"> </script>
   <script src="remotestorage-modules/twitter-credentials.js"> </script>
@@ -67,6 +68,18 @@
     remoteStorage.social.on('status', function(status) {
       console.log('remoteStorage.social status', JSON.stringify(status));
     });
+    remoteStorage.social.on('message', function(message) {
+      console.log('remoteStorage.social message', JSON.stringify(message));
+    });
     remoteStorage.social.setSockethub('wss://michielbdejong.com:10550', '1234567890');
+    
+    setTimeout(function() {
+      remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
+    }, 5000);
+    setTimeout(function() {
+      remoteStorage.social.send('irc', '#meute', 'hi');
+    }, 15000);
+    
+    document.getElementsByTagName('pre')[0].innerHTML = document.getElementsByTagName('script')[34].innerHTML;
   </script>
 </html>

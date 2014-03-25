@@ -299,8 +299,6 @@ remoteStorage.social = (function() {
   setTimeout(bootstrap, 0);
 
   return {
-    joinRooms: joinRooms,
-    ircMsg: ircMsg,
     setSockethub: function(url, secret) {
       var config = { secret: secret }, parts1, parts2;
       if (url.substring(0, 'wss://'.length) ===  'wss://') {
@@ -323,6 +321,8 @@ remoteStorage.social = (function() {
         remoteStorage['twitter-credentials'].setCreds(cred1, cred2, cred3, cred4, cred5);
       } else if (platform === 'facebook') {
         remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
+      } else if (platform === 'irc') {
+        joinRooms(cred1, cred2);
       } else {
         console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
       }
@@ -331,7 +331,9 @@ remoteStorage.social = (function() {
       console.log('remoteStorage.social.removeAccount', platform, cred1, cred2, cred3, cred4, cred5);
     },
     send: function(platform, param1, param2, param3, param4) {
-      if (platform === 'twitter') {
+      if (platform === 'irc') {
+        ircMsg(param1, param2);
+      } else if (platform === 'twitter') {
         tweet(param1);
       } else if (platform === 'facebook') {
         fbpost(param1);
