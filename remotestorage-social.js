@@ -61,7 +61,7 @@ remoteStorage.social = (function() {
         name: nick
       }
     };
-    document.sockethubClient.set('irc', {
+    remoteStorage.social._shClient.set('irc', {
      credentials: credentialObject
     }).then(function (obj) {
       // successful set credentials
@@ -69,7 +69,7 @@ remoteStorage.social = (function() {
       if(document.ircIncoming) {
         document.ircIncoming(obj);
       }
-      return document.sockethubClient.sendObject({
+      return remoteStorage.social._shClient.sendObject({
         verb: 'update',
         platform: 'irc',
         actor: {
@@ -88,7 +88,7 @@ remoteStorage.social = (function() {
         channelAddresses.push({address: channels[i]});
       }
       console.log('channelAddresses', channelAddresses);
-      return document.sockethubClient.sendObject({
+      return remoteStorage.social._shClient.sendObject({
         verb: 'observe',
         platform: 'irc',
         actor: {
@@ -122,7 +122,7 @@ remoteStorage.social = (function() {
     };
 
     console.log('sendMessage called: ', obj);
-    document.sockethubClient.sendObject(obj).then(function (obj2) {
+    remoteStorage.social._shClient.sendObject(obj).then(function (obj2) {
       console.log('message sent', obj, obj2);
       if(document.ircIncoming) {
         document.ircIncoming(obj);
@@ -149,7 +149,7 @@ remoteStorage.social = (function() {
       }
     };
 
-    document.sockethubClient.sendObject(obj).then(function (obj2) {
+    remoteStorage.social._shClient.sendObject(obj).then(function (obj2) {
       console.log('changeNick success', obj);
       if(document.ircIncoming) {
         document.ircIncoming(obj2);
@@ -176,7 +176,7 @@ remoteStorage.social = (function() {
       }
     };
 
-    document.sockethubClient.sendObject(obj).then(function (obj2) {
+    remoteStorage.social._shClient.sendObject(obj).then(function (obj2) {
       console.log('getAttendants success', obj);
       if(document.ircIncoming) {
         document.ircIncoming(obj2);
@@ -299,6 +299,8 @@ remoteStorage.social = (function() {
   setTimeout(bootstrap, 0);
 
   return {
+    joinRooms: joinRooms,
+    ircMsg: ircMsg,
     setSockethub: function(url, secret) {
       var config = { secret: secret }, parts1, parts2;
       if (url.substring(0, 'wss://'.length) ===  'wss://') {
