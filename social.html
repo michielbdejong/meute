@@ -76,12 +76,10 @@
     });
     remoteStorage.social.setSockethub('wss://michielbdejong.com:10550', '1234567890');
     
-    //setTimeout(function() {
-    //  remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
-    //}, 5000);
-    //setTimeout(function() {
-    //  remoteStorage.social.send('irc', '#meute', 'hi');
-    //}, 15000);
+    remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
+    setTimeout(function() {
+      remoteStorage.social.send('irc', '#meute', 'hi');
+    }, 15000);
     
     document.getElementsByTagName('pre')[0].innerHTML = document.getElementsByTagName('script')[34].innerHTML;
   </script>

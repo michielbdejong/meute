@@ -45,10 +45,13 @@ remoteStorage.social = (function() {
       });
       remoteStorage.social._shClient.on('registered', function() {
         console.log('registered!');
-        //for (i in remoteStorage.social._accountsToAdd) {
-        //  remoteStorage.social.addAccount.apply(remoteStorage.social._accountsToAdd[i]);
-        //}
+        remoteStorage.social._shClient.registered = true;
+        for (i in remoteStorage.social._accountsToAdd) {
+          remoteStorage.social.addAccount.apply(null, remoteStorage.social._accountsToAdd[i]);
+        }
+        remoteStorage.social._accountsToAdd = [];
         try {
+         return;
          remoteStorage.email.getConfig().then(function(config) {
             if(typeof(config) === 'object' && config['@context']) {
               delete config['@context'];
@@ -622,14 +625,21 @@ remoteStorage.social = (function() {
       remoteStorage.sockethub.writeConfig('default', config);
     },
     addAccount: function(platform, cred1, cred2, cred3, cred4, cred5) {
-      if (platform === 'twitter') {
-        remoteStorage['twitter-credentials'].setCreds(cred1, cred2, cred3, cred4, cred5);
-      } else if (platform === 'facebook') {
-        remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
-      } else if (platform === 'irc') {
-        joinRooms(cred1, cred2, cred3);
+      if (!remoteStorage.social._shClient || !remoteStorage.social._shClient.registered) {
+        if (!remoteStorage.social._accountsToAdd) {
+          remoteStorage.social._accountsToAdd = [];
+        }
+        remoteStorage.social._accountsToAdd.push(arguments);
       } else {
-        console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
+        if (platform === 'twitter') {
+          remoteStorage['twitter-credentials'].setCreds(cred1, cred2, cred3, cred4, cred5);
+        } else if (platform === 'facebook') {
+          remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
+        } else if (platform === 'irc') {
+          joinRooms(cred1, cred2, cred3);
+        } else {
+          console.log('remoteStorage.social.addAccount', platform, cred1, cred2, cred3, cred4, cred5);
+        }
       }
     },
     removeAccount: function(platform, cred1, cred2, cred3, cred4, cred5) {
