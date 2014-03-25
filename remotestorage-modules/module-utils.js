@@ -134,7 +134,7 @@ var PrefixTree = function(baseClient) {
 };
 
 function SyncedVar(name, baseClient) {
-  var data;
+  var data, loaded = false;
   baseClient.on('change', function(e) {
     if(e.relativePath === name) {
       data = e.newValue;
@@ -152,6 +152,11 @@ function SyncedVar(name, baseClient) {
     set: function(val) {
       baseClient.storeObject('SyncedVar', name, val);
       data=val;
+    },
+    load: function() {
+      return baseClient.getObject(name).then(function(res) {
+        data = res.data;
+      });
     }
   };
 }
@@ -182,6 +187,11 @@ function SyncedMap(name, baseClient) {
     },
     getKeys: function() {
       return Object.getOwnPropertyNames(data);
+    },
+    load: function(key) {
+      return prefixTree.getObject(key).then(function(res) {
+        data[key] = res.data;
+      });
     },
     getEverything: function() {
       return data;

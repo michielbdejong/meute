@@ -417,7 +417,7 @@ document.messaging = (function() {
       document.fetch1([document.notext[i]]);
       i++
      }
-    }, 10000);
+    }, 60000);
   }
   
   return {

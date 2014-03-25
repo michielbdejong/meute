@@ -49,3 +49,26 @@ bootstrap:
 * set credentials
 * join irc rooms
 * check for mail
+
+
+
+ways to make tosdr export faster, first phase:
+
+- allow to disable fireInitial and add load function to SyncedMap and SyncedVar
+- make it use dirty flags and then storeFiles
+
+
+
+the push version is useless if not stored immediately, you would get race conditions
+300000ms puts lead to race conditions anyway
+that pleas for a common in-memory cache
+also, a common in-memory cache is easier to work with, *if* the developer understands that it exists.
+sync access to it may make this clear, and also avoid surprises when empty cache results are returned without going to remote.
+
+is there a way to avoid race conditions with two in-memory caches?
+
+maybe have a local cache, a push cache, etcetera.
+
+caching control methods:
+readFromDisk loads local values for a subtree into memory
+flushToDisk saves any unsaved changes and unloads

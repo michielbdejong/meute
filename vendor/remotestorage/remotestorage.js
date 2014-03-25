@@ -181,7 +181,7 @@
     this._init();
 
     this.on('ready', function() {
-      if (this.local) {
+      if (this.local && !this.skipFireInitial) {
         setTimeout(this.local.fireInitial.bind(this.local), 0);
       }
     }.bind(this));

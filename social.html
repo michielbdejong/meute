@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>
+      console.log('sync hit');
+    </script>
+    <meta charset="utf-8" />
+    <title>remoteStorage.social playground</title>
+    <style>
+      body { font:15px sans-serif; line-height:1.4em; color:#222 }
+      nav {float:left; margin:3em}
+      nav div { border-style:solid; border-radius:1em; margin: 1em; padding: 1em}
+      nav div table tr td img { width:4em; height:4em; border-radius:1em }
+      article table tr td img { width:3em; height:3em; border-radius:1em }
+      article {float:left; margin-top:4em; padding:1em; border-style:solid; border-radius:1em}
+    </style>
+  </head>
+  <body>
+  </body>
+
+  <!-- core -->
+  <script src="vendor/remotestorage/lib/promising.js"></script>
+  <script src="vendor/remotestorage/remotestorage.js"></script>
+  <script src="vendor/remotestorage/eventhandling.js"></script>
+  <script src="vendor/remotestorage/wireclient.js"></script>
+  <script src="vendor/remotestorage/discover.js"></script>
+  <script src="vendor/remotestorage/authorize.js"></script>
+  <script src="vendor/remotestorage/access.js"></script>
+  <script src="vendor/remotestorage/env.js"></script>
+
+  <!-- widget -->
+  <script src="vendor/remotestorage/i18n.js"></script>
+  <script src="vendor/remotestorage/assets.js"></script>
+  <script src="vendor/remotestorage/widget.js"></script>
+  <script src="vendor/remotestorage/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="vendor/remotestorage/lib/tv4.js"></script>
+  <script src="vendor/remotestorage/lib/Math.uuid.js"></script>
+  <script src="vendor/remotestorage/baseclient.js"></script>
+  <script src="vendor/remotestorage/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="vendor/remotestorage/caching.js"></script>
+  <script src="vendor/remotestorage/sync.js"></script>
+  <script src="vendor/remotestorage/cachinglayer.js"></script>
+  <script src="vendor/remotestorage/indexeddb.js"></script>
+  <script src="vendor/remotestorage/localstorage.js"></script>
+  <script src="vendor/remotestorage/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="vendor/remotestorage/modules.js"></script>
+  <script src="vendor/remotestorage/debug/inspect.js"></script>
+  <script src="vendor/remotestorage/legacy.js"></script>
+  <script src="vendor/remotestorage/googledrive.js"></script>
+  <script src="vendor/remotestorage/dropbox.js"></script>
+  <script>remoteStorage = new RemoteStorage();</script>
+
+  <script src="remotestorage-modules/remotestorage-sockethub.js"> </script>
+  <script src="remotestorage-modules/twitter-credentials.js"> </script>
+  <script src="remotestorage-modules/facebook-credentials.js"> </script>
+  <script src="sockethub-client.js"></script>
+  
+  <script src="remotestorage-social.js"></script>
+  <script>
+    remoteStorage.displayWidget();
+    remoteStorage.social.on('status', function(status) {
+      console.log('remoteStorage.social status', JSON.stringify(status));
+    });
+    remoteStorage.social.setSockethub('wss://michielbdejong.com:10550', '1234567890');
+  </script>
+</html>
