@@ -496,7 +496,7 @@ remoteStorage.social = (function() {
 
   //twitter
   function sendTwitterCreds() {
-    remoteStorage['twitter-credentials'].getCreds().then(function(a) {
+    remoteStorage['twitter-credentials'].getCreds(remoteStorage.social._masterPwd).then(function(a) {
       console.log('twitter-creds', a);
       if(typeof(a.data) === 'string') {
         a.data = JSON.parse(a.data);
@@ -555,7 +555,7 @@ remoteStorage.social = (function() {
 
   //facebook
   function sendFacebookCreds() {
-    remoteStorage['facebook-credentials'].getCreds().then(function(a) {
+    remoteStorage['facebook-credentials'].getCreds(remoteStorage.social._masterPwd).then(function(a) {
       console.log('facebook-creds', a);
       if(typeof(a.data) === 'string') {
         a.data = JSON.parse(a.data);
@@ -632,9 +632,9 @@ remoteStorage.social = (function() {
         remoteStorage.social._accountsToAdd.push(arguments);
       } else {
         if (platform === 'twitter') {
-          remoteStorage['twitter-credentials'].setCreds(cred1, cred2, cred3, cred4, cred5);
+          remoteStorage['twitter-credentials'].setCreds(remoteStorage.social._masterPwd, cred1, cred2, cred3, cred4, cred5);
         } else if (platform === 'facebook') {
-          remoteStorage['facebook-credentials'].setCreds(cred1, cred2);
+          remoteStorage['facebook-credentials'].setCreds(remoteStorage.social._masterPwd, cred1, cred2);
         } else if (platform === 'irc') {
           joinRooms(cred1, cred2, cred3);
         } else {
@@ -694,6 +694,9 @@ remoteStorage.social = (function() {
     },
     findContact: function(prefix, cb) {
       console.log('remoteStorage.social.findContact', prefix, cb);
+    },
+    setMasterPassword: function(pwd) {
+      remoteStorage.social._masterPwd = pwd;
     }
   };
 })();

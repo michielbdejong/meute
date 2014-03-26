@@ -64,6 +64,7 @@
   <script src="remotestorage-modules/facebook-credentials.js"> </script>
   <script src="remotestorage-modules/email.js"> </script>
   <script src="sockethub-client.js"></script>
+  <script src="sjcl.js"></script>
   
   <script src="remotestorage-social.js"></script>
   <script>
@@ -75,6 +76,7 @@
       console.log('remoteStorage.social message', JSON.stringify(message));
     });
     remoteStorage.social.setSockethub('wss://michielbdejong.com:10550', '1234567890');
+    remoteStorage.social.setMasterPassword('*******');
     
     remoteStorage.social.addAccount('irc', 'irc.freenode.net', 'michielbdejong', ['#meute']);
     setTimeout(function() {
