@@ -1,24 +1,35 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configDone = {};
+  var masterPwd, sockethubClient, config = {}, configDone = {}, sockethubRegistered;
 
   function connectFurther() {
-    if (config.sockethub) {
-      if (configDone.sockethub) {
-        for (i in config) {
-          if (!configDone[i]) {
-            sockethubClient.set(i, config[i]);
-            configDone[i] = true;
-          }
-        }
-      } else {
-        sockethubClient = SockethubClient.connect(config.sockethub);
-        sockethubClient.on('registered', function() {
-          configDone.sockethub = true;
-          connectFurther();
-        });
-      }
-    } else {
+    if (!config.sockethub) {
       //nothing to do without a sockethub config
+      return;
+    }
+    for (i in config) {
+      if (!configDone[i]) {
+        if (i === 'sockethub') {
+          sockethubClient = SockethubClient.connect(config.sockethub);
+          sockethubClient.on('registered', function() {
+            sockethubRegistered = true;
+            console.log('registered!');
+            connectFurther();
+          });
+          configDone[i] = true;
+        } else if (sockethubRegistered) {        
+          console.log('setting!', i);
+          sockethubClient.sendObject({
+            platform: 'dispatcher',
+            target: [{ platform: i }],
+            verb: 'set',
+            object: {
+              objectType: 'credentials',
+              credentials: config[i]
+            }
+          });
+          configDone[i] = true;
+        }
+      }
     }
   }
  
@@ -55,13 +66,23 @@ meute = (function() {
       remoteStorage[which].setConfig(masterPwd, thisConfig);
     }
   }
+  function join(platform, actor, channels) {
+    sockethubClient.sendObject({
+      platform: 'irc',
+      verb: 'join',
+      actor: actor,
+      target: channels,
+      object: {},
+    });
+  }
   function send(obj) {
-    sockethubClient.send(obj);
+    sockethubClient.sendObject(obj);
   }
   
   return {
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
+    join: join,
     send: send
   };
 })();

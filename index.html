@@ -92,5 +92,49 @@
   <script src="upstream/remotestorage-modules/facebook.js"> </script>
 
   <script src="meute.js"> </script>
-
+  <script>
+    function step1() {
+      meute.setMasterPassword('master');
+    }
+    function step2() {
+      meute.addAccount('sockethub', {
+        host: 'michielbdejong.com',
+        ssl: true, tls: true, port: 10550, path: '',
+        register: { secret: '1234567890' }
+      });
+    }
+    function step3() {
+      meute.addAccount('irc', {
+        credentials: {
+          'nick': {
+            nick: 'nick',
+            server: 'irc.freenode.net',
+            password: '',
+            actor: {
+              address: 'nick',
+              name: 'nick'
+            }
+          }
+        }
+      });
+    }
+    function step4() {
+      meute.join('irc', { address: 'nick', name: 'nick' }, [
+        { address: '#meute' }
+      ]);
+    }
+    function step5() {
+      meute.send({
+        platform: 'irc',
+        verb: 'send',
+        actor: { address: 'nick', name: 'nick' },
+        target: [{
+          address: '#meute'
+        }],
+        object: {
+          text: 'hi'
+        }
+      });
+    }
+  </script>
 </html>

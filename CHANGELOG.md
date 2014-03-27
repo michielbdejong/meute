@@ -1,3 +1,8 @@
+# 0.2.1
+
+* many bugfixes in many places
+* compat with sockethub version f9f50ee1
+
 # 0.2.0
 
 * first version of the meute.setMasterPassword function
