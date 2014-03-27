@@ -11,7 +11,7 @@ meute = (function() {
           }
         }
       } else {
-        sockethubClient = SockethubClient.connect(config);
+        sockethubClient = SockethubClient.connect(config.sockethub);
         sockethubClient.on('registered', function() {
           configDone.sockethub = true;
           connectFurther();
@@ -41,18 +41,18 @@ meute = (function() {
   function loadAccount(which) {
     remoteStorage[which].getConfig(masterPwd).then(function(config) {
       addAccount(which, config);
-    }
+    });
   }
    
   function setMasterPassword(pwd) {
     masterPwd = pwd;
     bootstrap();
   }
-  function addAccount(which, config) {
-    config[which] = config;
+  function addAccount(which, thisConfig) {
+    config[which] = thisConfig;
     connectFurther();
     if (remoteStorage[which] && remoteStorage[which].setConfig) {
-      remoteStorage[which].setConfig(masterPwd, config);
+      remoteStorage[which].setConfig(masterPwd, thisConfig);
     }
   }
   function send(obj) {

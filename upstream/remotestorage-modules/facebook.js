@@ -6,7 +6,9 @@ RemoteStorage.defineModule('facebook', function(privClient, pubClient) {
   }
   function getConfig(pwd) {
     return privClient.getFile('facebook-config').then(function(a) {
-      a.data = sjcl.decrypt(pwd, a.data);
+      if (typeof(a) === 'object' && typeof(a.data) === 'string') {
+        a.data = sjcl.decrypt(pwd, a.data);
+      }
       return a;
     });
   }
