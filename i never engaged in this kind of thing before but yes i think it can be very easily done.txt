@@ -1,0 +1,32 @@
+web interfaces:
+
+https://[nickname].un.ht/[productname]/ <- cookie problems!
+https://[nickname].un.ht:[productport]/ <- quite ugly
+https://[nickname].un.ht:[productport]/[productname]/ <- easier to use but still quite ugly
+https://[productname].[nickname].un.ht/ <- looks good and has no cookie problems, just not sure what ssl does there
+
+webfinger:
+https://[nickname].un.ht/.well-known/webfinger
+
+persona:
+https://[nickname].un.ht/.well-known/browserid
+
+remotestorage:
+[productname] = reStore or similar
+
+forwards:
+http://[nickname].un.ht/ -> https://[nickname].un.ht/
+
+webfinger: [anything]@[nickname].un.ht
+
+email:  [anything]@[nickname].un.ht
+
+@mention: @[nickname].un.ht
+
+twitterdisobedience: host Randall(?)'s project as just another project
+
+https offloader running nodejs with SPDY; redirect to instance of [productname] with [nickname] mounted as shared folder (spin it up if necessary)
+
+user database: (nickname, password, quotas)
+
+monitoring process checks activity and shuts down idle containers, alerts in case of DoS or other emergency
