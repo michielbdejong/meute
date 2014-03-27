@@ -22,10 +22,8 @@ meute = (function() {
             platform: 'dispatcher',
             target: [{ platform: i }],
             verb: 'set',
-            object: {
-              objectType: 'credentials',
-              credentials: config[i]
-            }
+            object: config[i].object,
+            actor: config[i].actor
           });
           configDone[i] = true;
         }
