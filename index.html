@@ -2,10 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Meute - an unhosted messages/contacts/search app</title>
+    <title>Meute - a foundation for unhosted social apps</title>
   </head>
   <body>
-    <h1>Private alpha</h1>
-    <p style="width:30em" >There is not much to see here yet. Meute is an attempt to build a polyglot client for the federated social web, in an unhhosted web app, using technologies like <a href="http://remotestorage.io/">remotestorage</a> for per-user data storage, <a href="http://sockethub.org/">sockethub</a> for relaying messages from the browser to the outside world, and <a href="http://useraddress.net/">useraddress</a> for user search. It will initially support human-readable email and irc messages, but plans also exist to add support for comment threads on github issues, Facebook chat, and <a href="http://opentabs.net/">opentabs</a>. The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
+    <h1>v0.2.0</h1>
+    <p style="width:30em" ><a href="meute.js">meute.js</a> is still very basic, but it can already help you build an app that combines <a href="http://remotestorage.io/">remotestorage</a> for per-user data storage and <a href="http://sockethub.org/">sockethub</a> for relaying messages from the browser to the outside world. The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
+    <p>The 0.2 API still follows the sockethub syntax very closely and is as follows:
+    <pre>
+      meute.setMasterPassword('master');
+      meute.addAccount('sockethub', {
+        host: 'michielbdejong.com',
+        ssl: true, tls: true, port: 10550, path: '',
+        register: { secret: '1234567890' }
+      });
+      meute.addAccount('irc', {
+        credentials: {
+          'nick': {
+            nick: 'nick',
+            server: 'irc.freenode.net',
+            password: '',
+            channels: ['#meute'],
+            actor: {
+              address: 'nick',
+              name: 'nick'
+            }
+          }
+        }
+      });
+      meute.send({
+        platform: 'irc',
+        verb: 'send',
+        actor: { address: 'nick', name: 'nick' },
+        target: [{
+          address: '#meute'
+        }],
+        object: {
+          text: 'hi'
+        }
+      });
+    </pre>
+    <p>The credentials you give in the addAccount calls will be encrypted with the master password using sjcl and stored in the respective remotestorage modules.</p>
   </body>
 </html>
