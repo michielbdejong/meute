@@ -1,296 +1,258 @@
 (function() {
   /**
-   * Class: cachinglayer
+   * Interface: cachinglayer
    *
-   * this class defines functions that are mixed into remoteStorage.local when it is
-   * instantiated. In terms of OOP, it therefore effectively acts as a base class for
-   * indexeddb.js, localstorage.js, and inmemorystorage.js.
-   * Thesee three remoteStorage.local implementations should implement threfore
-   * implement this.getNodes, this.setNodes, and this.forAllNodes.
-   * the rest is blended in here to create a GPD (get/put/delete) interface
-   * which the baseclient can talk to.
-   * the objects itself should only expose getNodes, setNodes, and forAllNodes.
+   * This module defines functions that are mixed into remoteStorage.local when
+   * it is instantiated (currently one of indexeddb.js, localstorage.js, or
+   * inmemorystorage.js).
    *
+   * All remoteStorage.local implementations should therefore implement
+   * this.getNodes, this.setNodes, and this.forAllNodes. The rest is blended in
+   * here to create a GPD (get/put/delete) interface which the BaseClient can
+   * talk to.
    */
 
-  var  _isFolder = function(path) {
-      return path.substr(-1) === '/';
-    },
+  function isFolder(path) {
+    return path.substr(-1) === '/';
+  }
 
-    _isDocument = function(path) {
-      return path.substr(-1) !== '/';
-    },
+  function isDocument(path) {
+    return path.substr(-1) !== '/';
+  }
 
-    _deepClone = function(obj) {
-      if (obj === undefined) {
-        return undefined;
-      } else {
-        return JSON.parse(JSON.stringify(obj));
-      }
-    },
+  function deepClone(obj) {
+    if (obj === undefined) {
+      return undefined;
+    } else {
+      return JSON.parse(JSON.stringify(obj));
+    }
+  }
 
-    _equal = function(obj1, obj2) {
-      return JSON.stringify(obj1) === JSON.stringify(obj2);
-    },
+  function equal(obj1, obj2) {
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
+  }
 
-    _getLatest = function(node) {
-      if (typeof(node) !== 'object' || typeof(node.path) !== 'string') {
-        return;
+  function getLatest(node) {
+    if (typeof(node) !== 'object' || typeof(node.path) !== 'string') {
+      return;
+    }
+    if (isFolder(node.path)) {
+      if (node.local && node.local.itemsMap) {
+        return node.local;
       }
-      if (_isFolder(node.path)) {
-        if (node.local && node.local.itemsMap) {
-          return node.local;
-        }
-        if (node.common && node.common.itemsMap) {
-          return node.common;
-        }
-      } else {
-        if (node.local && node.local.body && node.local.contentType) {
-          return node.local;
-        }
-        if (node.common && node.common.body && node.common.contentType) {
-          return node.common;
-        }
-        //migration code; once all apps use this version of the lib, we can publish clean-up code
-        //that migrates over any old-format data, and stop supporting it. for now, new apps will
-        //support data in both formats, thanks to this:
-        if (node.body && node.contentType) {
-          return {
-            body: node.body,
-            contentType: node.contentType
-          };
-        }
+      if (node.common && node.common.itemsMap) {
+        return node.common;
       }
-    },
-    _nodesFromRoot = function(path) {
-      var parts, ret = [path];
-      if(path.substr(-1) === '/') {
-        //remove trailing slash if present,
-        //so it's not counted as a path level
-        path = path.substring(0, path.length-1);
+    } else {
+      if (node.local && node.local.body && node.local.contentType) {
+        return node.local;
       }
-      parts = path.split('/');
-      while(parts.length > 1) {
-        parts.pop();
-        ret.push(parts.join('/')+'/');
+      if (node.common && node.common.body && node.common.contentType) {
+        return node.common;
       }
-      return ret;
-    },
-    _makeNode = function(path, now) {
-      var ret = {
-        path: path,
-        common: {
-          timestamp: now
-        }
+      // Migration code! Once all apps use at least this version of the lib, we
+      // can publish clean-up code that migrates over any old-format data, and
+      // stop supporting it. For now, new apps will support data in both
+      // formats, thanks to this:
+      if (node.body && node.contentType) {
+        return {
+          body: node.body,
+          contentType: node.contentType
+        };
+      }
+    }
+  }
+
+  function isOutdated(node, maxAge) {
+    return !node || !node.timestamp ||
+           ((new Date().getTime()) - node.timestamp > maxAge);
+  }
+
+  function pathsFromRoot(path) {
+    var paths = [path];
+    var parts = path.replace(/\/$/, '').split('/');
+
+    while (parts.length > 1) {
+      parts.pop();
+      paths.push(parts.join('/')+'/');
+    }
+    return paths;
+  }
+
+  function makeNode(path, timestamp) {
+    var node = { path: path, common: { timestamp: timestamp } };
+
+    if (isFolder(path)) {
+      node.common.itemsMap = {};
+    }
+    return node;
+  }
+
+  function updateFolderNodeWithItemName(node, itemName, timestamp) {
+    if (!node.common) {
+      node.common = {
+        timestamp: timestamp,
+        itemsMap: {}
       };
-      if(_isFolder(path)) {
-        ret.common.itemsMap = {};
-      }
-      return ret;
-    };
+    }
+    if (!node.common.itemsMap) {
+      node.common.itemsMap = {};
+    }
+    if (!node.local) {
+      node.local = deepClone(node.common);
+    }
+    if (!node.local.itemsMap) {
+      node.local.itemsMap = node.common.itemsMap;
+    }
+    node.local.itemsMap[itemName] = true;
+
+    return node;
+  }
 
   var methods = {
-    //GPD interface:
+
     get: function(path, maxAge) {
       var promise = promising();
+
       this.getNodes([path]).then(function(objs) {
-        var latest = _getLatest(objs[path]);
-        if ((typeof(maxAge) === 'number') && (
-             !latest ||
-             !latest.timestamp ||
-             ((new Date().getTime()) - latest.timestamp > maxAge))) {
+        var node = getLatest(objs[path]);
+        if ((typeof(maxAge) === 'number') && isOutdated(node, maxAge)) {
           remoteStorage.sync.queueGetRequest(path, promise);
-          return promise;
         }
 
-        if (latest) {
-          promise.fulfill(200, latest.body || latest.itemsMap, latest.contentType);
+        if (node) {
+          promise.fulfill(200, node.body || node.itemsMap, node.contentType);
         } else {
           promise.fulfill(404);
         }
       }.bind(this), function(err) {
         promise.reject(err);
       }.bind(this));
+
       return promise;
     },
-    _updateNodes: function(nodePaths, cb) {
-      return this.getNodes(nodePaths).then(function(objs) {
-        var i, copyObjs = _deepClone(objs);
-        objs = cb(objs);
-        for (i in objs) {
-          if (_equal(objs[i], copyObjs[i])) {
-            delete objs[i];
-          } else if(_isDocument(i)) {
-            this._emit('change', {
-              path: i,
-              origin: 'window',
-              oldValue: objs[i].local.previousBody,
-              newValue: objs[i].local.body,
-              oldContentType: objs[i].local.previousContentType,
-              newContentType: objs[i].local.contentType
-            });
-            delete objs[i].local.previousBody;
-            delete objs[i].local.previousContentType;
-          }
-        }
-        return this.setNodes(objs).then(function() {
-          return 200;
-        }).then(function(status) {
-          var i;
-          if (this.diffHandler) {
-            for (i in objs) {
-              if (i.substr(-1) !== '/') {
-                this.diffHandler(i);
-              }
-            }
-          }
-          return status;
-        }.bind(this));
-      }.bind(this),
-      function(err) {
-        throw(err);
-      });
-    },
+
     put: function(path, body, contentType) {
-      var i, now = new Date().getTime(), pathNodes = _nodesFromRoot(path), previous;
-      return this._updateNodes(pathNodes, function(objs) {
+      var paths = pathsFromRoot(path);
+      var now = new Date().getTime();
+
+      return this._updateNodes(paths, function(nodes) {
         try {
-          for (i=0; i<pathNodes.length; i++) {
-            if (!objs[pathNodes[i]]) {
-              objs[pathNodes[i]] = _makeNode(pathNodes[i], now);
+          for (var i=0; i<paths.length; i++) {
+            var path = paths[i];
+            var node = nodes[path];
+            var previous;
+
+            if (!node) {
+              nodes[path] = node = makeNode(path, now);
             }
+
+            // Document
             if (i === 0) {
-              //save the document itself
-              previous = _getLatest(objs[pathNodes[i]]);
-              objs[pathNodes[i]].local = {
-                previousBody: (previous ? previous.body : undefined),
+              previous = getLatest(node);
+              node.local = {
+                body:                body,
+                contentType:         contentType,
+                timestamp:           now,
+                previousBody:        (previous ? previous.body : undefined),
                 previousContentType: (previous ? previous.contentType : undefined),
-                body: body,
-                contentType: contentType,
-                timestamp: now
               };
-            } else {
-              //add it to all parents
-              itemName = pathNodes[i-1].substring(pathNodes[i].length);
-              if (!objs[pathNodes[i]].common) {
-                objs[pathNodes[i]].common = {
-                  timestamp: now,
-                  itemsMap: {}
-                };
-              }
-              if (!objs[pathNodes[i]].local) {
-                objs[pathNodes[i]].local = _deepClone(objs[pathNodes[i]].common);
-              }
-              if (!objs[pathNodes[i]].common.itemsMap) {
-                objs[pathNodes[i]].common.itemsMap = {};
-              }
-              if (!objs[pathNodes[i]].local.itemsMap) {
-                objs[pathNodes[i]].local.itemsMap = objs[pathNodes[i]].common.itemsMap;
-              }
-              objs[pathNodes[i]].local.itemsMap[itemName] = true;
+            }
+            // Folder
+            else {
+              var itemName = paths[i-1].substring(path.length);
+              node = updateFolderNodeWithItemName(node, itemName, now);
             }
           }
-          return objs;
+          return nodes;
         } catch(e) {
-          RemoteStorage.log('error while putting', objs, i, e);
+          RemoteStorage.log('Error during PUT', nodes, i, e);
           throw e;
         }
       });
     },
+
     delete: function(path) {
-      var pathNodes = _nodesFromRoot(path);
-      return this._updateNodes(pathNodes, function(objs) {
-        var i, now = new Date().getTime();
-        for (i=0; i<pathNodes.length; i++) {
-          if (!objs[pathNodes[i]]) {
-            throw new Error('cannot delete a non-existing node; retrieve its parent folder first; missing node: '+pathNodes[i]);
+      var paths = pathsFromRoot(path);
+
+      return this._updateNodes(paths, function(nodes) {
+        var now = new Date().getTime();
+
+        for (var i=0; i<paths.length; i++) {
+          var path = paths[i];
+          var node = nodes[path];
+
+          if (!node) {
+            throw new Error('Cannot delete non-existing node '+path);
           }
-          if(i === 0) {
-            //delete the document itself
-            objs[path].local = {
-              body: false,
-              timestamp: now
-            };
-          } else {
-            //remove it from all parents
-            itemName = pathNodes[i-1].substring(pathNodes[i].length);
-            if (!objs[pathNodes[i]].local) {
-              objs[pathNodes[i]].local = _deepClone(objs[pathNodes[i]].common);
+
+          // Document
+          if (i === 0) {
+            // TODO should body better be undefined?
+            node.local = { body: false, timestamp: now };
+          }
+          // Folder
+          else {
+            if (!node.local) {
+              node.local = deepClone(node.common);
             }
-            delete objs[pathNodes[i]].local.itemsMap[itemName];
-            if (Object.getOwnPropertyNames(objs[pathNodes[i]].local.itemsMap).length) {
-              //this folder still has other items, don't remove any further ancestors
+            var itemName = paths[i-1].substring(path.length);
+            delete node.local.itemsMap[itemName];
+
+            if (Object.getOwnPropertyNames(node.local.itemsMap).length > 0) {
+              // This folder still contains other items, don't remove any further ancestors
               break;
             }
           }
         }
-        return objs;
+        return nodes;
       });
     },
-    _getAllDescendentPaths: function(path) {
-      if (_isFolder(path)) {
-        return this.getNodes([path]).then(function(objs) {
-          var i, pending=0, allPaths = [path], latest = _getLatest(objs[path]), promise = promising();
-          for (i in latest.itemsMap) {
-            pending++;
-            var subPromise = this._getAllDescendentPaths(path+i);
-            subPromise.then(function(paths) {
-              var j;
-              pending--;
-              for (j=0; j<paths.length; j++) {
-                allPaths.push(paths[j]);
-              }
-              if (pending === 0) {
-                promise.fulfill(allPaths);
-              }
-            });
-          }
-          return promise;
-        }.bind(this));
-      } else {
-        return promising().fulfill([path]);
-      }
-    },
+
     flush: function(path) {
       return this._getAllDescendentPaths(path).then(function(paths) {
         return this.getNodes(paths);
-      }.bind(this)).then(function(objs) {
-        var i;
-        for (i in objs) {
-          if (objs[i] && objs[i].common && objs[i].local) {
+      }.bind(this)).then(function(nodes) {
+        for (var path in nodes) {
+          var node = nodes[path];
+
+          if (node && node.common && node.local) {
             this._emit('change', {
-              path: objs[i].path,
-              origin: 'local',
-              oldValue: (objs[i].local.body === false ? undefined : objs[i].local.body),
-              newValue: (objs[i].common.body === false ? undefined : objs[i].common.body)
+              path:     node.path,
+              origin:   'local',
+              oldValue: (node.local.body === false ? undefined : node.local.body),
+              newValue: (node.common.body === false ? undefined : node.common.body)
             });
           }
-          objs[i] = undefined;
+          nodes[path] = undefined;
         }
-        return this.setNodes(objs);
+        return this.setNodes(nodes);
       }.bind(this));
     },
+
     fireInitial: function() {
       this.forAllNodes(function(node) {
         var latest;
-        if (_isDocument(node.path)) {
-          latest = _getLatest(node);
+        if (isDocument(node.path)) {
+          latest = getLatest(node);
           if (latest) {
             this._emit('change', {
-              path: node.path,
-              origin: 'local',
-              oldValue: undefined,
+              path:           node.path,
+              origin:         'local',
+              oldValue:       undefined,
               oldContentType: undefined,
-              newValue: latest.body,
+              newValue:       latest.body,
               newContentType: latest.contentType
             });
           }
         }
       }.bind(this));
     },
-    onDiff: function(setOnDiff) {
-      this.diffHandler = setOnDiff;
+
+    onDiff: function(diffHandler) {
+      this.diffHandler = diffHandler;
     },
+
     migrate: function(node) {
       if (typeof(node) === 'object' && !node.common) {
         node.common = {};
@@ -309,47 +271,89 @@
       }
       return node;
     },
-    nodesCache: {},
-    getNodesCached: function(paths) {
-      var i, results = {}, misses = [];
-      for (i=0; i<paths.length; i++) {
-        if (this.nodesCache[path[i]]) {
-          results[path[i]] = this.nodesCache[path[i]];
-        } else {
-          misses.push(paths[i]);
+
+    _updateNodes: function(paths, cb) {
+      var self = this;
+
+      return this.getNodes(paths).then(function(nodes) {
+        var existingNodes = deepClone(nodes);
+        var changeEvents = [];
+
+        nodes = cb(nodes);
+
+        for (var path in nodes) {
+          if (equal(nodes[path], existingNodes[path])) {
+            delete nodes[path];
+          }
+          else if(isDocument(path)) {
+            changeEvents.push({
+              path:           path,
+              origin:         'window',
+              oldValue:       nodes[path].local.previousBody,
+              newValue:       nodes[path].local.body,
+              oldContentType: nodes[path].local.previousContentType,
+              newContentType: nodes[path].local.contentType
+            });
+            delete nodes[path].local.previousBody;
+            delete nodes[path].local.previousContentType;
+          }
         }
-      }
-      return this.getNodes(paths, results);
+
+        return self.setNodes(nodes).then(function() {
+          self._emitChangeEvents(changeEvents);
+          return 200;
+        });
+      },
+      function(err) {
+        throw(err);
+      });
     },
 
-    setNodesCached: function(objs) {
-      var i;
-      for (i in objs) {
-        this.nodesCache[i] = objs[i];
+    _emitChangeEvents: function(events) {
+      for (var i=0; i<events.length; i++) {
+        this._emit('change', events[i]);
+        if (this.diffHandler) {
+          this.diffHandler(events[i].path);
+        }
       }
-      if (!this.flushTimer) {
-        this.flushTimer = setTimeout(function() {
-          clearTimeout(this.flushTimer);
-          this.setNodes(this.nodesCache);
-          this.nodesCache = {};
-        }, 10000);
-      }
-      return Promising().fulfill();
     },
-    //issues:
-    //* what if the write fails? what if it takes more than 10 seconds?
-    //* forAllNodes should also take into account both puts and deletes
-    //* check if pending deletes are correctly omitted from gets (is that this.nodesCache[path] === undefined?)
+
+    _getAllDescendentPaths: function(path) {
+      if (isFolder(path)) {
+        return this.getNodes([path]).then(function(nodes) {
+          var pending = 0;
+          var allPaths = [path];
+          var latest = getLatest(nodes[path]);
+          var promise = promising();
+
+          for (var itemName in latest.itemsMap) {
+            pending++;
+            this._getAllDescendentPaths(path+itemName).then(function(paths) {
+              pending--;
+              for (var i=0; i<paths.length; i++) {
+                allPaths.push(paths[i]);
+              }
+              if (pending === 0) {
+                promise.fulfill(allPaths);
+              }
+            });
+          }
+          return promise;
+        }.bind(this));
+      } else {
+        return promising().fulfill([path]);
+      }
+    },
 
     _getInternals: function() {
       return {
-        _isFolder: _isFolder,
-        _isDocument: _isDocument,
-        _deepClone: _deepClone,
-        _equal: _equal,
-        _getLatest: _getLatest,
-        _nodesFromRoot: _nodesFromRoot,
-        _makeNode: _makeNode
+        isFolder: isFolder,
+        isDocument: isDocument,
+        deepClone: deepClone,
+        equal: equal,
+        getLatest: getLatest,
+        pathsFromRoot: pathsFromRoot,
+        makeNode: makeNode
       };
     }
   };

@@ -21,6 +21,11 @@
      * Parameters:
      *   scope - An access scope, such as "contacts" or "calendar".
      *   mode  - Access mode to use. Either "r" or "rw".
+     *
+     * Example:
+     *   (start code)
+     *   remoteStorage.access.claim('foo', 'r');
+     *   remoteStorage.access.claim('bar', 'rw');
      */
     claim: function(scope, mode) {
       if (typeof(scope) !== 'string' || scope.indexOf('/') !== -1 || scope.length === 0) {
@@ -114,14 +119,6 @@
    *
    * Holds an array of claimed scopes in the form
    * > { name: "<scope-name>", mode: "<mode>" }
-   *
-   * Example:
-   *   (start code)
-   *   remoteStorage.access.claim('foo', 'r');
-   *   remoteStorage.access.claim('bar', 'rw');
-   *
-   *   remoteStorage.access.scopes
-   *   // -> [ { name: 'foo', mode: 'r' }, { name: 'bar', mode: 'rw' } ]
    */
   Object.defineProperty(RemoteStorage.Access.prototype, 'scopes', {
     get: function() {
@@ -153,6 +150,7 @@
 
   // Documented in src/remotestorage.js
   // TODO claimAccess is outdated, should be deleted soon
+  // Also, this does not even do what the docs say anymore.
   RemoteStorage.prototype.claimAccess = function(scopes) {
     if (typeof(scopes) === 'object') {
       for (var key in scopes) {

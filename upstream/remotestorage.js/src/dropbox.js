@@ -13,6 +13,10 @@
 
 
   /**
+   * Class: RemoteStorage.Dropbox
+   *
+   * WORK IN PROGRESS, NOT RECOMMENDED FOR PRODUCTION USE
+   *
    * Dropbox backend for RemoteStorage.js
    * this file exposes a get/put/delete interface which is compatible with the wireclient
    * it requires to get configured with a dropbox token similar to the wireclient.configure
@@ -144,7 +148,7 @@
       }
     };
 
-    RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done', 'not-connected');
+    RS.eventHandling(this, 'change', 'connected');
     rs.on('error', onErrorCb);
 
     this.clientId = rs.apiKeys.dropbox.api_key;
@@ -169,8 +173,6 @@
   };
 
   RS.Dropbox.prototype = {
-    online: true,
-
     /**
      * Method : connect()
      *   redirects to AUTH_URL(https://www.dropbox.com/1/oauth2/authorize)
@@ -213,13 +215,6 @@
                                                        userAddress: this.userAddress } );
       }
     },
-    
-    stopWaitingForToken: function() {
-      if (!this.connected) {
-        this._emit('not-connected');
-      }
-    },
-    
     /**
      * Method : _getFolder(path, options)
      **/
@@ -249,9 +244,9 @@
             listing = body.contents.reduce(function(m, item) {
               var itemName = item.path.split('/').slice(-1)[0] + ( item.is_dir ? '/' : '' );
               if (item.is_dir){
-                m[itemName] = { ETag: revCache.get(path+itemName) };
+                m[itemName] = revCache.get(path+itemName);
               } else {
-                m[itemName] = { ETag: item.rev };
+                m[itemName] = item.rev;
               }
               return m;
             }, {});
