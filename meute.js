@@ -1,5 +1,5 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {}, sockethubRegistered;
+  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {}, sockethubRegistered, roomJoins = {};
 
   function debugState() {
     console.log('meute internal state', masterPwd, sockethubClient, config, configDone, outbox, sockethubRegistered);
@@ -35,6 +35,7 @@ meute = (function() {
           });
           configDone[i] = true;
           flushOutbox(i);
+          joinRooms(i);
         }
       }
     }
@@ -47,6 +48,14 @@ meute = (function() {
         sockethubClient.sendObject(outbox[which][i]);
       }
       delete outbox[which];
+    }
+  }
+  function joinRooms(platform) {
+    if (!roomJoins[platform]) {
+      return;
+    }
+    for (var i=0; i<roomJoins[platform].length; i++) {
+      sockethubClient.sendObject(roomJoins[platform][i]);
     }
   }
   function bootstrap() {
@@ -102,13 +111,27 @@ meute = (function() {
     }
   }
   function join(platform, actor, channels) {
-    toOutbox(platform, {
+    var obj = {
       platform: 'irc',
       verb: 'join',
       actor: actor,
       target: channels,
       object: {},
-    });
+    };
+    if (!Array.isArray(roomJoins[platform])) {
+      roomJoins[platform] = [];
+    }
+    roomJoins[platform].push(obj);
+
+    //only sending this if the platform is online now, otherwise
+    //the rooms will be joined once the platform is configured
+    //and joinRooms is called for it:
+    if (configDone[platform] && configDone['sockethub']) {
+      console.log('sending directly', JSON.stringify(obj));
+      sockethubClient.sendObject(obj);
+    }
+    
+    //roomJoins will also be called again after each sockethub reconnect
   }
   function send(obj) {
     toOutbox(obj.platform, obj);
