@@ -1,3 +1,7 @@
+# 0.3.0
+
+* simplify the API (breaking change)
+
 # 0.2.4
 
 * resends platform configs and room joins after a sockethub reconnect

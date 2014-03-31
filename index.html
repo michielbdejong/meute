@@ -5,11 +5,17 @@
     <title>Meute - a foundation for unhosted social web apps</title>
   </head>
   <body>
-    <h1>v0.2.4</h1>
-    <p style="width:30em" >Meute is still very basic, but it can already help you build an app that combines <a href="http://remotestorage.io/">remotestorage</a> for per-user data storage and <a href="http://sockethub.org/">sockethub</a> for relaying messages from the browser to the outside world. The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
-    <p style="width:30em" >This page includes a build from source; view the page source to see which JavaScript files it includes. You can try out meute by opening your web console now, and typing 'meute.' to see which commands are available. The 0.2 API still follows the sockethub syntax very closely and is as follows:
+    <h1>v0.3.0</h1>
+    <p style="width:30em" >Meute is still very basic, but it can already help you build an app that combines
+      <a href="http://remotestorage.io/">remotestorage</a> for per-user data storage and
+      <a href="http://sockethub.org/">sockethub</a> for relaying messages from the browser to the outside world.
+      The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
+    <p style="width:30em" >This page includes a build from source; view the page source to see which JavaScript files it includes.
+      You can try out meute by opening your web console now, and typing 'meute.' to see which commands are available.
+      The 0.3 API is as follows:
     <pre id="codeExample">(loading...)</pre>
-    <p>The credentials you give in the addAccount calls will be encrypted with the master password using sjcl and stored in the respective remotestorage modules.</p>
+    <p>The credentials you give in the addAccount calls will be encrypted with the master password using sjcl and stored
+      in the respective remotestorage modules.</p>
   </body>
   <script src="upstream/sjcl.js"> </script>
   <script src="upstream/sockethub-client.js"></script>
@@ -83,43 +89,16 @@
       meute.setMasterPassword('master');
     }
     function step2() {
-      meute.addAccount('sockethub', {
-        host: 'michielbdejong.com',
-        ssl: true, tls: true, port: 10550, path: '',
-        register: { secret: '1234567890' }
-      });
+      meute.addAccount('sockethub', 'wss://michielbdejong.com:10550/', '1234567890');
     }
     function step3() {
-      meute.addAccount('irc', {
-        actor: {
-          address: 'nick12345',
-          name: 'nick12345'
-        },
-        object: {
-          nick: 'nick12345',
-          objectType: 'credentials',
-          server: 'irc.freenode.net',
-          password: '',
-        }
-      });
+      meute.addAccount('irc', 'irc.freenode.net', 'nick12345');
     }
     function step4() {
-      meute.join('irc', { address: 'nick12345', name: 'nick12345' }, [
-        { address: '#meute' }
-      ]);
+      meute.join('irc', ['#meute']); //meute.join('irc', '#meute'); is also allowed when joining only one channel
     }
     function step5() {
-      meute.send({
-        platform: 'irc',
-        verb: 'send',
-        actor: { address: 'nick12345', name: 'nick12345' },
-        target: [{
-          address: '#meute'
-        }],
-        object: {
-          text: 'hi'
-        }
-      });
+      meute.send('irc', '#meute', 'hi');
     }
     document.getElementsByTagName('pre')[0].innerHTML = 
         document.getElementsByTagName('script')[document.getElementsByTagName('script').length-1].innerHTML;

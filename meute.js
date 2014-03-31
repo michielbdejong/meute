@@ -1,8 +1,11 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {}, sockethubRegistered, roomJoins = {};
+  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {},
+    sockethubRegistered, roomJoins = {}, registeredActor = {};
 
   function debugState() {
-    console.log('meute internal state', masterPwd, sockethubClient, config, configDone, outbox, sockethubRegistered);
+    console.log('meute internal state',
+        masterPwd, sockethubClient, config, configDone, outbox,
+        sockethubRegistered, roomJoins, registeredActor);
   }
   function connectFurther() {
     if (!config.sockethub) {
@@ -77,7 +80,7 @@ meute = (function() {
       var config = res.data;
       if (typeof(config) === 'object') {
         try {
-          addAccount(which, config, false);
+          doAddAccount(which, config, false);
         } catch(e) {
           console.log('error adding account', which, config, e);
         }
@@ -91,7 +94,39 @@ meute = (function() {
     masterPwd = pwd;
     bootstrap();
   }
-  function addAccount(which, thisConfig, save) {
+  function addAccount(platform, server, id) {
+    var parts, parts2, obj;
+    if (platform === 'sockethub') {
+      parts = server.split('/');
+      parts2 = parts[2].split(':');
+      obj = {
+        host: parts2[0],
+        ssl: (parts[0] === 'wss:'),
+        tls: (parts[0] === 'wss:'),
+        port: (parts2.length === 2 ? parts2[1] : undefined),
+        path: parts[3],
+        register: { secret: id }
+      };
+    } else if (platform === 'irc') {
+      obj = {
+        actor: {
+          address: id,
+          name: id
+        },
+        object: {
+          nick: id,
+          objectType: 'credentials',
+          server: server,
+          password: '',
+        }
+      };
+    }
+    doAddAccount(platform, obj);
+  }
+  function doAddAccount(which, thisConfig, save) {
+    if (thisConfig.actor) {
+      registeredActor[which] = thisConfig.actor;
+    }
     config[which] = thisConfig;
     connectFurther();
     if (save !== false && remoteStorage[which] && remoteStorage[which].setConfig) {
@@ -110,14 +145,22 @@ meute = (function() {
       outbox[platform].push(obj);
     }
   }
-  function join(platform, actor, channels) {
+  function join(platform, channels) {
     var obj = {
-      platform: 'irc',
+      platform: platform,
       verb: 'join',
-      actor: actor,
-      target: channels,
       object: {},
     };
+    if (typeof(channels) === 'string') {
+      channels = [channels];
+    }
+    obj.target = [];
+    for (var i=0; i<channels.length; i++) {
+      obj.target.push({
+        address: channels[i]
+      });
+    }
+    obj.actor = registeredActor[platform];
     if (!Array.isArray(roomJoins[platform])) {
       roomJoins[platform] = [];
     }
@@ -133,7 +176,18 @@ meute = (function() {
     
     //roomJoins will also be called again after each sockethub reconnect
   }
-  function send(obj) {
+  function send(platform, target, text) {
+    var obj = {
+      platform: platform,
+      verb: 'send',
+      actor: registeredActor[platform],
+      target: [{
+        address: target
+      }],
+      object: {
+        text: text
+      }
+    };
     toOutbox(obj.platform, obj);
   }
   
