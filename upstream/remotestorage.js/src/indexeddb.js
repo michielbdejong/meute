@@ -63,7 +63,7 @@
     this.putsRunning = 0;
     //both these caches store path -> the uncommitted node, or false for a deletion:
     this.commitCache = {};
-    this.flushing = {};
+    this.commitRunning = {};
   };
 
   RS.IndexedDB.prototype = {
@@ -72,8 +72,8 @@
       for (i=0; i<paths.length; i++) {
         if (this.commitCache[paths[i]] !== undefined) {
           fromCache[paths[i]] = this._getInternals().deepClone(this.commitCache[paths[i]] || undefined);
-        } else if(this.flushing[paths[i]] !== undefined) {
-           fromCache[paths[i]] = this._getInternals().deepClone(this.flushing[paths[i]] || undefined);
+        } else if(this.commitRunning[paths[i]] !== undefined) {
+           fromCache[paths[i]] = this._getInternals().deepClone(this.commitRunning[paths[i]] || undefined);
         } else {
           misses.push(paths[i]);
         }
@@ -107,9 +107,9 @@
     },
     flushCommitCache: function() {
       if (Object.keys(this.commitCache).length > 0) {
-        this.flushing = this.commitCache;
+        this.commitRunning = this.commitCache;
         this.commitCache = {};
-        this.setNodesToDb(this.flushing).then(this.flushCommitCache.bind(this));
+        this.setNodesToDb(this.commitRunning).then(this.flushCommitCache.bind(this));
       }
     },
     getNodesFromDb: function(paths) {
