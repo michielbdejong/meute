@@ -62,7 +62,7 @@
     this.getsRunning = 0;
     this.putsRunning = 0;
     //both these caches store path -> the uncommitted node, or false for a deletion:
-    this.commitCache = {};
+    this.commitQueued = {};
     this.commitRunning = {};
   };
 
@@ -70,8 +70,8 @@
     getNodes: function(paths) {
       var i ,misses = [], fromCache = {};
       for (i=0; i<paths.length; i++) {
-        if (this.commitCache[paths[i]] !== undefined) {
-          fromCache[paths[i]] = this._getInternals().deepClone(this.commitCache[paths[i]] || undefined);
+        if (this.commitQueued[paths[i]] !== undefined) {
+          fromCache[paths[i]] = this._getInternals().deepClone(this.commitQueued[paths[i]] || undefined);
         } else if(this.commitRunning[paths[i]] !== undefined) {
            fromCache[paths[i]] = this._getInternals().deepClone(this.commitRunning[paths[i]] || undefined);
         } else {
@@ -94,7 +94,7 @@
     setNodes: function(nodes) {
       var promise = promising();
       for (var i in nodes) {
-        this.commitCache[i] = nodes[i] || false;
+        this.commitQueued[i] = nodes[i] || false;
       }
       this.maybeFlush();
       promise.fulfill();
@@ -102,14 +102,14 @@
     },
     maybeFlush: function() {
       if (this.putsRunning === 0) {
-        this.flushCommitCache();
+        this.flushcommitQueued();
       }
     },
-    flushCommitCache: function() {
-      if (Object.keys(this.commitCache).length > 0) {
-        this.commitRunning = this.commitCache;
-        this.commitCache = {};
-        this.setNodesToDb(this.commitRunning).then(this.flushCommitCache.bind(this));
+    flushcommitQueued: function() {
+      if (Object.keys(this.commitQueued).length > 0) {
+        this.commitRunning = this.commitQueued;
+        this.commitQueued = {};
+        this.setNodesToDb(this.commitRunning).then(this.flushcommitQueued.bind(this));
       }
     },
     getNodesFromDb: function(paths) {
