@@ -1,3 +1,9 @@
+# 0.2.3
+
+* uses new functional modules in remoteStorage modules
+* uses experimental commit-cache in remotestorage.js
+
+
 # 0.2.2
 
 * fixes compat with sockethub version f9f50ee1
