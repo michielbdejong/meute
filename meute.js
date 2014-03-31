@@ -1,6 +1,9 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configDone = {}, sockethubRegistered;
+  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {}, sockethubRegistered;
 
+  function debugState() {
+    console.log('meute internal state', masterPwd, sockethubClient, config, configDone, outbox, sockethubRegistered);
+  }
   function connectFurther() {
     if (!config.sockethub) {
       //nothing to do without a sockethub config
@@ -12,7 +15,12 @@ meute = (function() {
           sockethubClient = SockethubClient.connect(config.sockethub);
           sockethubClient.on('registered', function() {
             sockethubRegistered = true;
-            console.log('registered!');
+            console.log('registered! resending all platform configs');
+            for (i in configDone) {
+              if (i !== 'sockethub') {
+                delete configDone[i];
+              }
+            }
             connectFurther();
           });
           configDone[i] = true;
@@ -26,11 +34,21 @@ meute = (function() {
             actor: config[i].actor
           });
           configDone[i] = true;
+          flushOutbox(i);
         }
       }
     }
   }
  
+  function flushOutbox(which) {
+    console.log('flushing outbox', which, outbox);
+    if (configDone[which] && configDone['sockethub'] && Array.isArray(outbox[which])) {
+      for (var i=0; i<outbox[which].length; i++) {
+        sockethubClient.sendObject(outbox[which][i]);
+      }
+      delete outbox[which];
+    }
+  }
   function bootstrap() {
     var modulesToTry = {
       sockethub: true,
@@ -48,10 +66,12 @@ meute = (function() {
   function loadAccount(which) {
     remoteStorage[which].getConfig(masterPwd).then(function(res) {
       var config = res.data;
-      try {
-        addAccount(which, config, false);
-      } catch(e) {
-        console.log('error adding account', which, config, e);
+      if (typeof(config) === 'object') {
+        try {
+          addAccount(which, config, false);
+        } catch(e) {
+          console.log('error adding account', which, config, e);
+        }
       }
     }, function() {
       console.log('no config found for '+which);
@@ -69,8 +89,20 @@ meute = (function() {
       remoteStorage[which].setConfig(masterPwd, thisConfig);
     }
   }
+  function toOutbox(platform, obj) {
+    if (configDone[platform] && configDone['sockethub']) {
+      console.log('sending directly', JSON.stringify(obj));
+      sockethubClient.sendObject(obj);
+    } else {
+      console.log('queueing', JSON.stringify(obj));
+      if (!Array.isArray(outbox[platform])) {
+        outbox[platform] = [];
+      }
+      outbox[platform].push(obj);
+    }
+  }
   function join(platform, actor, channels) {
-    sockethubClient.sendObject({
+    toOutbox(platform, {
       platform: 'irc',
       verb: 'join',
       actor: actor,
@@ -79,10 +111,11 @@ meute = (function() {
     });
   }
   function send(obj) {
-    sockethubClient.sendObject(obj);
+    toOutbox(obj.platform, obj);
   }
   
   return {
+    debugState: debugState,
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
