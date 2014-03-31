@@ -40,16 +40,21 @@ meute = (function() {
       email: true
     };
     if (remoteStorage) {
-      remoteStorage.on('ready', function() {
-        for (i in modulesToTry) {
-          loadAccount(i);
-        }
-      });
+      for (i in modulesToTry) {
+        loadAccount(i);
+      }
     }
   }
   function loadAccount(which) {
-    remoteStorage[which].getConfig(masterPwd).then(function(config) {
-      addAccount(which, config);
+    remoteStorage[which].getConfig(masterPwd).then(function(res) {
+      var config = res.data;
+      try {
+        addAccount(which, config, false);
+      } catch(e) {
+        console.log('error adding account', which, config, e);
+      }
+    }, function() {
+      console.log('no config found for '+which);
     });
   }
    
@@ -57,10 +62,10 @@ meute = (function() {
     masterPwd = pwd;
     bootstrap();
   }
-  function addAccount(which, thisConfig) {
+  function addAccount(which, thisConfig, save) {
     config[which] = thisConfig;
     connectFurther();
-    if (remoteStorage[which] && remoteStorage[which].setConfig) {
+    if (save !== false && remoteStorage[which] && remoteStorage[which].setConfig) {
       remoteStorage[which].setConfig(masterPwd, thisConfig);
     }
   }
