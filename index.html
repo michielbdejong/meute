@@ -50,7 +50,23 @@
   <script src="upstream/remotestorage.js/src/legacy.js"></script>
   <script src="upstream/remotestorage.js/src/googledrive.js"></script>
   <script src="upstream/remotestorage.js/src/dropbox.js"></script>
-  <script>remoteStorage = new RemoteStorage();</script>
+
+  <script>
+    //for debugging:
+    function d(p) {
+      p.then(
+        function(a) { console.log('success', a, JSON.stringify(a)); },
+        function(a) { console.log('fail', a, JSON.stringify(a)); });
+    }
+    RemoteStorage._log = true;
+    RemoteStorage.reset = function() {
+      indexedDB.deleteDatabase('remotestorage');
+      localStorage.clear();
+    }
+
+    //instantiate:
+    remoteStorage = new RemoteStorage();
+  </script>
 
 
   <script src="upstream/remotestorage-modules/utils/credentialsstore.js"> </script>
