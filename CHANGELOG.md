@@ -1,3 +1,7 @@
+# 0.3.1
+
+* [#9] fix set->join->send sequence to be more patient
+
 # 0.3.0
 
 * simplify the API (breaking change)
@@ -5,8 +9,8 @@
 # 0.2.4
 
 * resends platform configs and room joins after a sockethub reconnect
-* queues send and join commands until the platform is ready (but does not rejoin rooms after page refresh)
-* stores configs to remoteStorage and reloads+resends them on page refresh
+* [#6] queues send and join commands until the platform is ready (but does not rejoin rooms after page refresh)
+* [#4] stores configs to remoteStorage and reloads+resends them on page refresh
 
 # 0.2.3
 
