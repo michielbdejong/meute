@@ -35,10 +35,12 @@ meute = (function() {
             verb: 'set',
             object: config[i].object,
             actor: config[i].actor
+          }).then(function() {
+            configDone[i] = true;
+            return joinRooms(i);
+          }).then(function() {
+            flushOutbox(i);
           });
-          configDone[i] = true;
-          flushOutbox(i);
-          joinRooms(i);
         }
       }
     }
@@ -54,12 +56,25 @@ meute = (function() {
     }
   }
   function joinRooms(platform) {
+    var promise = promising(), pending = 0;
     if (!roomJoins[platform]) {
       return;
     }
     for (var i=0; i<roomJoins[platform].length; i++) {
-      sockethubClient.sendObject(roomJoins[platform][i]);
+      pending++;
+      console.log('joining rooms', roomJoins[platform][i]);
+      sockethubClient.sendObject(roomJoins[platform][i]).then(function() {
+        pending--;
+        if (pending === 0) {
+          promise.fulfill();
+        }
+      });
     }
+    if (pending === 0) {
+      console.log('last room join done');
+      promise.fulfill();
+    }
+    return promise;
   }
   function bootstrap() {
     var modulesToTry = {
