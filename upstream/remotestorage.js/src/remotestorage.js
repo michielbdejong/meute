@@ -380,7 +380,7 @@
       }
 
       this._loadFeatures(function(features) {
-        this.log('all features loaded');
+        this.log('[RemoteStorage] All features loaded');
         this.local = features.local && new features.local();
         // this.remote set by WireClient._rs_init as lazy property on
         // RS.prototype
@@ -476,58 +476,74 @@
         }
       }
 
-      function featureInitializedCb(name) {
-        return function() {
-          self.log("[FEATURE "+name+"] initialized.");
-          features.push( {
-            name : name,
-            init :  RemoteStorage[name]._rs_init,
-            supported : true,
-            cleanup : RemoteStorage[name]._rs_cleanup
-          } );
-          featureDone();
-        };
+      function featureInitialized(name) {
+        self.log("[RemoteStorage] [FEATURE "+name+"] initialized.");
+        features.push({
+          name : name,
+          init :  RemoteStorage[name]._rs_init,
+          supported : true,
+          cleanup : RemoteStorage[name]._rs_cleanup
+        });
+        featureDone();
       }
 
-      function featureFailedCb(name) {
-        return function(err) {
-          self.log("[FEATURE "+name+"] initialization failed ( "+err+")");
-          featureDone();
-        };
+      function featureFailed(name, err) {
+        self.log("[RemoteStorage] [FEATURE "+name+"] initialization failed ( "+err+")");
+        featureDone();
       }
 
-      function featureSupportedCb(name) {
-        return function(success) {
-          self.log("[FEATURE "+name+"]" + success ? "":" not"+" supported");
-          if (!success) {
-            featureDone();
-          }
-        };
+      function featureSupported(name, success) {
+        self.log("[RemoteStorage] [FEATURE "+name+"]" + success ? "":" not"+" supported");
+        if (!success) {
+          featureDone();
+        }
+      }
+
+      function initFeature(name) {
+        var initResult;
+        try {
+          initResult = RemoteStorage[name]._rs_init(self);
+        } catch(e) {
+          featureFailed(name, e);
+          return;
+        }
+        if (typeof(initResult) === 'object' && typeof(initResult.then) === 'function') {
+          initResult.then(
+            function(){ featureInitialized(name); },
+            function(err){ featureFailed(name, err); }
+          );
+        } else {
+          featureInitialized(name);
+        }
       }
 
       featureList.forEach(function(featureName) {
-        self.log("[FEATURE " + featureName + "] initializing...");
+        self.log("[RemoteStorage] [FEATURE " + featureName + "] initializing...");
         var impl = RemoteStorage[featureName];
-        var initializedCb = featureInitializedCb(featureName);
-        var failedCb = featureFailedCb(featureName);
-        var supportedCb = featureSupportedCb(featureName);
+        var supported;
 
-        if (impl && (!impl._rs_supported || impl._rs_supported())) {
-          supportedCb(true);
-          var initResult;
-          try {
-            initResult = impl._rs_init(self);
-          } catch(e) {
-            failedCb(e);
-            return;
+        if (impl) {
+          supported = !impl._rs_supported || impl._rs_supported();
+
+          if (typeof supported === 'object') {
+            supported.then(
+              function(){
+                featureSupported(featureName, true);
+                initFeature(featureName);
+              },
+              function(){
+                featureSupported(featureName, false);
+              }
+            );
           }
-          if (typeof(initResult) === 'object' && typeof(initResult.then) === 'function') {
-            initResult.then(initializedCb, failedCb);
-          } else {
-            initializedCb();
+          else if (typeof supported === 'boolean') {
+            featureSupported(featureName, supported);
+            if (supported) {
+              initFeature(featureName);
+            }
           }
         } else {
-          supportedCb(false);
+          featureSupported(featureName, false);
         }
       });
     },
@@ -607,26 +623,6 @@
       }
     }
   };
-
-  /**
-   * Method: claimAccess
-   *
-   * High-level method to claim access on one or multiple scopes and enable
-   * caching for them. WARNING: when using Caching control, use remoteStorage.access.claim instead,
-   * see https://github.com/remotestorage/remotestorage.js/issues/380
-   *
-   * Examples:
-   *   (start code)
-   *     remoteStorage.claimAccess('foo', 'rw');
-   *     // is equivalent to:
-   *     remoteStorage.claimAccess({ foo: 'rw' });
-   *
-   *     // is equivalent to:
-   *     remoteStorage.access.claim('foo', 'rw');
-   *     remoteStorage.caching.enable('/foo/');
-   *     remoteStorage.caching.enable('/public/foo/');
-   *   (end code)
-   */
 
   /**
    * Property: connected
