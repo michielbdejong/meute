@@ -1,11 +1,23 @@
 meute = (function() {
   var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {},
-    sockethubRegistered, roomJoins = {}, registeredActor = {};
+    sockethubRegistered, roomJoins = {}, registeredActor = {}, handlers = {};
+
+  function emit(eventName, obj) {
+    if (Array.isArray(handlers[eventName])) {
+      for (var i=0; i<handlers[eventName].length; i++) {
+        handlers[eventName][i](obj);
+      }
+    }
+  }
+
+  function debug(obj) {
+    emit('debug', obj);
+  }
 
   function debugState() {
-    console.log('meute internal state',
+    debug(['meute internal state',
         masterPwd, sockethubClient, config, configDone, outbox,
-        sockethubRegistered, roomJoins, registeredActor);
+        sockethubRegistered, roomJoins, registeredActor]);
   }
   function connectFurther() {
     if (!config.sockethub) {
@@ -18,7 +30,7 @@ meute = (function() {
           sockethubClient = SockethubClient.connect(config.sockethub);
           sockethubClient.on('registered', function() {
             sockethubRegistered = true;
-            console.log('registered! resending all platform configs');
+            debug('registered! resending all platform configs');
             for (i in configDone) {
               if (i !== 'sockethub') {
                 delete configDone[i];
@@ -26,9 +38,12 @@ meute = (function() {
             }
             connectFurther();
           });
+          sockethubClient.on('message', function(msg) {
+            emit('message', msg);
+          });
           configDone[i] = true;
         } else if (sockethubRegistered) {        
-          console.log('setting!', i);
+          debug('setting!', i);
           sockethubClient.sendObject({
             platform: 'dispatcher',
             target: [{ platform: i }],
@@ -47,7 +62,7 @@ meute = (function() {
   }
  
   function flushOutbox(which) {
-    console.log('flushing outbox', which, outbox);
+    debug('flushing outbox', which, outbox);
     if (configDone[which] && configDone['sockethub'] && Array.isArray(outbox[which])) {
       for (var i=0; i<outbox[which].length; i++) {
         sockethubClient.sendObject(outbox[which][i]);
@@ -62,7 +77,7 @@ meute = (function() {
     }
     for (var i=0; i<roomJoins[platform].length; i++) {
       pending++;
-      console.log('joining rooms', roomJoins[platform][i]);
+      debug('joining rooms', roomJoins[platform][i]);
       sockethubClient.sendObject(roomJoins[platform][i]).then(function() {
         pending--;
         if (pending === 0) {
@@ -71,7 +86,7 @@ meute = (function() {
       });
     }
     if (pending === 0) {
-      console.log('last room join done');
+      debug('last room join done');
       promise.fulfill();
     }
     return promise;
@@ -97,11 +112,11 @@ meute = (function() {
         try {
           doAddAccount(which, config, false);
         } catch(e) {
-          console.log('error adding account', which, config, e);
+          debug('error adding account', which, config, e);
         }
       }
     }, function() {
-      console.log('no config found for '+which);
+      debug('no config found for '+which);
     });
   }
    
@@ -150,10 +165,10 @@ meute = (function() {
   }
   function toOutbox(platform, obj) {
     if (configDone[platform] && configDone['sockethub']) {
-      console.log('sending directly', JSON.stringify(obj));
+      debug('sending directly', JSON.stringify(obj));
       sockethubClient.sendObject(obj);
     } else {
-      console.log('queueing', JSON.stringify(obj));
+      debug('queueing', JSON.stringify(obj));
       if (!Array.isArray(outbox[platform])) {
         outbox[platform] = [];
       }
@@ -185,7 +200,7 @@ meute = (function() {
     //the rooms will be joined once the platform is configured
     //and joinRooms is called for it:
     if (configDone[platform] && configDone['sockethub']) {
-      console.log('sending directly', JSON.stringify(obj));
+      debug('sending directly', JSON.stringify(obj));
       sockethubClient.sendObject(obj);
     }
     
@@ -206,11 +221,18 @@ meute = (function() {
     toOutbox(obj.platform, obj);
   }
   
+  function on(eventName, eventHandler) {
+    if (!handlers[eventName]) {
+      handlers[eventName] = [];
+    }
+    handlers[eventName].push(eventHandler);
+  }
   return {
     debugState: debugState,
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
-    send: send
+    send: send,
+    on: on
   };
 })();

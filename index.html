@@ -87,6 +87,8 @@
   <script>
     function step1() {
       meute.setMasterPassword('master');
+      meute.on('message', function(obj) { console.log('meute message', obj); });
+      meute.on('debug', function(obj) { console.log('meute debug', obj); });
     }
     function step2() {
       meute.addAccount('sockethub', 'wss://michielbdejong.com:10550/', '1234567890');

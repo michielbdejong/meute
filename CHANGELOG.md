@@ -1,3 +1,7 @@
+# 0.3.2
+
+* add meute.on('debug', ... and meute.on('message', ...
+
 # 0.3.1
 
 * [#9] fix set->join->send sequence to be more patient
