@@ -71,25 +71,15 @@ meute = (function() {
     }
   }
   function joinRooms(platform) {
-    var promise = promising(), pending = 0;
+    var promise = promising(), channels = [];
     if (!roomJoins[platform]) {
       return;
     }
-    for (var i=0; i<roomJoins[platform].length; i++) {
-      pending++;
-      debug('joining rooms', roomJoins[platform][i]);
-      sockethubClient.sendObject(roomJoins[platform][i]).then(function() {
-        pending--;
-        if (pending === 0) {
-          promise.fulfill();
-        }
-      });
+    for (i in roomJoins[platform]) {
+      channels.push(i);
+      debug('joining rooms', platform, channels);
     }
-    if (pending === 0) {
-      debug('last room join done');
-      promise.fulfill();
-    }
-    return promise;
+    return meute.join(platform, channels);
   }
   function bootstrap() {
     var modulesToTry = {
@@ -175,36 +165,44 @@ meute = (function() {
       outbox[platform].push(obj);
     }
   }
-  function join(platform, channels) {
+  function join(platform, channels, leave) {
     var obj = {
       platform: platform,
-      verb: 'join',
+      verb: (leave ? 'leave' : 'join'),
       object: {},
     };
     if (typeof(channels) === 'string') {
       channels = [channels];
     }
+    if (typeof(roomJoins[platform]) != 'object') {
+      roomJoins[platform] = {};
+    }
+
     obj.target = [];
     for (var i=0; i<channels.length; i++) {
       obj.target.push({
         address: channels[i]
       });
+      if (leave) {
+        delete roomJoins[platform][channels[i]];
+      } else {
+        roomJoins[platform][channels[i]] = true;
+      }
     }
     obj.actor = registeredActor[platform];
-    if (!Array.isArray(roomJoins[platform])) {
-      roomJoins[platform] = [];
-    }
-    roomJoins[platform].push(obj);
 
     //only sending this if the platform is online now, otherwise
     //the rooms will be joined once the platform is configured
     //and joinRooms is called for it:
     if (configDone[platform] && configDone['sockethub']) {
       debug('sending directly', JSON.stringify(obj));
-      sockethubClient.sendObject(obj);
+      return sockethubClient.sendObject(obj);
     }
-    
+
     //roomJoins will also be called again after each sockethub reconnect
+  }
+  function leave(platform, channels) {
+    join(platform, channels, true);
   }
   function send(platform, target, text) {
     var obj = {
