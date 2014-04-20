@@ -1,6 +1,9 @@
 # 0.3.2
 
 * add meute.on('debug', ... and meute.on('message', ...
+* update to commit-cache branch of remotestorage.js
+* implement leaving irc rooms
+* keep track of irc room attendance
 
 # 0.3.1
 
