@@ -40,8 +40,11 @@ meute = (function() {
             connectFurther();
           });
           sockethubClient.on('message', function(msg) {
-            updateAttendance(msg);
-            emit('message', msg);
+            if (msg.verb === 'join' || msg.verb === 'leave') {
+              updateAttendance(msg);
+            } else {
+              emit('message', msg);
+            }
           });
           configDone[i] = true;
         } else if (sockethubRegistered) {        
