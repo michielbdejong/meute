@@ -360,6 +360,58 @@ meute = (function() {
     }
     return matches;
   }
+  function findGaps(fix) {  
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      have = {}
+      max = 0,
+      min = 99999999999999999,
+      gapStart = false;
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo) {
+        have[a[i].object.imapSeqNo] = true; 
+        if (a[i].object.imapSeqNo > max) {
+          max = a[i].object.imapSeqNo;
+        }
+        if (a[i].object.imapSeqNo < min) {
+          min = a[i].object.imapSeqNo;
+        }
+      }
+    }
+    for(i=min; i<max; i++) {
+      if (have[i]) {
+        if (gapStart) {
+          console.log('gap', gapStart, i-1);
+          if (fix) {
+            document.fetchEmailsFromTo(gapStart, gapStart + fix);
+            fix = 0;
+          }
+          gapStart = false;
+        }
+      } else {
+        if (!gapStart) {
+          gapStart = i;
+        }
+      }
+    }
+    if (fix) {
+      document.fetchEmailsFromTo(max, max + fix);
+    }
+    console.log('min,max', min, max);
+  }
+  function getSubjects(min) {
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      have = {}
+      max = 0;
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo && (!min || a[i].object.imapSeqNo > min)) {
+        have[a[i].object.imapSeqNo] = a[i].object.subject; 
+        if (a[i].object.imapSeqNo > max) {
+          max = a[i].object.imapSeqNo;
+        }
+      }
+    }
+    return have;
+  }
 
   function on(eventName, eventHandler) {
     if (!handlers[eventName]) {
@@ -380,6 +432,8 @@ meute = (function() {
     fetch1: fetch1,
     fetch2: fetch2,
     findEmailsFrom: findEmailsFrom,
+    findGaps: findGaps,
+    getSubjects: getSubjects,
     on: on
   };
 })();
