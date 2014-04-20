@@ -235,8 +235,44 @@ meute = (function() {
       }
     };
     toOutbox(obj.platform, obj);
+  } 
+  function sendEmail(recipient, subject, text, inReplyTo, preview) {
+    var msg = {
+      platform: 'email',
+      actor: {
+        name: 'Michiel B. de Jong',
+        address: 'anything@michielbdejong.com'
+      },
+      target: [{
+        field: 'to',
+        address: recipient,
+        name: recipient
+      }],
+      object: {
+        inReplyTo: inReplyTo,
+        subject: subject,
+        text: text
+      },
+      verb: 'send'
+    };
+    if (typeof(recipient) === 'object') {
+      msg.target = [];
+      for (i in recipient) {
+        msg.target.push({
+          field: i,
+          address: recipient[i],
+          name: recipient[i]
+        });
+      }
+      console.log('msg', msg);
+    }
+    if (preview) {
+      console.log(JSON.stringify(msg));
+    } else {
+      console.log('sending');
+      toOutbox(msg.platform, msg);
+    }
   }
-  
   function on(eventName, eventHandler) {
     if (!handlers[eventName]) {
       handlers[eventName] = [];
@@ -251,6 +287,7 @@ meute = (function() {
     join: join,
     leave: leave,
     send: send,
+    sendEmail: sendEmail,
     on: on
   };
 })();
