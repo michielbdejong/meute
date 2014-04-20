@@ -43,6 +43,7 @@ meute = (function() {
             if (msg.verb === 'join' || msg.verb === 'leave') {
               updateAttendance(msg);
             } else {
+              storeMessage(msg);
               emit('message', msg);
             }
           });
@@ -411,6 +412,22 @@ meute = (function() {
       }
     }
     return have;
+  }
+  function storeMessage(msg) {
+    console.log('msg', msg, JSON.stringify(msg));
+    if (msg.platform === 'irc' && document.ircIncoming) {
+      document.ircIncoming(msg);
+    }
+    remoteStorage.inbox.logActivity(msg);
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.imapSeqNo === 'number')) {
+      imapMsgRcvd();
+    }
+    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId) === 'string') {
+      key = msg.object.messageId.split('?').join('??').split('/').join('?');
+      //console.log('storing message', key, msg);
+      remoteStorage.email.storeMessage(key, msg);
+      storeContactsFromEmailObject(msg);
+    }
   }
 
   function on(eventName, eventHandler) {
