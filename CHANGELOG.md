@@ -1,3 +1,8 @@
+# 0.3.3
+
+* add inbox modules
+* add some crude email functions
+
 # 0.3.2
 
 * add meute.on('debug', ... and meute.on('message', ...
