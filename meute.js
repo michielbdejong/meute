@@ -273,6 +273,94 @@ meute = (function() {
       toOutbox(msg.platform, msg);
     }
   }
+  function fetchEmailsFromTo(from, to, includeBody) {
+    toOutbox('email', {
+      platform: 'email',
+      verb: 'fetch',
+      actor: {
+        address: 'anything@michielbdejong.com'
+      },
+      object: {
+        from: from,
+        to: to,
+        includeBody: includeBody
+      }
+    }).then(function(success) {
+      console.log('success', success);
+    }, function(failure) {
+      console.log('failure', failure);
+    });
+  }
+  function fetch1(arr) {
+    var i;
+    for(i=0; i<arr.length; i++) {
+      fetchEmailsFromTo(arr[i], arr[i], true);
+    }
+  }
+  function fetch2(arr) {
+    var i;
+    for(i=0; i<arr.length; i++) {
+      getMessage(arr[i]);
+    }
+  }
+  function getFullMessage(msg) {
+    if (msg.object.text || msg.object.html) {
+      console.log('getFullMessage - 1');
+      return msg;
+    } else if (msg.object.messageId) {
+      console.log('getFullMessage - 2');
+      return remoteStorage.email.getMessage(msg.object.messageId).then(function(success) {
+        console.log('success', success);
+      }, function(failure) {
+        console.log('failure', failure);
+      });
+    } else {
+      console.log('getFullMessage - 3');
+      console.log('retrieving full body', a[i]);
+      document.sockethubClient.sendObject({
+        platform: 'email',
+        verb: 'fetch',
+        actor: {
+          address: 'anything@michielbdejong.com'
+        },
+        object: {
+          from: imapSeqNo,
+          to: imapSeqNo,
+          includeBody: true
+        }
+      }).then(function(success) {
+        console.log('success', success);
+        document.result = success;
+      }, function(failure) {
+        console.log('failure', failure);
+      });
+      return;
+    }
+  }
+  function getMessage(imapSeqNo) {
+    var i, a = remoteStorage.inbox.getActivitySince();
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo === imapSeqNo) {
+        return getFullMessage(a[i]);
+      }
+    }
+  }
+  function findEmailsFrom(address) {
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      matches = {},
+      num = 0;
+    for (i in a) {
+      if (a[i].actor && Array.isArray(a[i].actor) && a[i].actor[0] && a[i].actor[0].address && a[i].actor[0].address === address) {
+        if (a[i].object && a[i].object.imapSeqNo) {
+          matches[a[i].object.imapSeqNo] = a[i];
+        } else {
+          matches[num++] = a[i];
+        }
+      }
+    }
+    return matches;
+  }
+
   function on(eventName, eventHandler) {
     if (!handlers[eventName]) {
       handlers[eventName] = [];
@@ -288,6 +376,10 @@ meute = (function() {
     leave: leave,
     send: send,
     sendEmail: sendEmail,
+    fetchEmailsFromTo: fetchEmailsFromTo,
+    fetch1: fetch1,
+    fetch2: fetch2,
+    findEmailsFrom: findEmailsFrom,
     on: on
   };
 })();
