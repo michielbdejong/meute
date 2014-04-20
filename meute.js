@@ -1,6 +1,7 @@
 meute = (function() {
   var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {},
-    sockethubRegistered, roomJoins = {}, registeredActor = {}, handlers = {};
+    sockethubRegistered, roomJoins = {}, registeredActor = {}, handlers = {},
+    attendance = {};
 
   function emit(eventName, obj) {
     if (Array.isArray(handlers[eventName])) {
@@ -17,7 +18,7 @@ meute = (function() {
   function debugState() {
     debug(['meute internal state',
         masterPwd, sockethubClient, config, configDone, outbox,
-        sockethubRegistered, roomJoins, registeredActor]);
+        sockethubRegistered, roomJoins, registeredActor, attendance]);
   }
   function connectFurther() {
     if (!config.sockethub) {
@@ -39,6 +40,7 @@ meute = (function() {
             connectFurther();
           });
           sockethubClient.on('message', function(msg) {
+            updateAttendance(msg);
             emit('message', msg);
           });
           configDone[i] = true;
@@ -60,7 +62,20 @@ meute = (function() {
       }
     }
   }
- 
+  function updateAttendance(msg) {
+    if (msg.verb === 'join' && msg.platform && msg.actor && msg.target) {
+      if (!attendance[msg.platform]) {
+        attendance[msg.platform] = {};
+      }
+      if (!attendance[msg.platform][msg.target]) {
+        attendance[msg.platform][msg.target] = {};
+      }
+      attendance[msg.platform][msg.target][msg.actor] = true;
+    } else if (msg.verb === 'leave' && msg.platform && msg.actor && msg.target
+        && attendance[msg.platform] && attendance[msg.platform][msg.target]) {
+      delete attendance[msg.platform][msg.target][msg.actor];
+    }
+  }
   function flushOutbox(which) {
     debug('flushing outbox', which, outbox);
     if (configDone[which] && configDone['sockethub'] && Array.isArray(outbox[which])) {
@@ -225,11 +240,13 @@ meute = (function() {
     }
     handlers[eventName].push(eventHandler);
   }
+
   return {
     debugState: debugState,
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
+    leave: leave,
     send: send,
     on: on
   };
