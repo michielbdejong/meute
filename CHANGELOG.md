@@ -1,7 +1,8 @@
 # 0.3.3
 
-* add inbox modules
+* add inbox module
 * add some crude email functions
+* add some crude www functions
 
 # 0.3.2
 
