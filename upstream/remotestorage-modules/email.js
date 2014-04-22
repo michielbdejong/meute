@@ -35,11 +35,11 @@ RemoteStorage.defineModule('email', function(privClient, pubClient) {
     return existing;
   }
 
-  var messages = PrefixTree(privateClient.scope('messages/'));
+  var messages = PrefixTree(privClient.scope('messages/'));
   return {
     exports: {
       _init: function() {
-        privateClient.cache('', 'ALL');
+        privClient.cache('', 'ALL');
       },
       getMessage: function(msgId) {
         return messages.getObject(msgId);
@@ -48,10 +48,10 @@ RemoteStorage.defineModule('email', function(privClient, pubClient) {
         return messages.getKeysAndDirs(prefix || '');
       },
       getImapBoxIndex: function(account, box) {
-        return remoteStorage.email.priv.getAll('imap/'+account+'/'+box+'/');
+        return privClient.getAll('imap/'+account+'/'+box+'/');
       },
       getNextMissingSequence: function(account, box) {
-        return remoteStorage.email.priv.getAll('imap/'+account+'/'+box+'/').then(
+        return privClient.getAll('imap/'+account+'/'+box+'/').then(
           function(map) {
             var i, highest=0, start;
             for(i in map) {
@@ -81,7 +81,7 @@ RemoteStorage.defineModule('email', function(privClient, pubClient) {
           merge = JSON.parse(JSON.stringify(mergeObjects(existing, obj)));//to avoid DataCloneError
         //console.log('merged', existing, obj, merge);
         return messages.storeObject('message', msgId, merge).then(function() {
-          return privateClient.storeObject('imapSeqno-to-messageId', 'imap/'+obj.object.imapAccountName+'/'+obj.object.imapBoxName+'/'+obj.object.imapSeqNo, {
+          return privClient.storeObject('imapSeqno-to-messageId', 'imap/'+obj.object.imapAccountName+'/'+obj.object.imapBoxName+'/'+obj.object.imapSeqNo, {
             account: accountName,
             box: 'INBOX',
             seqNo: obj.object.imapSeqNo,
