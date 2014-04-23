@@ -241,6 +241,12 @@ meute = (function() {
     toOutbox(obj.platform, obj);
   }
 
+  function on(eventName, eventHandler) {
+    if (!handlers[eventName]) {
+      handlers[eventName] = [];
+    }
+    handlers[eventName].push(eventHandler);
+  }
 
   return {
     debugState: debugState,

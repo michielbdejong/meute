@@ -231,11 +231,11 @@ meute.www = (function() {
   //posts.json should be cached with the ALL strategy, so that we are prepared for offlineness
   //any operation involving posts should warn if they are older than 17 minutes, and fail if they are older than 11 days
   function loadPosts() {
-    if (remoteStorage.connected) {
+//    if (remoteStorage.connected) {
       return remoteStorage.scope('/public/www/').getFile('michielbdejong.com/posts.json', 1000000).then(function(a) {
         posts = JSON.parse(a.data);
       });
-    } else {
+//    } else {
   }
   function doSomething(what) {
     return document.sockethubClient.sendObject({
@@ -304,13 +304,6 @@ meute.www = (function() {
       text: 'I RSVPed "'+going+'" for '+event.properties.url[event.properties.url.length-1],
       syndicate: syndicate
     });
-  }
-
-  function on(eventName, eventHandler) {
-    if (!handlers[eventName]) {
-      handlers[eventName] = [];
-    }
-    handlers[eventName].push(eventHandler);
   }
 
   return {
