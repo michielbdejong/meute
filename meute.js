@@ -182,21 +182,22 @@ meute = (function() {
           address: id,
           name: name
         },
-        smtp: {
-          username: id,
+        object: {
           objectType: 'credentials',
-          host: server,
-          password: pwd,
-          tls: false,
-          port: 25
-        },
-        imap: {
-          username: id,
-          objectType: 'credentials',
-          host: server,
-          password: pwd,
-          tls: false,
-          port: 143
+          smtp: {
+            username: id,
+            host: server,
+            password: pwd,
+            tls: false,
+            port: 25
+          },
+          imap: {
+            username: id,
+            host: server,
+            password: pwd,
+            tls: false,
+            port: 143
+          }
         }
       };
     }
