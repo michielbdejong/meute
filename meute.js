@@ -136,7 +136,7 @@ meute = (function() {
     masterPwd = pwd;
     bootstrap();
   }
-  function addAccount(platform, server, id) {
+  function addAccount(platform, server, id, name, pwd) {
     var parts, parts2, obj;
     if (platform === 'sockethub') {
       parts = server.split('/');
@@ -166,13 +166,23 @@ meute = (function() {
       obj = {
         actor: {
           address: id,
-          name: id
+          name: name
         },
-        object: {
-          nick: id,
+        smtp: {
+          username: id,
           objectType: 'credentials',
-          server: server,
-          password: '',
+          host: server,
+          password: pwd,
+          tls: false,
+          port: 25
+        },
+        imap: {
+          username: id,
+          objectType: 'credentials',
+          host: server,
+          password: pwd,
+          tls: false,
+          port: 143
         }
       };
     }
