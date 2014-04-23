@@ -72,7 +72,15 @@
 
     //instantiate:
     remoteStorage = new RemoteStorage();
+    var i=0;
+    remoteStorage.scope('/').on('change', function() {
+      i++;
+      if(i%1000===0) {
+        console.log('change events... '+i);
+      }
+    });
     remoteStorage.on('ready', function() {
+      console.log('Calling fireInitial..');
       remoteStorage.fireInitial();
     });
   </script>

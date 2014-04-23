@@ -33,11 +33,11 @@ meute.email = (function() {
       console.log(JSON.stringify(msg));
     } else {
       console.log('sending');
-      toOutbox(msg.platform, msg);
+      meute.toOutbox(msg.platform, msg);
     }
   }
   function fetchEmailsFromTo(from, to, includeBody) {
-    toOutbox('email', {
+    meute.toOutbox('email', {
       platform: 'email',
       verb: 'fetch',
       actor: {
@@ -145,7 +145,7 @@ meute.email = (function() {
         if (gapStart) {
           console.log('gap', gapStart, i-1);
           if (fix) {
-            document.fetchEmailsFromTo(gapStart, gapStart + fix);
+            fetchEmailsFromTo(gapStart, gapStart + fix);
             fix = 0;
           }
           gapStart = false;
@@ -157,7 +157,7 @@ meute.email = (function() {
       }
     }
     if (fix) {
-      document.fetchEmailsFromTo(max, max + fix);
+      fetchEmailsFromTo(max, max + fix);
     }
     console.log('min,max', min, max);
   }

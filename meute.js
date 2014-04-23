@@ -255,6 +255,7 @@ meute = (function() {
     join: join,
     leave: leave,
     send: send,
+    toOutbox: toOutbox,
     on: on
   };
 })();
