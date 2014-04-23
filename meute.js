@@ -42,8 +42,10 @@ meute = (function() {
           sockethubClient.on('message', function(msg) {
             if (msg.verb === 'join' || msg.verb === 'leave') {
               updateAttendance(msg);
+            } else if (msg.verb === 'observe' && msg.object.objectType === 'attendance') {
+              setAttendance(msg);
             } else {
-              storeMessage(msg);
+              //storeMessage(msg);
               emit('message', msg);
             }
           });
@@ -66,18 +68,30 @@ meute = (function() {
       }
     }
   }
-  function updateAttendance(msg) {
-    if (msg.verb === 'join' && msg.platform && msg.actor && msg.target) {
+  function setAttendance(msg) {
+    if (msg.verb === 'observe' && msg.platform && msg.object && msg.target && msg.target[0] && msg.target[0].address) {
       if (!attendance[msg.platform]) {
         attendance[msg.platform] = {};
       }
-      if (!attendance[msg.platform][msg.target]) {
-        attendance[msg.platform][msg.target] = {};
+      attendance[msg.platform][msg.target[0]] = {};
+      for(var i=0; i<msg.object.members.length; i++) {
+        attendance[msg.platform][msg.target[0].address][msg.object.members[i]] = true;
       }
-      attendance[msg.platform][msg.target][msg.actor] = true;
-    } else if (msg.verb === 'leave' && msg.platform && msg.actor && msg.target
-        && attendance[msg.platform] && attendance[msg.platform][msg.target]) {
-      delete attendance[msg.platform][msg.target][msg.actor];
+    }
+  }
+  function updateAttendance(msg) {
+    if (msg.verb === 'join' && msg.platform && msg.actor && msg.actor.address
+        && msg.target && msg.target[0] && msg.target[0].address) {
+      if (!attendance[msg.platform]) {
+        attendance[msg.platform] = {};
+      }
+      if (!attendance[msg.platform][msg.target[0].address]) {
+        attendance[msg.platform][msg.target[0].address] = {};
+      }
+      attendance[msg.platform][msg.target[0].address][msg.actor.address] = true;
+    } else if (msg.verb === 'leave' && msg.platform && msg.actor && msg.actor.address && msg.target
+        && attendance[msg.platform] && attendance[msg.platform][msg.target[0].address]) {
+      delete attendance[msg.platform][msg.target[0].address][msg.actor.address];
     }
   }
   function flushOutbox(which) {
@@ -214,7 +228,9 @@ meute = (function() {
     var obj = {
       platform: platform,
       verb: (leave ? 'leave' : 'join'),
-      object: {},
+      object: {
+        text: ''//required in leave verb schema
+      },
     };
     if (typeof(channels) === 'string') {
       channels = [channels];
@@ -273,6 +289,7 @@ meute = (function() {
 
   return {
     debugState: debugState,
+    getSockethubClient: function() { return sockethubClient; },
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
