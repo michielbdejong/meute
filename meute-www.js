@@ -307,6 +307,6 @@ meute.www = (function() {
   }
 
   return {
-    publish: publish
+    //publish: publish
   };
 })();

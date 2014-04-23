@@ -192,9 +192,9 @@ meute.email = (function() {
     sendEmail: sendEmail,
     fetchEmailsFromTo: fetchEmailsFromTo,
     fetch1: fetch1,
-    fetch2: fetch2,
+    //fetch2: fetch2,
     findEmailsFrom: findEmailsFrom,
     findGaps: findGaps,
-    getSubjects: getSubjects
+    //getSubjects: getSubjects
   };
 })();
