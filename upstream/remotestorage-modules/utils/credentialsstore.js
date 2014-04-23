@@ -24,7 +24,7 @@ CredentialsStore = function(moduleName, privClient) {
     if (!sjcl) {
       throw new Error('please include sjcl.js (the Stanford JS Crypto Library) in your app');
     }
-    return privClient.getFile(moduleName+'-config').then(function(a) {
+    return privClient.getFile(moduleName+'-config', false).then(function(a) {
       if (typeof(a) === 'object' && typeof(a.data) === 'string') {
         if (typeof(pwd) === 'string') {
           try {
