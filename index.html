@@ -72,6 +72,9 @@
 
     //instantiate:
     remoteStorage = new RemoteStorage();
+    remoteStorage.on('ready', function() {
+      remoteStorage.fireInitial();
+    });
   </script>
 
 
