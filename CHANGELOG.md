@@ -1,3 +1,9 @@
+# 0.3.3
+
+* add meute.email
+* add meute.www
+* fix irc attendance tracking
+
 # 0.3.2
 
 * add meute.on('debug', ... and meute.on('message', ...
