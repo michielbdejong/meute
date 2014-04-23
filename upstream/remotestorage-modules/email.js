@@ -1,97 +1,21 @@
 RemoteStorage.defineModule('email', function(privClient, pubClient) {
-  if(!CredentialsStore) {
-    throw new Error('please include utils/credentialsstore.js');
-  }
-  var credentialsStore = CredentialsStore('email', privClient);
 
-  function mergeObjects(existing, adding) {
-    var i;
-    if((typeof(adding) != 'object') || (typeof(existing) != 'object')) {
-      return existing;
-    }
-    if(Array.isArray(existing)) {
-      if(Array.isArray(adding)) {
-        for(i=0; i<adding.length; i++) {
-          if(existing.indexOf(adding[i]) == -1) {
-            existing.push(adding[i]);
-          }
-        }
-        return existing;
-      } else {
-        return Array.concat(existing, [adding]);
-      }
-    }
-    if(Array.isArray(adding)) {
-      return existing;
-    }
-    for(i in adding) {
-      if(typeof(adding[i]=='object') && typeof(existing[i])) {
-        existing[i]=mergeObjects(existing[i], adding[i]);
-      }
-      if(!existing[i]) {
-        existing[i] = adding[i];
-      }
-    }
-    return existing;
+  function setConfig(pwd, config) {
+    privClient.storeFile('application/json', 'email-config', 
+        sjcl.encrypt(pwd, JSON.stringify(config)));
   }
-
-  var messages = PrefixTree(privClient.scope('messages/'));
+  function getConfig(pwd) {
+    return privClient.getFile('email-config').then(function(a) {
+      if (typeof(a) === 'object' && typeof(a.data) === 'string') {
+        a.data = sjcl.decrypt(pwd, a.data);
+      }
+      return a;
+    });
+  }
   return {
     exports: {
-      _init: function() {
-        privClient.cache('', 'ALL');
-      },
-      getMessage: function(msgId) {
-        return messages.getObject(msgId);
-      },
-      getMessageIds: function(prefix) {
-        return messages.getKeysAndDirs(prefix || '');
-      },
-      getImapBoxIndex: function(account, box) {
-        return privClient.getAll('imap/'+account+'/'+box+'/');
-      },
-      getNextMissingSequence: function(account, box) {
-        return privClient.getAll('imap/'+account+'/'+box+'/').then(
-          function(map) {
-            var i, highest=0, start;
-            for(i in map) {
-              if(parseInt(i)>highest) {
-                highest = i;
-              }
-              console.log('highest? ', i, highest);
-            }
-            for(i=highest;i>=0;i--) {
-              if(map[i] || i===0) {
-                if(start) {
-                  return 'highest:'+highest+', start:'+start+', end:'+(parseInt(i)+1)
-                    +', suggestion: document.fetchEmails('+(1+Math.floor((highest-start)/10))+', '+10+', false);';
-                }
-              } else {
-                if(!start) {
-                  start = parseInt(i);
-                }
-              }
-            }
-            return 'up to date! highest:'+highest+', start:'+start+', end:'+(parseInt(i)+1)+', map:'+JSON.stringify(map);
-          }
-        );
-      },
-      storeMessage: function(msgId, obj, accountName) {
-        var existing = messages.getObject(msgId) || {},
-          merge = JSON.parse(JSON.stringify(mergeObjects(existing, obj)));//to avoid DataCloneError
-        //console.log('merged', existing, obj, merge);
-        return messages.storeObject('message', msgId, merge).then(function() {
-          return privClient.storeObject('imapSeqno-to-messageId', 'imap/'+obj.object.imapAccountName+'/'+obj.object.imapBoxName+'/'+obj.object.imapSeqNo, {
-            account: accountName,
-            box: 'INBOX',
-            seqNo: obj.object.imapSeqNo,
-            messageId: msgId
-          });
-        });
-      },
-      setConfig: credentialsStore.setConfig,
-      getConfig: credentialsStore.getConfig      
+      setConfig: setConfig,
+      getConfig: getConfig
     }
   };
 });
-remoteStorage.email._init();

@@ -144,7 +144,9 @@
         var node = getLatest(objs[path]);
         if ((typeof(maxAge) === 'number') && isOutdated(node, maxAge)) {
           remoteStorage.sync.queueGetRequest(path, promise);
-        } else if (node) {
+        }
+
+        if (node) {
           promise.fulfill(200, node.body || node.itemsMap, node.contentType);
         } else {
           promise.fulfill(404);
