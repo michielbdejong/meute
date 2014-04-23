@@ -112,9 +112,9 @@ meute = (function() {
       for (i in modulesToTry) {
         loadAccount(i);
       }
-      getTemplate('homepage.html');
-      getTemplate('blogpost.html');
-      loadPosts();
+      //getTemplate('homepage.html');
+      //getTemplate('blogpost.html');
+      //loadPosts();
     }
   }
   function loadAccount(which) {
@@ -150,6 +150,19 @@ meute = (function() {
         register: { secret: id }
       };
     } else if (platform === 'irc') {
+      obj = {
+        actor: {
+          address: id,
+          name: id
+        },
+        object: {
+          nick: id,
+          objectType: 'credentials',
+          server: server,
+          password: '',
+        }
+      };
+    } else if (platform === 'email') {
       obj = {
         actor: {
           address: id,

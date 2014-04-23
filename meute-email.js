@@ -48,10 +48,6 @@ meute.email = (function() {
         to: to,
         includeBody: includeBody
       }
-    }).then(function(success) {
-      console.log('success', success);
-    }, function(failure) {
-      console.log('failure', failure);
     });
   }
   function fetch1(arr) {
