@@ -72,6 +72,19 @@
 
     //instantiate:
     remoteStorage = new RemoteStorage();
+    function fireInitial() {
+      var i=0;
+      remoteStorage.scope('/').on('change', function() {
+        i++;
+        if(i%1000===0) {
+          console.log('change events... '+i);
+        }
+      });
+      remoteStorage.on('ready', function() {
+        console.log('Calling fireInitial..');
+        remoteStorage.fireInitial();
+      });
+    }
   </script>
 
 
@@ -84,6 +97,8 @@
   <script src="upstream/remotestorage-modules/facebook.js"> </script>
 
   <script src="meute.js"> </script>
+  <script src="meute-email.js"> </script>
+  <script src="meute-www.js"> </script>
   <script>
     function step1() {
       meute.setMasterPassword('master');
