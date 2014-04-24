@@ -72,10 +72,10 @@
     }
     function evalScript(path) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', path, true);
+      xhr.open('GET', path+'?refresh='+new Date().getTime(), true);
       xhr.onload = function() {
         eval(xhr.responseText);
-        console.log('reloaded '+path+' (you may need to hard-refresh it in a separate window)');
+        console.log('reloaded '+path);
       };
       xhr.send();
     }
