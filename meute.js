@@ -16,8 +16,8 @@ meute = (function() {
   }
 
   function debugState() {
-    debug({
-      masterPWd: masterPwd,
+    return {
+      masterPwd: masterPwd,
       sockethubClient: sockethubClient,
       config: config,
       configDone: configDone,
@@ -27,7 +27,7 @@ meute = (function() {
       registeredActor: registeredActor,
       attendance: attendance,
       topic: topic
-    });
+    };
   }
   function connectFurther() {
     debug('connectFurther called');
@@ -321,7 +321,6 @@ meute = (function() {
 
   return {
     debugState: debugState,
-    getSockethubClient: function() { return sockethubClient; },
     setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
@@ -331,4 +330,4 @@ meute = (function() {
     bootstrap: bootstrap,
     on: on
   };
-})();
+})(); 
