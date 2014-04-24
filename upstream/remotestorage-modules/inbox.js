@@ -1,4 +1,7 @@
 RemoteStorage.defineModule('inbox', function(privateClient, publicClient) {
+  if(!window.asrender) {
+    throw new Error('please include asrender.js in your app');
+  }
   var activity, last, timestamp, activityHandlers = [];
 
   function addToConversation(conversationName, id) {
