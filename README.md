@@ -13,19 +13,19 @@ object to enter an irc channel, say something, and leave. Here is a
 reference documentation of all the functions the library exposes in
 the v0.4.* API:
 
-`meute.debugState()`: returns all internal state, namely:
-  config: all configs (currently sockethub, irc and email are supported),
-  configDone: which configs have been sent to sockethub successfully,
-  masterPwd: the current master password (see `meute.setMasterPassword`),
-  outbox: commands that have been queued up until they can be sent,
-  registeredActor: the name and id used for sending email and appearingn on irc,
-  roomJoins: which irc rooms you have joined (or are in the process of joining),
-  sockethubClient: the sockethub-client instance,
-  sockethubRegistered: whether sockethub register command has been sent successfully,
-  topic: irc room topics,
-  attendance: irc room members
+* `meute.debugState()`: returns all internal state, namely:
+  *  config: all configs (currently sockethub, irc and email are supported),
+  *  configDone: which configs have been sent to sockethub successfully,
+  *  masterPwd: the current master password (see `meute.setMasterPassword`),
+  *  outbox: commands that have been queued up until they can be sent,
+  *  registeredActor: the name and id used for sending email and appearingn on irc,
+  *  roomJoins: which irc rooms you have joined (or are in the process of joining),
+  *  sockethubClient: the sockethub-client instance,
+  *  sockethubRegistered: whether sockethub register command has been sent successfully,
+  *  topic: irc room topics,
+  *  attendance: irc room members
 
-`meute.setMasterPassword(x)` where `x` is either undefined or a string: Set a
+* `meute.setMasterPassword(x)` where `x` is either undefined or a string: Set a
   client-side password with which to encrypt credentials when storing to remoteStorage,
   and with which to decrypt them when retrieving them. Should be a string, or undefined
   for no encryption. When credentials have been stored encrypted, nothing will work
@@ -34,54 +34,54 @@ the v0.4.* API:
   previous call, all credentials will be overwritten in remoteStorage, encrypted with
   the new password.
 
-`meute.addAccount(platform, server, x[, y, z])`, where:
-  string `platform` is 'sockethub', 'irc', or 'email'
-  string `server` is a WebSocket URL for sockethub, an irc server for irc, or an imap/stmp server for email,
-  string `x` is the secret for sockethub, the nick for irc, or the email address and imap username for email,
-  string `y` is the display name for email,
-  string `z` is the imap password for email,
-  sets the sockethub, irc, or email credentials.
+* `meute.addAccount(platform, server, x[, y, z])`, where:
+  * string `platform` is 'sockethub', 'irc', or 'email'
+  * string `server` is a WebSocket URL for sockethub, an irc server for irc, or an imap/stmp server for email,
+  * string `x` is the secret for sockethub, the nick for irc, or the email address and imap username for email,
+  * string `y` is the display name for email,
+  * string `z` is the imap password for email,
+  Sets the sockethub, irc, or email credentials.
 
-`meute.join(platform, rooms)`, where platform is 'irc' and rooms is a string or array of string room names:
+* `meute.join(platform, rooms)`, where platform is 'irc' and rooms is a string or array of string room names:
   join one or more irc rooms. Example: `meute.join('irc', ['#meute', '#remotestorage']);`
 
-`meute.leave(platform, rooms)`, where platform is 'irc' and rooms is a string or array of string room names:
+* `meute.leave(platform, rooms)`, where platform is 'irc' and rooms is a string or array of string room names:
   leave one or more irc rooms. Example: `meute.leave('irc', ['#remotestorage']);`
 
-`meute.send(platform, target, text)` where platform is 'irc', string target is an irc nick or room name,
-  string text is the text to send:
+* `meute.send(platform, target, text)` where platform is 'irc', string target is an irc nick or room name,
+  * string text is the text to send:
   Sends message `text` to the irc user or the irc room `target`.
 
-`meute.on(event, handler)` where event is 'message' or 'debug' and handler is a function:
+* `meute.on(event, handler)` where event is 'message' or 'debug' and handler is a function:
   Will cause handler to be called with a string argument when a debug message is available in the case of 'debug',
   or with an ActivityStreams object representing an irc message or an incoming email message in the case of 'message'
 
-`meute.email.sendEmail(recipient, subject, text, inReplyTo, preview)`, where:
-  recipient is either a string email address or an object containing one 'to' and one 'cc' field, both being single
-  email addresses,
-  string subject is the email subject,
-  string text is the email body text,
-  string inReplyTo is the messageId of an email to which this email is a reply,
-  boolean preview will prevent the email from actually being sent if true,
+* `meute.email.sendEmail(recipient, subject, text, inReplyTo, preview)`, where:
+  * recipient is either a string email address or an object containing one 'to' and one 'cc' field, both being single
+    email addresses,
+  * string subject is the email subject,
+  * string text is the email body text,
+  * string inReplyTo is the messageId of an email to which this email is a reply,
+  * boolean preview will prevent the email from actually being sent if true,
   Will sent an email with the properties specified.
 
-`meute.email.fetchEmailsFromTo(from, to, includeBody)` with:
-  integer `from` the first IMAP id,
-  integer `to` the last IMAP id,
-  boolean `includeBody` set to true if you want the email bodies; false if you want just the headers,
+* `meute.email.fetchEmailsFromTo(from, to, includeBody)` with:
+  * integer `from` the first IMAP id,
+  * integer `to` the last IMAP id,
+  * boolean `includeBody` set to true if you want the email bodies; false if you want just the headers,
   Fetches emails over IMAP; they will come in as 'message' events (see `meute.on`)
 
-`meute.email.fetch1(arr)` with `arr` an array of integers:
+* `meute.email.fetch1(arr)` with `arr` an array of integers:
   Fetch the bodies of the messages with the specified IMAP ids. Useful if you retrieved all the headers first of
   all your new email, and want to retrieve the bodies of only a few of them.
 
-`fireInitial()`: load emails from disk into memory. This may take several minutes if you have more than 10,000 emails.
+* `fireInitial()`: load emails from disk into memory. This may take several minutes if you have more than 10,000 emails.
 
-`meute.email.findEmailsFrom(address)` with string `address` an email address, will return all email messages with
+* `meute.email.findEmailsFrom(address)` with string `address` an email address, will return all email messages with
   that from address that have currently been loaded into memory. Make sure to call `fireInitial` first and wait for
   it to complete.
 
-`meute.email.findGaps(fetch)`, with `fetch` either undefined or an integer: See which email IMAP id's are in memory,
+* `meute.email.findGaps(fetch)`, with `fetch` either undefined or an integer: See which email IMAP id's are in memory,
   and where there are gaps. If you specify an integer `fix` value, then the first `fix` emails of the first gap will
   be fetched. When there are no gaps (e.g. there is a solid range of IMAP id's from 0 to 12345), then it will try to
   fetch up to `fix` newer emails (with higher IMAP id's). Make sure to call `fireInitial` first and wait for it to
