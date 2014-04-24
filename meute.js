@@ -1,5 +1,5 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configDone = {}, outbox = {},
+  var masterPwd, sockethubClient, config = {}, configuring = {}, configDone = {}, outbox = {},
     sockethubRegistered, roomJoins = {}, registeredActor = {}, handlers = {},
     attendance = {}, topic = {};
 
@@ -30,39 +30,44 @@ meute = (function() {
     });
   }
   function connectFurther() {
+    debug('connectFurther called');
     if (!config.sockethub) {
       //nothing to do without a sockethub config
       return;
     }
-    for (var i in config) {
-      if (!configDone[i]) {
-        if (i === 'sockethub') {
-          sockethubClient = SockethubClient.connect(config.sockethub);
-          sockethubClient.on('registered', function() {
-            sockethubRegistered = true;
-            debug('registered! resending all platform configs');
-            configDone = { sockethub: true };
-            connectFurther();
-          });
-          sockethubClient.on('message', function(msg) {
-            if (msg.verb === 'join' || msg.verb === 'leave') {
-              updateAttendance(msg);
-            } else if (msg.verb === 'observe' && msg.object.objectType === 'attendance') {
-              setAttendance(msg);
-            } else if (msg.verb === 'update' && msg.object.objectType === 'topic') {
-              updateTopic(msg);
-            } else {
-              //storeMessage(msg);
-              emit('message', msg);
-            }
-          });
-        } else if (sockethubRegistered && config[i].actor && config[i].object) {
+    if (!configDone.sockethub && !configuring.sockethub) {
+      debug('configuring sockethub', config.sockethub);
+      sockethubClient = SockethubClient.connect(config.sockethub);
+      sockethubClient.on('registered', function() {
+        sockethubRegistered = true;
+        debug('registered! resending all platform configs');
+        configuring = {};
+        configDone = { sockethub: true };
+        connectFurther();
+      });
+      sockethubClient.on('message', function(msg) {
+        if (msg.verb === 'join' || msg.verb === 'leave') {
+          updateAttendance(msg);
+        } else if (msg.verb === 'observe' && msg.object.objectType === 'attendance') {
+          setAttendance(msg);
+        } else if (msg.verb === 'update' && msg.object.objectType === 'topic') {
+          updateTopic(msg);
+        } else {
+          //storeMessage(msg);
+          emit('message', msg);
+        }
+      });
+      configuring.sockethub = true;
+    } else if (sockethubRegistered) {
+      for (var i in config) {
+        if (i !== 'sockethub' && config[i].actor && config[i].object) {
           sendConfig(i);
         }
       }
     }
   }
   function sendConfig(platform) {
+    configuring[platform] = true;
     sockethubClient.sendObject({
       platform: 'dispatcher',
       target: [{ platform: platform }],
@@ -70,6 +75,7 @@ meute = (function() {
       object: config[platform].object,
       actor: config[platform].actor
     }).then(function() {
+      delete configuring[platform];
       configDone[platform] = true;
       return joinRooms(platform);
     }).then(function() {
@@ -92,7 +98,7 @@ meute = (function() {
       if (!topic[msg.platform]) {
         topic[msg.platform] = {};
       }
-      topic[msg.platform][msg.target[0]] = msg.object.topic;
+      topic[msg.platform][msg.target[0].address] = msg.object.topic;
     }
   }
   function updateAttendance(msg) {
@@ -157,7 +163,7 @@ meute = (function() {
         try {
           doAddAccount(which, config, false);
         } catch(e) {
-          debug('error adding account', which, config, e);
+          debug('error adding account "'+which+'": '+e.message);
         }
       }
     }, function(err) {
@@ -228,6 +234,7 @@ meute = (function() {
     doAddAccount(platform, obj);
   }
   function doAddAccount(which, thisConfig, save) {
+    debug('doAddAccount("'+which+'", '+JSON.stringify(thisConfig)+')');
     if (thisConfig.actor) {
       registeredActor[which] = thisConfig.actor;
     }
