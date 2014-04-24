@@ -52,7 +52,7 @@ meute.email = (function() {
       }
     });
   }
-  function fetch(pageNo, pageSize, includeBody) {
+  function fetch(page, perPage, includeBody) {
     meute.toOutbox('email', {
       platform: 'email',
       verb: 'fetch',
@@ -60,8 +60,8 @@ meute.email = (function() {
         address: 'anything@michielbdejong.com'
       },
       object: {
-        pageNo: pageNo,
-        pageSize: pageSize,
+        page: page,
+        perPage: perPage,
         includeBody: includeBody
       }
     });
