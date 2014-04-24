@@ -72,6 +72,10 @@
 
     //instantiate:
     remoteStorage = new RemoteStorage();
+    var remoteStorageReady = false;
+    remoteStorage.on('ready', function() {
+      remoteStorageReady = true;
+    });
     function fireInitial() {
       var i=0;
       remoteStorage.scope('/').on('change', function() {
@@ -80,10 +84,15 @@
           console.log('change events... '+i);
         }
       });
-      remoteStorage.on('ready', function() {
-        console.log('Calling fireInitial..');
+      if (remoteStorageReady) {
+        console.log('Calling fireInitial...');
         remoteStorage.fireInitial();
-      });
+      } else {
+        console.log('Will call fireInitial when remoteStorage ready is fired');
+        remoteStorage.on('ready', function() {
+          remoteStorage.fireInitial();
+        });
+      }
     }
   </script>
 
