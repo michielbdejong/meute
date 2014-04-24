@@ -74,19 +74,21 @@
       xhr.open('GET', path, true);
       xhr.onload = function() {
         eval(xhr.responseText);
-        console.log('reloaded '+path);
+        console.log('reloaded '+path+' (you may need to hard-refresh it in a separate window)');
       };
       xhr.send();
     }
     function reload() {
       evalScript('meute.js');
-      evalScript('meute-email.js');
-      evalScript('meute-www.js');
+      setTimeout(function() {
+        evalScript('meute-email.js');
+        evalScript('meute-www.js');
+      }, 1000);
       setTimeout(function() {
         meute.on('message', function(obj) { console.log('meute message', obj); });
         meute.on('debug', function(obj) { console.log('meute debug', obj); });
         meute.bootstrap();
-      }, 1000);
+      }, 2000);
     }
 
     //instantiate:

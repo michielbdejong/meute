@@ -53,7 +53,12 @@ meute = (function() {
         } else if (msg.verb === 'update' && msg.object.objectType === 'topic') {
           updateTopic(msg);
         } else {
-          //storeMessage(msg);
+          if (meute.email && meute.email.storeMessage) {
+            console.log('storing message');
+            meute.email.storeMessage(msg);
+          } else {
+            console.log('not storing message');
+          }
           emit('message', msg);
         }
       });

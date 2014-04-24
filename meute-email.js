@@ -37,6 +37,8 @@ meute.email = (function() {
     }
   }
   function fetchEmailsFromTo(from, to, includeBody) {
+    console.log('meute.email.fetchEmailsFromTo is broken, use meute.email.fetch instead!');
+    return;
     meute.toOutbox('email', {
       platform: 'email',
       verb: 'fetch',
@@ -50,7 +52,23 @@ meute.email = (function() {
       }
     });
   }
+  function fetch(pageNo, pageSize, includeBody) {
+    meute.toOutbox('email', {
+      platform: 'email',
+      verb: 'fetch',
+      actor: {
+        address: 'anything@michielbdejong.com'
+      },
+      object: {
+        pageNo: pageNo,
+        pageSize: pageSize,
+        includeBody: includeBody
+      }
+    });
+  }
   function fetch1(arr) {
+    console.log('meute.email.fetch1 is broken, use meute.email.fetch instead!');
+    return;
     var i;
     for(i=0; i<arr.length; i++) {
       fetchEmailsFromTo(arr[i], arr[i], true);
@@ -119,7 +137,11 @@ meute.email = (function() {
     }
     return matches;
   }
-  function findGaps(fix) {  
+  function findGaps(fix) {
+    if (fix) {
+      console.log('meute.email.findGaps(fix) is broken, use meute.email.fetch instead!');
+      return;
+    }
     var i, a = remoteStorage.inbox.getActivitySince(),
       have = {}
       max = 0,
@@ -201,11 +223,12 @@ meute.email = (function() {
   return {
     sendEmail: sendEmail,
     fetchEmailsFromTo: fetchEmailsFromTo,
+    fetch: fetch,
     fetch1: fetch1,
     //fetch2: fetch2,
     findEmailsFrom: findEmailsFrom,
     findGaps: findGaps,
     //getSubjects: getSubjects,
-    storemessage: storeMessage
+    storeMessage: storeMessage
   };
 })();

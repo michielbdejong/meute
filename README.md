@@ -69,11 +69,13 @@ the v0.4.* API:
   * integer `from` the first IMAP id,
   * integer `to` the last IMAP id,
   * boolean `includeBody` set to true if you want the email bodies; false if you want just the headers,
-  Fetches emails over IMAP; they will come in as 'message' events (see `meute.on`)
+  Fetches emails over IMAP; they will come in as 'message' events (see `meute.on`). *NB: this function is
+  currently broken, use `meute.email.fetch` instead!*
 
 * `meute.email.fetch1(arr)` with `arr` an array of integers:
   Fetch the bodies of the messages with the specified IMAP ids. Useful if you retrieved all the headers first of
-  all your new email, and want to retrieve the bodies of only a few of them.
+  all your new email, and want to retrieve the bodies of only a few of them. *NB: this function is
+  currently broken, use `meute.email.fetch` instead!*
 
 * `fireInitial()`: load emails from disk into memory. This may take several minutes if you have more than 10,000 emails.
 
@@ -85,4 +87,10 @@ the v0.4.* API:
   and where there are gaps. If you specify an integer `fix` value, then the first `fix` emails of the first gap will
   be fetched. When there are no gaps (e.g. there is a solid range of IMAP id's from 0 to 12345), then it will try to
   fetch up to `fix` newer emails (with higher IMAP id's). Make sure to call `fireInitial` first and wait for it to
-  complete.
+  complete. *NB: the `fix` parameter is currently broken, use `meute.email.fetch` instead!*
+
+* `meute.email.fetch(pageNo, pageSize, includeBody)` where:
+  * integer `pageNo` is the number of the page block to fetch,
+  * integer `pageSize` is the page block size,
+  * boolean `includeBody` causes bodies as well as headers to be fetched if set to true,
+  Will retrieve the latest `pageSize` emails if `pageNo` is 0, the `pageSize` ones before that if `pageNo` is 1, etcetera.
