@@ -112,7 +112,8 @@ meute = (function() {
       }
       attendance[msg.platform][msg.target[0].address][msg.actor.address] = true;
     } else if (msg.verb === 'leave' && msg.platform && msg.actor && msg.actor.address && msg.target
-        && attendance[msg.platform] && attendance[msg.platform][msg.target[0].address]) {
+         && msg.target[0] && msg.target[0].address && attendance[msg.platform]
+         && attendance[msg.platform][msg.target[0].address]) {
       delete attendance[msg.platform][msg.target[0].address][msg.actor.address];
     }
   }
