@@ -27,7 +27,7 @@ var PrefixTree = function(baseClient) {
     return keyToBase(key, depth)+keyToItemName(key, depth);
   }
   function getKeysAndDirs(path) {
-    return baseClient.getListing(path).then(function(listing) {
+    return baseClient.getListing(path, false).then(function(listing) {
       var itemsMap={}, i, keys = [], dirs = [];
       if(typeof(listing)=='object') {
         itemsMap = listing
@@ -47,7 +47,7 @@ var PrefixTree = function(baseClient) {
   
   function tryDepth(key, depth, checkMaxLeaves) {
     var thisDir = keyToBase(key, depth);
-    return baseClient.getListing(thisDir).then(function(itemsMap) {
+    return baseClient.getListing(thisDir, false).then(function(itemsMap) {
       if(!itemsMap) {
         itemsMap = {};
       }
@@ -83,7 +83,7 @@ var PrefixTree = function(baseClient) {
     },
     getFile: function(key) {
       return tryDepth(key, minDepth, false).then(function(depth) {
-        return baseClient.getFile(keyToPath(key, depth));
+        return baseClient.getFile(keyToPath(key, depth), false);
       }, function(err) {
         console.log('getFile error', key, err.message);
       });
@@ -97,7 +97,7 @@ var PrefixTree = function(baseClient) {
     },
     getObject: function(key) {
       return tryDepth(key, minDepth, false).then(function(depth) {
-        return baseClient.getObject(keyToPath(key, depth));
+        return baseClient.getObject(keyToPath(key, depth), false);
       }, function(err) {
         console.log('getObject error', key, err.message);
       });
