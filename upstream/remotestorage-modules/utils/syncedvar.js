@@ -19,7 +19,7 @@ function SyncedVar(name, baseClient) {
       data=val;
     },
     load: function() {
-      return baseClient.getObject(name).then(function(res) {
+      return baseClient.getObject(name, false).then(function(res) {
         data = res.data;
       });
     }

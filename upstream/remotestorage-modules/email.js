@@ -48,10 +48,10 @@ RemoteStorage.defineModule('email', function(privClient, pubClient) {
         return messages.getKeysAndDirs(prefix || '');
       },
       getImapBoxIndex: function(account, box) {
-        return privClient.getAll('imap/'+account+'/'+box+'/');
+        return privClient.getAll('imap/'+account+'/'+box+'/', false);
       },
       getNextMissingSequence: function(account, box) {
-        return privClient.getAll('imap/'+account+'/'+box+'/').then(
+        return privClient.getAll('imap/'+account+'/'+box+'/', false).then(
           function(map) {
             var i, highest=0, start;
             for(i in map) {
