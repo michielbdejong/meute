@@ -1,3 +1,16 @@
+# 0.4.1
+
+* Trying to get all email functionality from v0.1.0 restored
+* Added reload() function for debugging without refreshing the page
+* make fireInitial more intelligent about remoteStorage being ready or not
+
+# 0.4.0
+
+* Documented the entire API
+* Keep track of irc room members and topics
+* Make connectFurther function more robust
+* Allow changing and removing the master password
+
 # 0.3.3
 
 * add meute.email
