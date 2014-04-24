@@ -144,8 +144,8 @@ meute = (function() {
           debug('error adding account', which, config, e);
         }
       }
-    }, function() {
-      debug('no config found for '+which);
+    }, function(err) {
+      debug('no config found for '+which+': '+err);
     });
   }
    
@@ -305,6 +305,7 @@ meute = (function() {
     leave: leave,
     send: send,
     toOutbox: toOutbox,
+    bootstrap: bootstrap,
     on: on
   };
 })();
