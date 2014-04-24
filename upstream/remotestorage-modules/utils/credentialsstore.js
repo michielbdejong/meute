@@ -30,7 +30,7 @@ CredentialsStore = function(moduleName, privClient) {
           try {
             a.data = JSON.parse(sjcl.decrypt(pwd, a.data.substring(algorithmPrefix.length)));
           } catch(e) {
-            throw new Error('could not decrypt '+moduleName+'-config');
+            throw new Error('could not decrypt '+moduleName+'-config with that password');
           }
         } else {
           try {

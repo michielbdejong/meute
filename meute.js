@@ -25,7 +25,7 @@ meute = (function() {
       //nothing to do without a sockethub config
       return;
     }
-    for (i in config) {
+    for (var i in config) {
       if (!configDone[i]) {
         if (i === 'sockethub') {
           sockethubClient = SockethubClient.connect(config.sockethub);
@@ -123,8 +123,11 @@ meute = (function() {
       email: true
     };
     if (remoteStorage) {
-      for (i in modulesToTry) {
-        loadAccount(i);
+      for (var i in modulesToTry) {
+        if (!configDone[i]) {
+          console.log('trying to load account', i);
+          loadAccount(i);
+        }
       }
       //getTemplate('homepage.html');
       //getTemplate('blogpost.html');
@@ -147,6 +150,11 @@ meute = (function() {
   }
    
   function setMasterPassword(pwd) {
+    //save loaded configs with the new pwd:
+    for (var i in config) {
+      console.log('changing master password for', i);
+      remoteStorage[i].setConfig(pwd, config[i]);
+    }
     masterPwd = pwd;
     bootstrap();
   }
