@@ -158,7 +158,7 @@ meute = (function() {
     masterPwd = pwd;
     bootstrap();
   }
-  function addAccount(platform, server, id, name, pwd) {
+  function addAccount(platform, server, id, pwd, name) {
     var parts, parts2, obj;
     if (platform === 'sockethub') {
       parts = server.split('/');
