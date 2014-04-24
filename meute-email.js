@@ -171,19 +171,29 @@ meute.email = (function() {
     }
     return have;
   }
+  function getMessage(imapSeqNo) {
+    var i, a = remoteStorage.inbox.getActivitySince();
+    for (i in a) {
+      if (a[i].object && a[i].object.imapSeqNo === imapSeqNo) {
+        return getFullMessage(a[i]);
+      }
+    }
+  }
+
+  function storeContactsFromEmailObject(obj) {
+    remoteStorage.contacts.addFromList(obj.actor);
+    if(obj.target) {
+      remoteStorage.contacts.addFromList(obj.target.to);
+      remoteStorage.contacts.addFromList(obj.target.cc);
+    }
+  }
+
   function storeMessage(msg) {
-    console.log('msg', msg, JSON.stringify(msg));
-    if (msg.platform === 'irc' && document.ircIncoming) {
-      document.ircIncoming(msg);
-    }
     remoteStorage.inbox.logActivity(msg);
-    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.imapSeqNo === 'number')) {
-      imapMsgRcvd();
-    }
     if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId) === 'string') {
       key = msg.object.messageId.split('?').join('??').split('/').join('?');
       //console.log('storing message', key, msg);
-      remoteStorage.email.storeMessage(key, msg);
+      remoteStorage.email.storeMessage(key, msg, meute.debugState().registeredActor.email.address);
       storeContactsFromEmailObject(msg);
     }
   }
@@ -195,6 +205,7 @@ meute.email = (function() {
     //fetch2: fetch2,
     findEmailsFrom: findEmailsFrom,
     findGaps: findGaps,
-    //getSubjects: getSubjects
+    //getSubjects: getSubjects,
+    storemessage: storeMessage
   };
 })();
