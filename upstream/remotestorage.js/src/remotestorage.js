@@ -178,7 +178,8 @@
       if (this.local) {
         setTimeout(this.local.fireInitial.bind(this.local), 0);
       }
-    };
+    }.bind(this);
+    this.on('ready', this.fireInitial.bind(this));
   };
 
   RemoteStorage.DiscoveryError = function(message) {
