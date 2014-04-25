@@ -65,7 +65,7 @@
         function(a) { console.log('success', a, JSON.stringify(a)); },
         function(a) { console.log('fail', a, JSON.stringify(a)); });
     }
-    RemoteStorage._log = true;
+    //RemoteStorage._log = true;
     RemoteStorage.reset = function() {
       indexedDB.deleteDatabase('remotestorage');
       localStorage.clear();
@@ -90,6 +90,41 @@
         meute.on('debug', function(obj) { console.log('meute debug', obj); });
         meute.bootstrap();
       }, 2000);
+    }
+
+    function calcPage(oldest, newest, perPage) {
+      var page = Math.floor((newest-oldest)/perPage)+1;
+      return 'meute.email.fetch('+page+', '+perPage+') will get you ids '+(newest-(page*perPage))+' to '+(newest-((page-1)*perPage+1));
+    }
+    function benchmark(num, interval) {
+      var setter, i=0, startTime = new Date().getTime();
+      if (interval) {
+        setter = setInterval(function() {
+          remoteStorage.scope('/test/').storeFile('text/plain', 'test'+i, 'a');
+          i++;
+          if (i === num) {
+            console.log('finished setting', (new Date().getTime() - startTime)/1000);
+            clearInterval(setter);
+          }
+        }, interval);
+      } else {
+        for (i=0; i<num; i++) {
+          remoteStorage.scope('/test/').storeFile('text/plain', 'test'+i, 'a');
+        }
+        console.log('finished setting', (new Date().getTime() - startTime)/1000);
+      }
+
+      setTimeout(function() {
+        var timer = setInterval(function() {
+          if (remoteStorage.local.putsRunning === 0
+              && (remoteStorage.local.commitQueued === undefined || Object.keys(remoteStorage.local.commitQueued).length === 0)) {
+            console.log('finished storing', (new Date().getTime() - startTime)/1000);
+            clearInterval(timer);
+//          } else {
+//            console.log(remoteStorage.local.putsRunning + ' <- ' + Object.keys(remoteStorage.local.commitQueued).length);
+          }
+        }, 100);
+      }, 1000);
     }
 
     //instantiate:
