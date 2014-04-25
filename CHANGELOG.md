@@ -1,3 +1,9 @@
+# 0.4.2
+
+* Disable local events (10x performance increase)
+* Document remoteStorage.contacts.search
+* Fix meute.email.fetch
+
 # 0.4.1
 
 * Trying to get all email functionality from v0.1.0 restored
