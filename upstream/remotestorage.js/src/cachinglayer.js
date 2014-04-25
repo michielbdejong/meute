@@ -288,6 +288,7 @@
 
     fireInitial: function() {
       if (RemoteStorage.enableChangeEvents && !RemoteStorage.enableChangeEvents.local) {
+        RemoteStorage.log('suppressing fireInitial because RemoteStorage.enableChangeEvents.local is set to false');
         return;
       }
       this.forAllNodes(function(node) {

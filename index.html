@@ -65,7 +65,7 @@
         function(a) { console.log('success', a, JSON.stringify(a)); },
         function(a) { console.log('fail', a, JSON.stringify(a)); });
     }
-    //RemoteStorage._log = true;
+    RemoteStorage._log = true;
     RemoteStorage.reset = function() {
       indexedDB.deleteDatabase('remotestorage');
       localStorage.clear();

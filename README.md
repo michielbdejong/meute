@@ -94,3 +94,6 @@ the v0.4.* API:
   * integer `pageSize` is the page block size,
   * boolean `includeBody` causes bodies as well as headers to be fetched if set to true,
   Will retrieve the latest `pageSize` emails if `pageNo` is 0, the `pageSize` ones before that if `pageNo` is 1, etcetera.
+
+* `remoteStorage.contacts.find(searchString)` where string `searchString` is a substring of the name or address of the contact:
+  Returns an object full of addressbook entries that match the search (filled automatically from incoming email messages).
