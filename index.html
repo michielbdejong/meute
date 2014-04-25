@@ -133,8 +133,15 @@
     remoteStorage.on('ready', function() {
       remoteStorageReady = true;
     });
+    RemoteStorage.enableChangeEvents = {
+      local: false,
+      window: false,
+      remote: true,
+      conflict: true
+    };
     function fireInitial() {
       var i=0;
+      RemoteStorage.enableChangeEvents.local = true;
       remoteStorage.scope('/').on('change', function() {
         i++;
         if(i%1000===0) {
@@ -145,10 +152,7 @@
         console.log('Calling fireInitial...');
         remoteStorage.fireInitial();
       } else {
-        console.log('Will call fireInitial when remoteStorage ready is fired');
-        remoteStorage.on('ready', function() {
-          remoteStorage.fireInitial();
-        });
+        console.log('fireInitial will be called from the remoteStorage ready event...');
       }
     }
   </script>
