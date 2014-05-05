@@ -37,8 +37,8 @@ meute.email = (function() {
     }
   }
   function fetchEmailsFromTo(from, to, includeBody) {
-    console.log('meute.email.fetchEmailsFromTo is broken, use meute.email.fetch instead!');
-    return;
+    //console.log('meute.email.fetchEmailsFromTo is broken, use meute.email.fetch instead!');
+    //return;
     meute.toOutbox('email', {
       platform: 'email',
       verb: 'fetch',
@@ -137,6 +137,43 @@ meute.email = (function() {
     }
     return matches;
   }
+  function wasAddressedTo(obj, addr) {
+    if (typeof(obj) != 'object' || !obj.target) {
+      return false;
+    }
+    for (var way in obj.target) {
+      if (Array.isArray(obj.target[way])) {
+        for (var i=0; i<obj.target[way].length; i++) {
+          if (obj.target[way][i].address === addr) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+  function findEmailsTo(address) {
+    var i, a = remoteStorage.inbox.getActivitySince(),
+      matches = {},
+      num = 0;
+    for (i in a) {
+      if (wasAddressedTo(a[i], address)) {
+        if (a[i].object && a[i].object.imapSeqNo) {
+          matches[a[i].object.imapSeqNo] = a[i];
+        } else {
+          matches[num++] = a[i];
+        }
+      }
+    }
+    return matches;
+  }
+  function retrieveAll(address) {
+    var objs = findEmailsTo(address), msgIds = {};
+    for (var i in objs) {
+      msgIds[objs[i].object.messageId] = objs[i].object.imapSeqNo;
+    }
+    return msgIds;
+  }
   function findGaps(fix) {
     if (fix) {
       console.log('meute.email.findGaps(fix) is broken, use meute.email.fetch instead!');
@@ -227,7 +264,8 @@ meute.email = (function() {
     fetch1: fetch1,
     //fetch2: fetch2,
     findEmailsFrom: findEmailsFrom,
-    findGaps: findGaps,
+    findEmailsTo: findEmailsTo,
+    retrieveAll: retrieveAll,
     //getSubjects: getSubjects,
     storeMessage: storeMessage
   };
