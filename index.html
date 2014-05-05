@@ -182,8 +182,8 @@
   <script src="meute-email.js"> </script>
   <script src="meute-www.js"> </script>
   <script>
-    meute.on('message', function(obj) { console.log('meute message', obj); });
-    meute.on('debug', function(obj) { console.log('meute debug', obj); });
+    meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
+    meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
     meute.bootstrap();
 
     function step1() {
@@ -204,6 +204,17 @@
     function step6() {
       meute.leave('irc', ['#meute']); //meute.leave('irc', '#meute'); is also allowed when leaving only one channel
     }
+    function step7() {
+      meute.email.fetch(0, 50);
+    }
+    function step8() {
+      var str = '';
+      for (i=0; i<messageLogs.length; i++) {
+        str += '' + i + ': ' + msgs[i].actor[0].address + '-' + msgs[i].object.subject + '\n';
+      }
+      return str;
+    }
+
     document.getElementsByTagName('pre')[0].innerHTML = 
         document.getElementsByTagName('script')[document.getElementsByTagName('script').length-1].innerHTML;
   </script>
