@@ -64,6 +64,9 @@
 
   <script>
     //for debugging:
+    var messageLogs = [],
+      debugLogs = [];
+
     function d(p) {
       p.then(
         function(a) { console.log('success', a, JSON.stringify(a)); },
@@ -90,8 +93,8 @@
         evalScript('meute-www.js');
       }, 1000);
       setTimeout(function() {
-        meute.on('message', function(obj) { console.log('meute message', obj); });
-        meute.on('debug', function(obj) { console.log('meute debug', obj); });
+        meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
+        meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
         meute.bootstrap();
       }, 2000);
     }
