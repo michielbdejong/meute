@@ -1,3 +1,8 @@
+# 0.4.2
+
+* display the widget in the main page
+* warn about the sockethub version in the main page
+
 # 0.4.1
 
 * Trying to get all email functionality from v0.1.0 restored
