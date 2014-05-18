@@ -84,13 +84,6 @@ meute.email = (function() {
     if (msg.object.text || msg.object.html) {
       console.log('getFullMessage - 1');
       return msg;
-    } else if (msg.object.messageId) {
-      console.log('getFullMessage - 2');
-      return remoteStorage.email.getMessage(msg.object.messageId).then(function(success) {
-        console.log('success', success);
-      }, function(failure) {
-        console.log('failure', failure);
-      });
     } else {
       console.log('getFullMessage - 3');
       console.log('retrieving full body', a[i]);
@@ -114,159 +107,11 @@ meute.email = (function() {
       return;
     }
   }
-  function getMessage(imapSeqNo) {
-    var i, a = remoteStorage.inbox.getActivitySince();
-    for (i in a) {
-      if (a[i].object && a[i].object.imapSeqNo === imapSeqNo) {
-        return getFullMessage(a[i]);
-      }
-    }
-  }
-  function findEmailsFrom(address) {
-    var i, a = remoteStorage.inbox.getActivitySince(),
-      matches = {},
-      num = 0;
-    for (i in a) {
-      if (a[i].actor && Array.isArray(a[i].actor) && a[i].actor[0] && a[i].actor[0].address && a[i].actor[0].address === address) {
-        if (a[i].object && a[i].object.imapSeqNo) {
-          matches[a[i].object.imapSeqNo] = a[i];
-        } else {
-          matches[num++] = a[i];
-        }
-      }
-    }
-    return matches;
-  }
-  function wasAddressedTo(obj, addr) {
-    if (typeof(obj) != 'object' || !obj.target) {
-      return false;
-    }
-    for (var way in obj.target) {
-      if (Array.isArray(obj.target[way])) {
-        for (var i=0; i<obj.target[way].length; i++) {
-          if (obj.target[way][i].address === addr) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-  function findEmailsTo(address) {
-    var i, a = remoteStorage.inbox.getActivitySince(),
-      matches = {},
-      num = 0;
-    for (i in a) {
-      if (wasAddressedTo(a[i], address)) {
-        if (a[i].object && a[i].object.imapSeqNo) {
-          matches[a[i].object.imapSeqNo] = a[i];
-        } else {
-          matches[num++] = a[i];
-        }
-      }
-    }
-    return matches;
-  }
-  function retrieveAll(address) {
-    var objs = findEmailsTo(address), msgIds = {};
-    for (var i in objs) {
-      msgIds[objs[i].object.messageId] = objs[i].object.imapSeqNo;
-    }
-    return msgIds;
-  }
-  function findGaps(fix) {
-    if (fix) {
-      console.log('meute.email.findGaps(fix) is broken, use meute.email.fetch instead!');
-      return;
-    }
-    var i, a = remoteStorage.inbox.getActivitySince(),
-      have = {}
-      max = 0,
-      min = 99999999999999999,
-      gapStart = false;
-    for (i in a) {
-      if (a[i].object && a[i].object.imapSeqNo) {
-        have[a[i].object.imapSeqNo] = true; 
-        if (a[i].object.imapSeqNo > max) {
-          max = a[i].object.imapSeqNo;
-        }
-        if (a[i].object.imapSeqNo < min) {
-          min = a[i].object.imapSeqNo;
-        }
-      }
-    }
-    for(i=min; i<max; i++) {
-      if (have[i]) {
-        if (gapStart) {
-          console.log('gap', gapStart, i-1);
-          if (fix) {
-            fetchEmailsFromTo(gapStart, gapStart + fix);
-            fix = 0;
-          }
-          gapStart = false;
-        }
-      } else {
-        if (!gapStart) {
-          gapStart = i;
-        }
-      }
-    }
-    if (fix) {
-      fetchEmailsFromTo(max, max + fix);
-    }
-    console.log('min,max', min, max);
-  }
-  function getSubjects(min) {
-    var i, a = remoteStorage.inbox.getActivitySince(),
-      have = {}
-      max = 0;
-    for (i in a) {
-      if (a[i].object && a[i].object.imapSeqNo && (!min || a[i].object.imapSeqNo > min)) {
-        have[a[i].object.imapSeqNo] = a[i].object.subject; 
-        if (a[i].object.imapSeqNo > max) {
-          max = a[i].object.imapSeqNo;
-        }
-      }
-    }
-    return have;
-  }
-  function getMessage(imapSeqNo) {
-    var i, a = remoteStorage.inbox.getActivitySince();
-    for (i in a) {
-      if (a[i].object && a[i].object.imapSeqNo === imapSeqNo) {
-        return getFullMessage(a[i]);
-      }
-    }
-  }
-
-  function storeContactsFromEmailObject(obj) {
-    remoteStorage.contacts.addFromList(obj.actor);
-    if(obj.target) {
-      remoteStorage.contacts.addFromList(obj.target.to);
-      remoteStorage.contacts.addFromList(obj.target.cc);
-    }
-  }
-
-  function storeMessage(msg) {
-    remoteStorage.inbox.logActivity(msg);
-    if(typeof(msg)=='object' && msg.platform=='email' && msg.object && typeof(msg.object.messageId) === 'string') {
-      key = msg.object.messageId.split('?').join('??').split('/').join('?');
-      //console.log('storing message', key, msg);
-      remoteStorage.email.storeMessage(key, msg, meute.debugState().registeredActor.email.address);
-      storeContactsFromEmailObject(msg);
-    }
-  }
 
   return {
     sendEmail: sendEmail,
     fetchEmailsFromTo: fetchEmailsFromTo,
     fetch: fetch,
-    fetch1: fetch1,
-    //fetch2: fetch2,
-    findEmailsFrom: findEmailsFrom,
-    findEmailsTo: findEmailsTo,
-    retrieveAll: retrieveAll,
-    //getSubjects: getSubjects,
-    storeMessage: storeMessage
+    fetch1: fetch1
   };
 })();
