@@ -3,6 +3,8 @@
 * Disable local events (10x performance increase)
 * Document remoteStorage.contacts.search
 * Fix meute.email.fetch
+* display the widget in the main page
+* warn about the sockethub version in the main page
 
 # 0.4.1
 
