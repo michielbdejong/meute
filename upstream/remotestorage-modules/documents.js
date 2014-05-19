@@ -49,7 +49,7 @@ RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
      *   It also supports all <BaseClient methods at http://remotestoragejs.com/doc/code/files/baseclient-js.html>
      */
     privateList: function(path) {
-      return privateClient.scope(path + "/").extend(listMethods).cache('');
+      return privateClient.scope(path + "/").extend(listMethods).cache('', 'ALL');
     },
 
     /**
@@ -67,7 +67,7 @@ RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
      *   It also supports all <BaseClient methods at http://remotestoragejs.com/doc/code/files/baseclient-js.html>
      */
     publicList: function(path) {
-      return publicClient.scope(path + "/").extend(listMethods).cache('');
+      return publicClient.scope(path + "/").extend(listMethods).cache('', 'ALL');
     }
 
   };
@@ -149,7 +149,7 @@ RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
       var path  = 'shared/' + id;
       var url = this.getItemURL(path);
       return this.storeFile(contentType, path, data).then(function() {
-	return url;
+        return url;
       });
     },
 
