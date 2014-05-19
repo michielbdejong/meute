@@ -48,6 +48,8 @@ meute.email = (function() {
       object: {
         from: from,
         to: to,
+        fromSeqNo: from,
+        toSeqNo: to,
         includeBody: includeBody
       }
     });
@@ -103,6 +105,8 @@ meute.email = (function() {
         object: {
           from: imapSeqNo,
           to: imapSeqNo,
+          fromSeqNo: imapSeqNo,
+          toSeqNo: imapSeqNo,
           includeBody: true
         }
       }).then(function(success) {
