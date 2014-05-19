@@ -1,8 +1,12 @@
-# 0.4.2
+# 0.4.3
 
+* support fromSeqNo, toSeqNo in latest sockethub API
 * Disable local events (10x performance increase)
 * Document remoteStorage.contacts.search
 * Fix meute.email.fetch
+
+# 0.4.2
+
 * display the widget in the main page
 * warn about the sockethub version in the main page
 
