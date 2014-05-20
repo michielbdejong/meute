@@ -120,7 +120,7 @@
      *
      * Parameters:
      *   path   - The path to query. It MUST end with a forward slash.
-     *   maxAge - Either false or the maximum age of cached listing in
+     *   maxAge - (optional) Maximum age of cached listing in
      *            milliseconds
      *
      * Returns:
@@ -136,7 +136,7 @@
      *
      * Example:
      *   (start code)
-     *   client.getListing('', false).then(function(listing) {
+     *   client.getListing('').then(function(listing) {
      *     listing.forEach(function(item) {
      *       console.log(item);
      *     });
@@ -149,18 +149,12 @@
       } else if (path.length > 0 && path[path.length - 1] !== '/') {
         throw "Not a folder: " + path;
       }
-      if (maxAge === undefined) {
-        maxAge = 2*remoteStorage.getSyncInterval();
-        softMaxAge = true;
-      } else {
-        softMaxAge = false;
-      }
       if (maxAgeInvalid(maxAge)) {
-        return promising().reject('Argument \'maxAge\' of baseClient.getListing must be false or a number');
+        return promising().reject('Argument \'maxAge\' of baseClient.getListing must be undefined or a number');
       }
-      return this.storage.get(this.makePath(path), maxAge, softMaxAge).then(
+      return this.storage.get(this.makePath(path), maxAge).then(
         function(status, body) {
-          return (status === 404) ? undefined : body;
+          return (status === 404) ? {} : body;
         }
       );
     },
@@ -172,7 +166,7 @@
      *
      * Parameters:
      *   path   - path to the folder
-     *   maxAge - Either false or the maximum age of cached objects in
+     *   maxAge - (optional) Maximum age of cached objects in
      *            milliseconds
      *
      * Returns:
@@ -180,7 +174,7 @@
      *
      * Example:
      *   (start code)
-     *   client.getAll('', false).then(function(objects) {
+     *   client.getAll('').then(function(objects) {
      *     for (var key in objects) {
      *       console.log('- ' + key + ': ', objects[key]);
      *     }
@@ -193,18 +187,12 @@
       } else if (path.length > 0 && path[path.length - 1] !== '/') {
         throw "Not a folder: " + path;
       }
-      if (maxAge === undefined) {
-        maxAge = 2*remoteStorage.getSyncInterval();
-        softMaxAge = true;
-      } else {
-        softMaxAge = false;
-      }
       if (maxAgeInvalid(maxAge)) {
-        return promising().reject('Argument \'maxAge\' of baseClient.getAll must be false or a number');
+        return promising().reject('Argument \'maxAge\' of baseClient.getAll must be undefined or a number');
       }
 
-      return this.storage.get(this.makePath(path), maxAge, softMaxAge).then(function(status, body) {
-        if (status === 404) { return; }
+      return this.storage.get(this.makePath(path), maxAge).then(function(status, body) {
+        if (status === 404) { return {}; }
         if (typeof(body) === 'object') {
           var promise = promising();
           var count = Object.keys(body).length, i = 0;
@@ -239,8 +227,6 @@
      *
      * Parameters:
      *   path     - see getObject
-     *   maxAge - Either false or the maximum age of cached listing in
-     *            milliseconds
      *
      * Returns:
      *   A promise for an object:
@@ -251,7 +237,7 @@
      * Example:
      *   (start code)
      *   // Display an image:
-     *   client.getFile('path/to/some/image', false).then(function(file) {
+     *   client.getFile('path/to/some/image').then(function(file) {
      *     var blob = new Blob([file.data], { type: file.mimeType });
      *     var targetElement = document.findElementById('my-image-element');
      *     targetElement.src = window.URL.createObjectURL(blob);
@@ -262,16 +248,10 @@
       if (typeof(path) !== 'string') {
         return promising().reject('Argument \'path\' of baseClient.getFile must be a string');
       }
-      if (maxAge === undefined) {
-        maxAge = 2*remoteStorage.getSyncInterval();
-        softMaxAge = true;
-      } else {
-        softMaxAge = false;
-      }
       if (maxAgeInvalid(maxAge)) {
-        return promising().reject('Argument \'maxAge\' of baseClient.getFile must be false or a number');
+        return promising().reject('Argument \'maxAge\' of baseClient.getFile must be undefined or a number');
       }
-      return this.storage.get(this.makePath(path), maxAge, softMaxAge).then(function(status, body, mimeType, revision) {
+      return this.storage.get(this.makePath(path), maxAge).then(function(status, body, mimeType, revision) {
         return {
           data: body,
           mimeType: mimeType,
@@ -345,15 +325,13 @@
      *
      * Parameters:
      *   path     - relative path from the module root (without leading slash)
-     *   maxAge - Either false or the maximum age of cached listing in
-     *            milliseconds
      *
      * Returns:
      *   A promise for the object.
      *
      * Example:
      *   (start code)
-     *   client.getObject('/path/to/object', false).
+     *   client.getObject('/path/to/object').
      *     then(function(object) {
      *       // object is either an object or null
      *     });
@@ -363,16 +341,10 @@
       if (typeof(path) !== 'string') {
         return promising().reject('Argument \'path\' of baseClient.getObject must be a string');
       }
-      if (maxAge === undefined) {
-        maxAge = 2*remoteStorage.getSyncInterval();
-        softMaxAge = true;
-      } else {
-        softMaxAge = false;
-      }
       if (maxAgeInvalid(maxAge)) {
-        return promising().reject('Argument \'maxAge\' of baseClient.getObject must be false or a number');
+        return promising().reject('Argument \'maxAge\' of baseClient.getObject must be undefined or a number');
       }
-      return this.storage.get(this.makePath(path), maxAge, softMaxAge).then(function(status, body, mimeType, revision) {
+      return this.storage.get(this.makePath(path), maxAge).then(function(status, body, mimeType, revision) {
         if (typeof(body) === 'object') {
           return body;
         } else if (typeof(body) !== 'undefined' && status === 200) {
@@ -410,7 +382,7 @@
      *   Now that is what the *type* is for.
      *
      *   Within remoteStorage.js, @context values are built using three components:
-     *     http://remotestoragejs.com/spec/modules/ - A prefix to guarantee unqiueness
+     *     http://remotestorage.io/spec/modules/ - A prefix to guarantee uniqueness
      *     the module name     - module names should be unique as well
      *     the type given here - naming this particular kind of object within this module
      *
@@ -441,9 +413,7 @@
           return promising(function(p) { p.reject(validationResult); });
         }
       } catch(exc) {
-        if (! (exc instanceof RS.BaseClient.Types.SchemaNotFound)) {
-          return promising().reject(exc);
-        }
+        return promising().reject(exc);
       }
 
       return this.storage.put(this.makePath(path), object, 'application/json; charset=UTF-8').then(function(status, _body, _mimeType, revision) {
@@ -505,7 +475,7 @@
     },
 
     _fireChange: function(event) {
-      if (!RemoteStorage.disableChangeEvents) {
+      if (RemoteStorage.config.changeEvents[event.origin]) {
         this._emit('change', event);
       }
     },
@@ -585,7 +555,7 @@
   */
 
   maxAgeInvalid = function(maxAge) {
-    return maxAge !== false && typeof(maxAge) !== 'number';
+    return typeof(maxAge) !== 'undefined' && typeof(maxAge) !== 'number';
   };
 
   // Defined in baseclient/types.js

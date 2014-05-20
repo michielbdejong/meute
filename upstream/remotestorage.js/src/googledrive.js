@@ -72,10 +72,6 @@
     this.clientId = clientId;
 
     this._fileIdCache = new Cache(60 * 5); // ids expire after 5 minutes (is this a good idea?)
-
-    setTimeout(function() {
-//      this.configure(undefined, undefined, undefined, localStorage['remotestorage:googledrive:token']);
-    }.bind(this), 0);
   };
 
   RS.GoogleDrive.prototype = {
@@ -91,8 +87,6 @@
       } else {
         this.connected = false;
         delete this.token;
-        // not reseting backend whenever googledrive gets initialized without an token
-//       this.rs.setBackend(undefined);
         delete localStorage['remotestorage:googledrive:token'];
       }
     },
@@ -226,7 +220,6 @@
         } else {
           this._getMeta(id, function(metaError, meta) {
             var etagWithoutQuotes;
-            RemoteStorage.log('path, options, metaError, meta', path, options, metaError, meta);
             if (typeof(meta) === 'object' && typeof(meta.etag) === 'string') {
               etagWithoutQuotes = meta.etag.substring(1, meta.etag.length-1);
             }
@@ -236,6 +229,8 @@
               var options = {};
               if (!meta.downloadUrl) {
                 if(meta.exportLinks && meta.exportLinks['text/html']) {
+                  // Documents that were generated inside GoogleDocs have no
+                  // downloadUrl, but you can export them to text/html instead:
                   meta.mimeType += ';export=text/html';
                   meta.downloadUrl = meta.exportLinks['text/html'];
                 } else { 

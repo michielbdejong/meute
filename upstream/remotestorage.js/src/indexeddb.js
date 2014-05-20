@@ -31,9 +31,7 @@
    *       distinguish create/update/delete operations and analyze changes in
    *       change handlers. In addition they carry a "origin" property, which
    *       is either "window", "local", or "remote". "remote" events are fired
-   *       whenever a change comes in from RemoteStorage.Sync. In the future,
-   *       "device" origin events will also be fired for changes happening in
-   *       other windows on the same device.
+   *       whenever a change comes in from RemoteStorage.Sync.
    *
    *   The sync interface (also on RemoteStorage.IndexedDB object):
    *     - #getNodes([paths]) returns the requested nodes in a promise.
@@ -61,58 +59,10 @@
 
     this.getsRunning = 0;
     this.putsRunning = 0;
-    //both these caches store path -> the uncommitted node, or false for a deletion:
-    this.commitQueued = {};
-    this.commitRunning = {};
   };
 
   RS.IndexedDB.prototype = {
     getNodes: function(paths) {
-      var i ,misses = [], fromCache = {};
-      for (i=0; i<paths.length; i++) {
-        if (this.commitQueued[paths[i]] !== undefined) {
-          fromCache[paths[i]] = this._getInternals().deepClone(this.commitQueued[paths[i]] || undefined);
-        } else if(this.commitRunning[paths[i]] !== undefined) {
-           fromCache[paths[i]] = this._getInternals().deepClone(this.commitRunning[paths[i]] || undefined);
-        } else {
-          misses.push(paths[i]);
-        }
-      }
-      if (misses.length > 0) {
-        return this.getNodesFromDb(misses).then(function(nodes) {
-          for (i in fromCache) {
-            nodes[i] = fromCache[i];
-          }
-          return nodes;
-        });
-      } else {
-        promise = promising();
-        promise.fulfill(fromCache);
-        return promise;
-      }
-    },
-    setNodes: function(nodes) {
-      var promise = promising();
-      for (var i in nodes) {
-        this.commitQueued[i] = nodes[i] || false;
-      }
-      this.maybeFlush();
-      promise.fulfill();
-      return promise;
-    },
-    maybeFlush: function() {
-      if (this.putsRunning === 0) {
-        this.flushcommitQueued();
-      }
-    },
-    flushcommitQueued: function() {
-      if (Object.keys(this.commitQueued).length > 0) {
-        this.commitRunning = this.commitQueued;
-        this.commitQueued = {};
-        this.setNodesToDb(this.commitRunning).then(this.flushcommitQueued.bind(this));
-      }
-    },
-    getNodesFromDb: function(paths) {
       var promise = promising();
       var transaction = this.db.transaction(['nodes'], 'readonly');
       var nodes = transaction.objectStore('nodes');
@@ -143,7 +93,7 @@
       return promise;
     },
 
-    setNodesToDb: function(nodes) {
+    setNodes: function(nodes) {
       var promise = promising();
       var transaction = this.db.transaction(['nodes'], 'readwrite');
       var nodesStore = transaction.objectStore('nodes');

@@ -134,7 +134,7 @@
     RemoteStorage.eventHandling(
       this, 'ready', 'connected', 'disconnected', 'not-connected', 'conflict',
             'error', 'features-loaded', 'connecting', 'authing', 'wire-busy',
-            'wire-done'
+            'wire-done', 'sync-interval-change'
     );
 
     // pending get/put/delete calls.
@@ -200,11 +200,20 @@
    * You can enable logging with <enableLog>.
    */
   RemoteStorage.log = function() {
-    if (RemoteStorage._log) {
+    if (RemoteStorage.config.logging) {
       console.log.apply(console, arguments);
     }
   };
 
+  RemoteStorage.config = {
+    logging: false,
+    changeEvents: {
+      local:    true,
+      window:   false,
+      remote:   true,
+      conflict: true
+    }
+  };
 
   RemoteStorage.prototype = {
     /**
@@ -224,7 +233,7 @@
     connect: function(userAddress) {
       this.setBackend('remotestorage');
       if (userAddress.indexOf('@') < 0) {
-        this._emit('error', new RemoteStorage.DiscoveryError("User adress doesn't contain an @."));
+        this._emit('error', new RemoteStorage.DiscoveryError("User address doesn't contain an @."));
         return;
       }
       this.remote.configure(userAddress);
@@ -328,7 +337,7 @@
      * Enable remoteStorage logging
      */
     enableLog: function() {
-      RemoteStorage._log = true;
+      RemoteStorage.config.logging = true;
     },
 
     /**
@@ -337,7 +346,7 @@
      * Disable remoteStorage logging
      */
     disableLog: function() {
-      RemoteStorage._log = false;
+      RemoteStorage.config.logging = false;
     },
 
     /**

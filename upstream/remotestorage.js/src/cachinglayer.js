@@ -20,14 +20,24 @@
     return path.substr(-1) !== '/';
   }
 
+  /**
+   * Function: fixArrayBuffers
+   *
+   * Takes an object and its copy as produced by the _deepClone function
+   * below, and finds and fixes any ArrayBuffers that were cast to `{}` instead
+   * of being cloned to new ArrayBuffers with the same content.
+   *
+   * It recurses into sub-objects, but skips arrays if they occur.
+   *
+   */
   function fixArrayBuffers(srcObj, dstObj) {
     var field, srcArr, dstArr;
-    if (typeof(srcObj) != 'object' || typeof(dstObj) != 'object') {
+    if (typeof(srcObj) != 'object' || Array.isArray(srcObj) || srcObj === null) {
       return;
     }
     for (field in srcObj) {
-      if (typeof(srcObj[field]) === 'object') {
-        if (typeof(srcObj[field]) === 'object' && srcObj[field] !== null && srcObj[field].toString() === '[object ArrayBuffer]') {
+      if (typeof(srcObj[field]) === 'object' && srcObj[field] !== null) {
+        if (srcObj[field].toString() === '[object ArrayBuffer]') {
           dstObj[field] = new ArrayBuffer(srcObj[field].byteLength);
           srcArr = new Int8Array(srcObj[field]);
           dstArr = new Int8Array(dstObj[field]);
@@ -85,15 +95,9 @@
     }
   }
 
-  function isOutdated(objs, maxAge) {
-    var i, node;
-    for (i in objs) {
-      node = getLatest(objs[i]);
-      if (node && node.timestamp && (new Date().getTime()) - node.timestamp <= maxAge) {
-        return false;
-      }
-    }
-    return true;
+  function isOutdated(node, maxAge) {
+    return !node || !node.timestamp ||
+           ((new Date().getTime()) - node.timestamp > maxAge);
   }
 
   function pathsFromRoot(path) {
@@ -139,41 +143,22 @@
 
   var methods = {
 
-    get: function(path, maxAge, softMaxAge) {
+    get: function(path, maxAge) {
       var promise = promising();
 
-      if (typeof(maxAge) === 'number') {
-        this.getNodes(pathsFromRoot(path)).then(function(objs) {
-          var node = getLatest(objs[path]);
-          if (isOutdated(objs, maxAge)) {
-            remoteStorage.sync.queueGetRequest(path, promise);
-          } else if (node) {
-            promise.fulfill(200, node.body || node.itemsMap, node.contentType);
-          } else {
-            promise.fulfill(404);
-          }
-        }.bind(this), function(err) {
-          var node = getLatest(objs[path]);
-          if (softMaxAge) {
-            if (node) {
-              promise.fulfill(200, node.body || node.itemsMap, node.contentType);
-            } else {
-              promise.fulfill(404);
-            }
-          } else {
-            promise.reject(err);
-          }
-        }.bind(this));
-      } else {
-        this.getNodes([path]).then(function(objs) {
-          var node = getLatest(objs[path]);
-          if (node) {
-            promise.fulfill(200, node.body || node.itemsMap, node.contentType);
-          } else {
-            promise.fulfill(404);
-          }
-        }.bind(this));
-      }
+      this.getNodes([path]).then(function(objs) {
+        var node = getLatest(objs[path]);
+        if ((typeof(maxAge) === 'number') && isOutdated(node, maxAge)) {
+          remoteStorage.sync.queueGetRequest(path, promise);
+        } else if (node) {
+          promise.fulfill(200, node.body || node.itemsMap, node.contentType);
+        } else {
+          promise.fulfill(404);
+        }
+      }.bind(this), function(err) {
+        promise.reject(err);
+      }.bind(this));
+
       return promise;
     },
 
@@ -281,14 +266,13 @@
     },
 
     _emitChange: function(obj) {
-      if (!RemoteStorage.enableChangeEvents || RemoteStorage.enableChangeEvents[obj.origin]) {
+      if (RemoteStorage.config.changeEvents[obj.origin]) {
         this._emit('change', obj);
       }
     },
 
     fireInitial: function() {
-      if (RemoteStorage.enableChangeEvents && !RemoteStorage.enableChangeEvents.local) {
-        RemoteStorage.log('suppressing fireInitial because RemoteStorage.enableChangeEvents.local is set to false');
+      if (!RemoteStorage.config.changeEvents.local) {
         return;
       }
       this.forAllNodes(function(node) {
