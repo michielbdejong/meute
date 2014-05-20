@@ -50,7 +50,7 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
    */
 
   /**
-   * Schema: message.recipient
+   * Schema: email.recipient
    *
    * Represents a recipient of a message.
    *
@@ -60,7 +60,7 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
    */
 
   /**
-   * Schema: message.draft
+   * Schema: messages/draft
    *
    * Represents a saved message that hasn't been sent yet.
    *
@@ -195,7 +195,7 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
 
 
   /**
-   * Schema: message
+   * Schema: messages/message
    *
    * Represents a received or sent message.
    *
@@ -212,18 +212,6 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
     //required: ['target', 'object.subject', 'object.body', 'object.date']
   });
 
-  /**
-   * Schema: account
-   *
-   * Represents an account's basic metadata.
-   *
-   * Properties:
-   *   name    - The account owner's name.
-   *             This name is used as the sender name for outgoing messages.
-   *   address - The address associated with this account.
-   *             Will be used as the sender address for outgoing messages.
-   *
-   */
   var actorTemplate = {
     properties: {
       actor: {
@@ -237,64 +225,18 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
     }
   };
 
-  /**
-   * Schema: account.smtp-credentials
-   *
-   * Credentials for a SMTP server.
-   *
-   * Properties:
-   *   host     - Hostname of the SMTP server.
-   *   username - Username to authenticate against SMTP server.
-   *   password - Password to authenticate against SMTP server.
-   *   port     - Port to connect to.
-   *   secure   - Boolean flag to turn on TLS / SSL.
-   */
-  privateClient.declareType('smtp-credentials', {
-    type: 'object',
-    properties: {
-      actor: actorTemplate,
-      credentials: {
-        host: { type: 'string' },
-        username: { type: 'string' },
-        password: { type: 'string' },
-        port: { type: 'number' },
-        secure: { type: 'boolean' },
-      }
-    }
-  });
 
   /**
-   * Schema: account.imap-credentials
-   *
-   * Credentials for an IMAP server.
-   *
-   * Properties:
-   *   host     - Hostname of the IMAP server.
-   *   username - Username to authenticate against IMAP server.
-   *   password - Password to authenticate against IMAP server.
-   *   port     - Port to connect to.
-   *   secure   - Boolean flag to turn on TLS / SSL.
-   */
-  privateClient.declareType('imap-credentials', {
-    type: 'object',
-    properties: {
-      actor: actorTemplate,
-      credentials: {
-        host: { type: 'string' },
-        username: { type: 'string' },
-        password: { type: 'string' },
-        port: { type: 'number' },
-        secure: { type: 'boolean' }
-      }
-    }
-  });
-
-  /**
-   * Schema: account.xmpp-credentials
+   * Schema: messages/xmpp-credentials
    *
    * Credentials for an XMPP connection.
    *
    * Properties:
+   *   actor   - object:
+   *     name    - The account owner's name.
+   *               This name is used as the sender name for outgoing messages.
+   *     address - The address associated with this account.
+   *               Will be used as the sender address for outgoing messages.
    *   username - Username to authenticate against XMPP server.
    *   password - Password to authenticate against XMPP server.
    *   server     - Hostname of the XMPP server.
@@ -326,28 +268,6 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
           type: 'number',
           required: false
         }
-      }
-    }
-  });
-
-  /**
-   * Schema: account.IRC-credentials
-   *
-   * Credentials for an IRC server.
-   *
-   * Properties:
-   *   nick     - Username to authenticate against IRC server.
-   *   password - Password to authenticate against IRC server.
-   *   server   - Hostname of the IRC server.
-   */
-  privateClient.declareType('irc-credentials', {
-    type: 'object',
-    properties: {
-      actor: actorTemplate,
-      credentials: {
-        nick: { type: 'string' },
-        password: { type: 'string' },
-        server: { type: 'string' }
       }
     }
   });
@@ -411,7 +331,9 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
       var fetchYear = function (years) {
         var year = years.shift();
         return this.getListing(year).
-          then(sort).then(function (months) {
+          then(function(obj) {
+            return Object.keys(obj);
+          }).then(sort).then(function (months) {
             return fetchMonth(year, months);
           }).then(function () {
             if ((result.length < limit) && (years.length > 0)) {
@@ -423,7 +345,9 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
       var fetchMonth = function (year, months) {
         var month = months.shift();
         return this.getListing(year + month).
-          then(sort).then(function (days) {
+          then(function(obj) {
+            return Object.keys(obj);
+          }).then(sort).then(function (days) {
             return fetchDay(year, month, days);
           }).then(function () {
             if ((result.length < limit) && (months.length > 0)) {
@@ -435,7 +359,9 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
       var fetchDay = function (year, month, days) {
         var day = days.shift();
         return this.getListing(year + month + day).
-          then(sort).then(function (messageIds) {
+          then(function(obj) {
+            return Object.keys(obj);
+          }).then(sort).then(function (messageIds) {
             return fetchMessage(year, month, day, messageIds);
           }).then(function () {
             if ((result.length < limit) && (days.length > 0)) {
@@ -460,7 +386,9 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
         });
       }.bind(this);
 
-      return this.getListing().then(sort).then(fetchYear).
+      return this.getListing().then(function(obj) {
+          return Object.keys(obj);
+        }).then(sort).then(fetchYear).
         then(function () {
           return result;
         });
@@ -626,26 +554,33 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
             var listing = [];
             if (typeof keys === 'object') {
               var keysArray = Object.keys(keys);
-              var keysLength = keysArray.length - 1;
+              var keysLength = keysArray.length;
               var promise = promising();
-              keys.forEach(function (key, keyIndex) {
-                var record = unpackURI(key);
-                if (record) {
-                  if (!accountTypes) {
-                    // all accounts match
-                    listing.push(record);
-                  } else {
-                    // return listing of a specific account type
-                    if (accountTypes.indexOf(record[1]) < 0) {
+              var numDone = 0;
+
+              if (keysLength === 0) {
+                promise.fulfill(listing);
+              } else {
+                for (var key in keys) {
+                  console.log('key', key);
+                  var record = unpackURI(key);
+                  if (record) {
+                    if (!accountTypes) {
+                      // all accounts match
                       listing.push(record);
+                    } else {
+                      // return listing of a specific account type
+                      if (accountTypes.indexOf(record[1]) < 0) {
+                        listing.push(record);
+                      }
                     }
                   }
+                  numDone++
+                  if (keysLength === numDone) {
+                    promise.fulfill(listing);
+                  }
                 }
-
-                if (keysLength === keyIndex) {
-                  promise.fulfill(listing);
-                }
-              });
+              }
               return promise;
             } else {
               return [];
@@ -666,7 +601,7 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
 
         save: function (accountType, account) {
           var promise = promising();
-          var validTypes = [ 'smtp', 'imap', 'xmpp', 'irc' ];
+          var validTypes = [ 'xmpp' ];
 
           if (! accountType) {
             promise.reject(['Can\'t save account without protocol accountType specified (first param)!']);
@@ -742,8 +677,8 @@ RemoteStorage.defineModule('messages', function (privateClient, publicClient) {
       account: account,
 
       listMessageAccounts: function () {
-        return privateClient.getListing('accounts/').then(function (list) {
-          return (list||[]).map(function (item) {
+        return privateClient.getListing('accounts/').then(function (obj) {
+          return (Object.keys(obj)).map(function (item) {
             return item.replace(/\/$/, '');
           });
         });

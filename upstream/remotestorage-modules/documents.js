@@ -1,8 +1,3 @@
-define(function(require) {
-
-var remoteStorage = require("remotestorage");
-
-
 /**
  * File: Documents
  *
@@ -17,7 +12,14 @@ var remoteStorage = require("remotestorage");
 RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
 
   /**
-   * Schema declaration
+   * Schema: documents/text
+   *
+   * A text document
+   *
+   * Properties:
+   *   title - title of the document (string, required)
+   *   content - content of the document (string, required)
+   *   lastEdited - 13-digit timestamp for when the document was last edited
    */
   privateClient.declareType("text", {
     "description": "A text document",
@@ -110,9 +112,26 @@ RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
      */
     set: function(id, doc) {
       return this.storeObject("text", id.toString(), doc).then(function() {
-      	doc.id = id;
-	      return doc;
+        doc.id = id;
+        return doc;
       });
+    },
+
+    /**
+     * Method: remove
+     *
+     * Remove a document for a specified id.
+     *
+     * Parameters:
+     *   id  - the id the document is at.
+     *
+     * Returns:
+     *   A promise, which will be fulfilled when the change was made locally.
+     *   After that, the change will propagate from local to remote through
+     *   asynchronous synchronization.
+     */
+    remove: function(id) {
+      return this.remove(id.toString());
     },
 
     /**
@@ -176,11 +195,5 @@ RemoteStorage.defineModule("documents", function(privateClient, publicClient) {
 
 
   return { exports: documentsModule };
-
-});
-
-
-
-return remoteStorage["documents"];
 
 });
