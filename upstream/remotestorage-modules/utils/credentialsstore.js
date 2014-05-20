@@ -139,6 +139,6 @@ CredentialsStore.prototype.on = function(eventName, handler) {
   }
 }
 
-if (global) {
+if (typeof(global) !== 'undefined') {
   global.CredentialsStore = CredentialsStore;
 }
