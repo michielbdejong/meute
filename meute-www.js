@@ -1,8 +1,7 @@
 meute.www = (function() {
-  var templates = {}, posts = [];
   function getTemplate(name) {
     getResource('template/'+name, function(txt) {
-      templates[name] = txt;
+      meute.www.templates[name] = txt;
       console.log('loaded template', name);
     });
   }
@@ -17,45 +16,47 @@ meute.www = (function() {
     xhr.send();
   }
   function getHighestId() {
-    return posts.length-1;
+    return meute.www.posts.length-1;
   }
   function generateHomePage() {
-    var str = templates['homepage.html'], i, feedStr = '<?xml version="1.0" encoding="utf-8"?>\n'
+    var str = meute.www.templates['homepage.html'], i, feedStr = '<?xml version="1.0" encoding="utf-8"?>\n'
       + '<rss version="2.0">\n'
       + '  <channel>\n'
       + '    <title>Michiel B. de Jong</title>\n'
       + '    <link>https://michielbdejong.com/</link>\n'
       + '    <description>Michiel\'s POSSE feed</description>\n';
-    for (i=posts.length-1; i>=0; i--) {
-      if (posts[i].type === 'note' || posts[i].type === 'h-rsvp') {
+    for (i=meute.www.posts.length-1; i>=0; i--) {
+      if (meute.www.posts[i].type === 'note' || meute.www.posts[i].type === 'h-rsvp') {
         str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
-          + hEntryDate(posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
-          + twitterActions(posts[i].tweetId, i)
+          + hEntryDate(meute.www.posts[i].date)+', <a href="/live/'+i+'">michielbdejong.com/live/'+i+'</a>'
+          + twitterActions(meute.www.posts[i].tweetId, i)
           + '</span><h1 class="e-content">'
-          + aggregateMedia(posts[i].text)
-          + hEntryMarkup(posts[i], false)
+          + aggregateMedia(meute.www.posts[i].text)
+          + hEntryMarkup(meute.www.posts[i], false)
           + '</h1></article>\n';
-        posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
+        meute.www.posts[i].saferText = meute.www.posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
         feedStr += '    <item>\n'
-          + '      <title>'+posts[i].saferText+'</title>\n'
+          + '      <title>'+meute.www.posts[i].saferText+'</title>\n'
           + '      <link>https://michielbdejong/live/'+i+'</link>\n'
           + '      <guid>https://michielbdejong/live/'+i+'</guid>\n'
-          + '      <pubDate>'+posts[i].date.toString()+'</pubDate>\n'
-          + '      <description>'+posts[i].saferText+'</description>\n'
+          + '      <pubDate>'+meute.www.posts[i].date.toString()+'</pubDate>\n'
+          + '      <description>'+meute.www.posts[i].saferText+'</description>\n'
           + '    </item>\n';
-      } else if(posts[i].type === 'article') {
+      } else if(meute.www.posts[i].type === 'article') {
         str += '<article id="'+i+'" class="h-entry"><span style="float:right">'
-          + hEntryDate(posts[i].date)+', <a href="/blog/'+posts[i].blogPostId+'.html">michielbdejong.com/blog/'+posts[i].blogPostId+'.html</a></span><h1 class="e-content">'
-          + posts[i].text
-          + hEntryMarkup(posts[i], false)
+          + hEntryDate(meute.www.posts[i].date)+', <a href="/blog/'
+          + meute.www.posts[i].blogPostId+'.html">michielbdejong.com/blog/'
+          + meute.www.posts[i].blogPostId+'.html</a></span><h1 class="e-content">'
+          + meute.www.posts[i].text
+          + hEntryMarkup(meute.www.posts[i], false)
           + '</h1></article>\n';
-        posts[i].saferText = posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
+        meute.www.posts[i].saferText = meute.www.posts[i].text.split('&').join('&amp;').split('<').join('&gt;');
         feedStr += '    <item>\n'
-          + '      <title>'+posts[i].saferText+'</title>\n'
-          + '      <link>https://michielbdejong/blog/'+posts[i].blogPostId+'.html</link>\n'
-          + '      <guid>https://michielbdejong/blog/'+posts[i].blogPostId+'.html</guid>\n'
-          + '      <pubDate>'+posts[i].date.toString()+'</pubDate>\n'
-          + '      <description>'+posts[i].saferText+'</description>\n'
+          + '      <title>'+meute.www.posts[i].saferText+'</title>\n'
+          + '      <link>https://michielbdejong/blog/'+meute.www.posts[i].blogPostId+'.html</link>\n'
+          + '      <guid>https://michielbdejong/blog/'+meute.www.posts[i].blogPostId+'.html</guid>\n'
+          + '      <pubDate>'+meute.www.posts[i].date.toString()+'</pubDate>\n'
+          + '      <description>'+meute.www.posts[i].saferText+'</description>\n'
           + '    </item>\n';
        }
     }
@@ -130,7 +131,7 @@ meute.www = (function() {
           + 'article { width: 40em; margin: 5em auto; padding: 3em; border-radius: 1em; background-color: white }\n'
           + 'footer { width: 40em; margin: 5em auto; color: white }\n</style></head><body><nav><a href="1">first</a> '
           + (postObj.id === 0 ? '' : '<a href="'+(postObj.id-1)+'">previous</a> ')
-          + (postObj.id === posts.length-1 ? '' : '<a href="'+(postObj.id+1)+'">next</a> ')
+          + (postObj.id === meute.www.posts.length-1 ? '' : '<a href="'+(postObj.id+1)+'">next</a> ')
           + '</nav><header class="h-entry"><h1 class="e-content">',
         str3 = '</h1>'+hEntryMarkup(postObj, true)
           + '<p>This message on my profile feed: <a href="https://michielbdejong.com/#'+postObj.id+'">https://michielbdejong.com/#'+postObj.id+'</a>'
@@ -141,12 +142,12 @@ meute.www = (function() {
     return str1+postObj.text+str2+aggregateMedia(postObj.text)+str3;
   }
   function publishNote(id) {
-    remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(posts[id]));
+    remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/live/'+id, createLivePost(meute.www.posts[id]));
   }
   function publishBlogPost(id, title) {
     getResource('blog/'+id+'.html', function(txt) {
       console.log('fetched', txt);
-      var str = '<!DOCTYPE html><html><head><title>'+title+templates['blogpost.html']+'\n'+title+'</h1></header><article>'+txt+'\n</article></body><!-- generated by https://meute.5apps.com/ --></html>';
+      var str = '<!DOCTYPE html><html><head><title>'+title+meute.www.templates['blogpost.html']+'\n'+title+'</h1></header><article>'+txt+'\n</article></body><!-- generated by https://meute.5apps.com/ --></html>';
       remoteStorage.scope('/public/www/').storeFile('text/html', 'michielbdejong.com/blog/'+id+'.html', str);
     });
   }  
@@ -161,7 +162,7 @@ meute.www = (function() {
   function publish(str, syndicate, tweetId, likeUrl, inReplyTo) {
     var id, backlink, page, tweetStr, postObj;
     id = getHighestId() + 1;//not threadsafe at all!    
-    if (posts.length === 0) {
+    if (meute.www.posts.length === 0) {
       return 'refusing to publish zero posts! try comparing `posts` to `backup` in the console';
     }
     if (syndicate) {
@@ -208,8 +209,8 @@ meute.www = (function() {
           likeUrl: likeUrl,
           inReplyTo: inReplyTo
         };
-        posts.push(postObj);
-        if (posts.length != id+1) {
+        meute.www.posts.push(postObj);
+        if (meute.www.posts.length != id+1) {
           console.log('new note is not the last post - race condition?');
           return;
         }
@@ -225,7 +226,7 @@ meute.www = (function() {
     }
   }
   function savePosts() {
-    remoteStorage.scope('/public/www/').storeFile('application/json', 'michielbdejong.com/posts.json', JSON.stringify(posts));
+    remoteStorage.scope('/public/www/').storeFile('application/json', 'michielbdejong.com/posts.json', JSON.stringify(meute.www.posts));
   }
   //in anonymous mode, publish really makes no sense, so we can safely throw an exception there.
   //posts.json should be cached with the ALL strategy, so that we are prepared for offlineness
@@ -235,7 +236,7 @@ meute.www = (function() {
       return remoteStorage.scope('/public/www/').getFile('michielbdejong.com/posts.json', 1000000).then(function(a) {
         console.log('loaded posts', a);
         //posts = JSON.parse(a.data);
-        posts = a.data;
+        meute.www.posts = a.data;
       });
 //    } else {
   }
@@ -270,10 +271,10 @@ meute.www = (function() {
     }
   }
   function publishComplex(obj) {
-    obj.id = posts.length;
+    obj.id = meute.www.posts.length;
     obj.date = new Date().toISOString();
     obj.url = 'https://michielbdejong.com/live/'+obj.id;
-    posts.push(obj);
+    meute.www.posts.push(obj);
     publishNote(obj.id);
     publish();
     if (obj.inReplyTo) {
@@ -309,6 +310,8 @@ meute.www = (function() {
   }
 
   return {
+    templates: {},
+    posts: [],
     loadPosts: loadPosts,
     publish: publish
   };
