@@ -151,6 +151,8 @@
       remote: true,
       conflict: true
     };
+    remoteStorage.access.claim('www', 'rw');
+    remoteStorage.scope('/public/www/').cache('', 'ALL');
     function fireInitial() {
       var i=0;
       RemoteStorage.enableChangeEvents.local = true;

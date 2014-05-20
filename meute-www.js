@@ -233,7 +233,9 @@ meute.www = (function() {
   function loadPosts() {
 //    if (remoteStorage.connected) {
       return remoteStorage.scope('/public/www/').getFile('michielbdejong.com/posts.json', 1000000).then(function(a) {
-        posts = JSON.parse(a.data);
+        console.log('loaded posts', a);
+        //posts = JSON.parse(a.data);
+        posts = a.data;
       });
 //    } else {
   }
@@ -307,6 +309,7 @@ meute.www = (function() {
   }
 
   return {
-    //publish: publish
+    loadPosts: loadPosts,
+    publish: publish
   };
 })();
