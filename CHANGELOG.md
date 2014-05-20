@@ -1,3 +1,9 @@
+# 0.5.0
+
+* Use current master of remotestorage.js
+* Use current ahead branch of the remoteStorage modules
+* Fix and document IndieWeb code (meute.www)
+
 # 0.4.3
 
 * support fromSeqNo, toSeqNo in latest sockethub API
