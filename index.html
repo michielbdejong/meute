@@ -16,9 +16,12 @@
     because the config syntax changed, and some irc functionality was added since the v0.1.5 release of sockethub.</p>
     <p style="width:30em" >This page includes a build from source; view the page source to see which JavaScript files it includes.
       You can try out meute by opening your web console now, and typing 'meute.' to see which commands are available.
-      The full 0.4 API is described in the <a href="https://github.com/michielbdejong/meute">readme</a>, but here is an example:
-    <pre id="codeExample">(loading...)</pre>
-    <p>The credentials you give in the addAccount calls will be encrypted with the master password using sjcl and stored
+      The full 0.4 API is described in the <a href="https://github.com/michielbdejong/meute">readme</a>, but here is an example:</p>
+    <pre id="pre1">(loading...)</pre>
+    <p style="width:30em" >You can also do IndieWeb things with meute (provided you run a webserver with remoteStorage access to the public
+    html folder, like <a href="https://github.com/michielbdejong/resite">reSite</a>):</p>
+    <pre id="pre2">(loading...)</pre>
+    <p style="width:30em" >The credentials you give in the addAccount calls will be encrypted with the master password using sjcl and stored
       in the respective remotestorage modules.</p>
   </body>
   <script src="upstream/sjcl.js"> </script>
@@ -191,7 +194,7 @@
   <script src="meute.js"> </script>
   <script src="meute-email.js"> </script>
   <script src="meute-www.js"> </script>
-  <script>
+  <script id="exampleCode1">
     meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
     meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
     meute.bootstrap();
@@ -225,7 +228,19 @@
       return str;
     }
 
-    document.getElementsByTagName('pre')[0].innerHTML = 
-        document.getElementsByTagName('script')[document.getElementsByTagName('script').length-1].innerHTML;
+    document.getElementById('pre1').innerHTML = document.getElementById('exampleCode1').innerHTML.replace('<', '&gt;');
+  </script>
+  <script id="exampleCode2">
+    function indieWebExampleStep1() {
+      meute.www.loadTemplate('homepage.html');
+      meute.www.loadPosts();
+    }
+    //...wait for the requests to complete...
+    function indieWebExampleStep2() {
+      meute.www.posts = JSON.parse(meute.www.posts);
+      meute.www.publish('Posting from an unhosted meute instance');
+    }
+    
+    document.getElementById('pre2').innerHTML = document.getElementById('exampleCode2').innerHTML.replace('<', '&gt;');
   </script>
 </html>

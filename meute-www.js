@@ -312,6 +312,7 @@ meute.www = (function() {
   return {
     templates: {},
     posts: [],
+    getTemplate: getTemplate,
     loadPosts: loadPosts,
     publish: publish
   };
