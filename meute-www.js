@@ -235,8 +235,15 @@ meute.www = (function() {
 //    if (remoteStorage.connected) {
       return remoteStorage.scope('/public/www/').getFile('michielbdejong.com/posts.json', 1000000).then(function(a) {
         console.log('loaded posts', a);
-        //posts = JSON.parse(a.data);
-        meute.www.posts = a.data;
+        try {
+          meute.www.posts = JSON.parse(a.data);
+        } catch(e) {
+          //FIXME: find out why a.data seems to sometimes (but not always) be an object already at this point
+          console.log('WARNING: getFile returned an array instead of a string');
+          if (Array.isArray(a.data)) {
+            meute.www.posts = a.data;
+          }
+        }
       });
 //    } else {
   }
