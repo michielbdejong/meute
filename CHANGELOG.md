@@ -1,3 +1,7 @@
+# 0.5.1
+
+* add support for sockethub version e1a4b680
+
 # 0.5.0
 
 * Use current master of remotestorage.js

@@ -50,6 +50,9 @@ meute.email = (function() {
         to: to,
         fromSeqNo: from,
         toSeqNo: to,
+        property: 'seqno',
+        after: from - 1,
+        before: to + 1,
         includeBody: includeBody
       }
     });
@@ -100,6 +103,9 @@ meute.email = (function() {
           to: imapSeqNo,
           fromSeqNo: imapSeqNo,
           toSeqNo: imapSeqNo,
+          property: 'seqno',
+          after: imapSeqNo - 1,
+          before: imapSeqNo + 1,
           includeBody: true
         }
       }).then(function(success) {
