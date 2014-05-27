@@ -230,6 +230,31 @@ meute = (function() {
           }
         }
       };
+    } else if (platform === 'facebook') {
+      obj = {
+        actor: {
+          address: 'you',
+          name: 'you'
+        },
+        object: {
+          objectType: 'credentials',
+          access_token: server
+        }
+      };
+    } else if (platform === 'twitter') {
+      obj = {
+        actor: {
+          address: 'you',
+          name: 'you'
+        },
+        object: {
+          objectType: 'credentials',
+          access_token: server,
+          access_token_secret: id,
+          consumer_secret: pwd,
+          consumer_key: name
+        }
+      };
     }
     doAddAccount(platform, obj);
   }

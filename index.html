@@ -231,12 +231,16 @@
     document.getElementById('pre1').innerHTML = document.getElementById('exampleCode1').innerHTML.replace('<', '&gt;');
   </script>
   <script id="exampleCode2">
-    function indieWebExampleStep1() {
+    function indieWebExampleStep1(fbToken) {
       meute.www.getTemplate('homepage.html');
       meute.www.loadPosts();
+      meute.addAccount('facebook', fbToken);
+    }
+    function indieWebExampleStep2(twitterAccessToken, twitterAccessTokenKey, twitterConsumerSecret, twitterConsumerKey) {
+      meute.addAccount('twitter', twitterAccessToken, twitterAccessTokenKey, twitterConsumerSecret, twitterConsumerKey);
     }
     //...wait for the requests to complete...
-    function indieWebExampleStep2() {
+    function indieWebExampleStep3() {
       meute.www.publish('Posting from an unhosted meute instance');
     }
     
