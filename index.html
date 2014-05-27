@@ -154,7 +154,10 @@
       remote: true,
       conflict: true
     };
-    remoteStorage.access.claim('www', 'rw');
+    ['contacts', 'documents', 'email', 'facebook', 'irc', 'messages', 'pgp', 'pictures', 'sockethub', 'twitter', 'www']
+        .forEach(function(moduleName) {
+      remoteStorage.access.claim(moduleName, 'rw');
+    });
     remoteStorage.scope('/public/www/').cache('', 'ALL');
     function fireInitial() {
       var i=0;
