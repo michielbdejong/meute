@@ -238,8 +238,7 @@ meute.www = (function() {
         try {
           meute.www.posts = JSON.parse(a.data);
         } catch(e) {
-          //FIXME: find out why a.data seems to sometimes (but not always) be an object already at this point
-          console.log('WARNING: getFile returned an array instead of a string');
+          //protect against https://github.com/remotestorage/remotestorage.js/issues/691:
           if (Array.isArray(a.data)) {
             meute.www.posts = a.data;
           }
