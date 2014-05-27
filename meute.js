@@ -189,7 +189,7 @@ meute = (function() {
         host: parts2[0],
         ssl: (parts[0] === 'wss:'),
         tls: (parts[0] === 'wss:'),
-        port: (parts2.length === 2 ? parts2[1] : undefined),
+        port: (parts2.length === 2 ? parseInt(parts2[1]) : undefined),
         path: parts[3],
         register: { secret: id }
       };
