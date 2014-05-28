@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Meute - a foundation for unhosted social web apps</title>
+  </head>
+  <body>
+    <h1>post form based on meute</h1>
+    <input type="text" id="textToPost"/>
+    <input type="submit" value="post" onclick= "post();"/>
+  </body>
+  <script src="upstream/sjcl.js"> </script>
+  <script src="upstream/sockethub-client.js"></script>
+  <script src="upstream/asrender.js"> </script>
+
+  <!-- seems that hoodie has an undocumented dependency on jquery -->
+  <script src="upstream/jquery.js"> </script>
+  <script src="upstream/hoodie.js"> </script>
+
+  <!-- core -->
+  <script src="upstream/remotestorage.js/lib/promising.js"></script>
+  <script src="upstream/remotestorage.js/src/remotestorage.js"></script>
+  <script src="upstream/remotestorage.js/src/eventhandling.js"></script>
+  <script src="upstream/remotestorage.js/src/wireclient.js"></script>
+  <script src="upstream/remotestorage.js/src/discover.js"></script>
+  <script src="upstream/remotestorage.js/src/authorize.js"></script>
+  <script src="upstream/remotestorage.js/src/access.js"></script>
+  <script src="upstream/remotestorage.js/src/env.js"></script>
+
+  <!-- widget -->
+  <script src="upstream/remotestorage.js/src/i18n.js"></script>
+  <script src="upstream/remotestorage.js/src/assets.js"></script>
+  <script src="upstream/remotestorage.js/src/widget.js"></script>
+  <script src="upstream/remotestorage.js/src/view.js"></script>
+  
+  <!-- baseclient -->
+  <script src="upstream/remotestorage.js/lib/tv4.js"></script>
+  <script src="upstream/remotestorage.js/lib/Math.uuid.js"></script>
+  <script src="upstream/remotestorage.js/src/baseclient.js"></script>
+  <script src="upstream/remotestorage.js/src/baseclient/types.js"></script>
+
+  <!-- caching -->
+  <script src="upstream/remotestorage.js/src/caching.js"></script>
+  <script src="upstream/remotestorage.js/src/sync.js"></script>
+  <script src="upstream/remotestorage.js/src/cachinglayer.js"></script>
+  <script src="upstream/remotestorage.js/src/indexeddb.js"></script>
+  <script src="upstream/remotestorage.js/src/localstorage.js"></script>
+  <script src="upstream/remotestorage.js/src/inmemorystorage.js"></script>
+
+  <!-- the rest: -->
+  <script src="upstream/remotestorage.js/src/modules.js"></script>
+  <script src="upstream/remotestorage.js/src/debug/inspect.js"></script>
+  <script src="upstream/remotestorage.js/src/legacy.js"></script>
+  <script src="upstream/remotestorage.js/src/googledrive.js"></script>
+  <script src="upstream/remotestorage.js/src/dropbox.js"></script>
+
+  <script>
+    //for debugging:
+    var messageLogs = [],
+      debugLogs = [];
+
+    function d(p) {
+      p.then(
+        function(a) { console.log('success', a, JSON.stringify(a)); },
+        function(a) { console.log('fail', a, JSON.stringify(a)); });
+    }
+    RemoteStorage._log = true;
+    RemoteStorage.reset = function() {
+      indexedDB.deleteDatabase('remotestorage');
+      localStorage.clear();
+    }
+    function evalScript(path) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', path+'?refresh='+new Date().getTime(), true);
+      xhr.onload = function() {
+        eval(xhr.responseText);
+        console.log('reloaded '+path);
+      };
+      xhr.send();
+    }
+    function reload() {
+      evalScript('meute.js');
+      setTimeout(function() {
+        evalScript('meute-email.js');
+        evalScript('meute-www.js');
+      }, 1000);
+      setTimeout(function() {
+        meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
+        meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
+        meute.bootstrap();
+      }, 2000);
+    }
+
+    //instantiate:
+    remoteStorage = new RemoteStorage();
+    remoteStorage.displayWidget();
+    var remoteStorageReady = false;
+    remoteStorage.on('ready', function() {
+      remoteStorageReady = true;
+    });
+    RemoteStorage.enableChangeEvents = {
+      local: false,
+      window: false,
+      remote: true,
+      conflict: true
+    };
+    ['contacts', 'documents', 'email', 'facebook', 'irc', 'messages', 'pgp', 'pictures', 'sockethub', 'twitter', 'www']
+        .forEach(function(moduleName) {
+      remoteStorage.access.claim(moduleName, 'rw');
+    });
+    remoteStorage.scope('/public/www/').cache('', 'ALL');
+    function fireInitial() {
+      var i=0;
+      RemoteStorage.enableChangeEvents.local = true;
+      remoteStorage.scope('/').on('change', function() {
+        i++;
+        if(i%1000===0) {
+          console.log('change events... '+i);
+        }
+      });
+      if (remoteStorageReady) {
+        console.log('Calling fireInitial...');
+        remoteStorage.fireInitial();
+      } else {
+        console.log('fireInitial will be called from the remoteStorage ready event...');
+      }
+    }
+  </script>
+
+
+  <script src="upstream/remotestorage-modules/utils/credentialsstore.js"> </script>
+  <script src="upstream/remotestorage-modules/utils/prefixtree.js"> </script>
+  <script src="upstream/remotestorage-modules/utils/syncedmap.js"> </script>
+  <script src="upstream/remotestorage-modules/utils/syncedvar.js"> </script>
+
+  <script src="upstream/remotestorage-modules/sockethub-credentials.js"> </script>
+  <script src="upstream/remotestorage-modules/messages.js"> </script>
+  <script src="upstream/remotestorage-modules/email-credentials.js"> </script>
+  <script src="upstream/remotestorage-modules/irc-credentials.js"> </script>
+  <script src="upstream/remotestorage-modules/twitter-credentials.js"> </script>
+  <script src="upstream/remotestorage-modules/facebook-credentials.js"> </script>
+  <script src="upstream/remotestorage-modules/contacts.js"> </script>
+  <script src="upstream/remotestorage-modules/documents.js"> </script>
+  <script src="upstream/remotestorage-modules/pgp.js"> </script>
+  <script src="upstream/remotestorage-modules/pictures.js"> </script>
+
+  <script src="meute.js"> </script>
+  <script src="meute-email.js"> </script>
+  <script src="meute-www.js"> </script>
+  <script>
+    meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
+    meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
+    meute.bootstrap();
+
+    meute.www.getTemplate('homepage.html');
+    meute.www.loadPosts();
+    
+    function post() {
+      meute.www.publish(document.getElementById('textToPost').value);
+    }
+  </script>
+</html>
