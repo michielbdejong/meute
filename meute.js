@@ -249,10 +249,10 @@ meute = (function() {
         },
         object: {
           objectType: 'credentials',
-          access_token: server,
-          access_token_secret: id,
-          consumer_secret: pwd,
-          consumer_key: name
+          consumer_key: id, //aka API key
+          consumer_secret: server, //aka API secret
+          access_token: pwd,
+          access_token_secret: name
         }
       };
     }

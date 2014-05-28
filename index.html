@@ -247,6 +247,21 @@
       meute.www.publish('Posting from an unhosted meute instance');
     }
     
+    var account;
+    function indieWebExampleStep4() {
+      remoteStorage.messages.account('mailto:anything@michielbdejong.com').then(function(a) {
+        console.log('success', a);
+        account = a;
+      }, function(a) {
+        console.log('failure', a);
+      });
+      meute.debugState().sockethubClient.on('message', function(msg) {
+        account.store(obj);
+        console.log('msg stored');
+      });
+      meute.email.fetchEmailsFromTo(19000, 19000);
+    }
+    
     document.getElementById('pre2').innerHTML = document.getElementById('exampleCode2').innerHTML.replace('<', '&gt;');
   </script>
 </html>
