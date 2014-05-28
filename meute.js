@@ -249,8 +249,8 @@ meute = (function() {
         },
         object: {
           objectType: 'credentials',
-          consumer_key: id, //aka API key
-          consumer_secret: server, //aka API secret
+          consumer_key: server, //aka API key
+          consumer_secret: id, //aka API secret
           access_token: pwd,
           access_token_secret: name
         }
