@@ -255,8 +255,8 @@
       }, function(a) {
         console.log('failure', a);
       });
-      meute.debugState().sockethubClient.on('message', function(msg) {
-        account.store(obj);
+      meute.on('message', function(msg) {
+        account.store(msg);
         console.log('msg stored');
       });
       meute.email.fetchEmailsFromTo(19000, 19000);
