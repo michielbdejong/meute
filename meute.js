@@ -158,7 +158,6 @@ meute = (function() {
     if (remoteStorage) {
       for (var i in modulesToTry) {
         if (!configDone[i]) {
-          console.log('trying to load account', i);
           loadAccount(i);
         }
       }
@@ -168,14 +167,17 @@ meute = (function() {
     }
   }
   function loadAccount(which) {
-    remoteStorage[which].getConfig(masterPwd).then(function(res) {
-      var config = res.data;
+    remoteStorage[which].getConfig(masterPwd).then(function(config) {
+      console.log('config for', which, masterPwd, config);
       if (typeof(config) === 'object') {
         try {
           doAddAccount(which, config, false);
+          console.log('added account', which);
         } catch(e) {
           debug('error adding account "'+which+'": '+e.message);
         }
+      } else {
+        debug('no config exists for '+which);
       }
     }, function(err) {
       debug('no config found for '+which+': '+err);
