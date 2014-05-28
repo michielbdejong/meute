@@ -233,8 +233,8 @@ meute = (function() {
     } else if (platform === 'facebook') {
       obj = {
         actor: {
-          address: 'you',
-          name: 'you'
+          address: 'me',
+          name: 'me'
         },
         object: {
           objectType: 'credentials',
