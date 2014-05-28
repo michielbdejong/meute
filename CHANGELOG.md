@@ -1,6 +1,8 @@
 # 0.5.1
 
 * add support for sockethub version e1a4b680
+* add/fix Facebook and Twitter
+* several small bugfixes
 
 # 0.5.0
 
