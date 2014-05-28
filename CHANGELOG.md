@@ -1,3 +1,8 @@
+# 0.5.2
+
+* add /post.html
+* several small bugfixes
+
 # 0.5.1
 
 * add support for sockethub version e1a4b680
