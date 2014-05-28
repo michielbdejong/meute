@@ -285,7 +285,13 @@ meute = (function() {
   function toOutbox(platform, obj, promise) {
     if (configDone[platform] && configDone['sockethub']) {
       debug('sending directly', JSON.stringify(obj));
-      sockethubClient.sendObject(obj);
+      sockethubClient.sendObject(obj).then(function(directSuccess) {
+        debug('direct success', directSuccess);
+        promise.fulfill(directSuccess);
+      }, function(directFailure) {
+        debug('direct failure', directFailure);
+        promise.fulfill(directFailure);
+      });
     } else {
       debug('queueing', JSON.stringify(obj));
       if (!Array.isArray(outbox[platform])) {

@@ -167,8 +167,8 @@ meute.www = (function() {
     }
     if (syndicate) {
       console.log('publish syndicate');
-      sendFacebookCreds();
-      sendTwitterCreds();
+      //sendFacebookCreds();
+      //sendTwitterCreds();
       //backlink = ' (perma: /live/'+id+')';
       backlink = ' /live/'+id;
       backlink = ' (/live/'+id+')';
@@ -177,7 +177,7 @@ meute.www = (function() {
       //if (likeUrl) {
       //  fblike(likeUrl);
       //} else {
-        fbpost(str+backlink);
+        meute.post('facebook', 'me', str+backlink);
       //}
       if ((str+backlink).length > 140) {
         tweetStr = str.substring(0, 105)+'...';//change this value to 104 after i publish post #999

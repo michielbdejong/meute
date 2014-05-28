@@ -7,7 +7,8 @@
   <body>
     <h1>post form based on meute</h1>
     <input type="text" id="textToPost"/>
-    <input type="submit" value="post" onclick= "post();"/>
+    <input type="submit" value="www" onclick= "post(false);"/>
+    <input type="submit" value="tweet" onclick= "post(true);"/>
   </body>
   <script src="upstream/sjcl.js"> </script>
   <script src="upstream/sockethub-client.js"></script>
@@ -155,8 +156,8 @@
     meute.www.getTemplate('homepage.html');
     meute.www.loadPosts();
     
-    function post() {
-      meute.www.publish(document.getElementById('textToPost').value);
+    function post(syndicate) {
+      meute.www.publish(document.getElementById('textToPost').value, syndicate);
     }
   </script>
 </html>
