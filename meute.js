@@ -336,6 +336,20 @@ meute = (function() {
     };
     toOutbox(obj.platform, obj);
   }
+  function post(platform, target, text) {
+    var obj = {
+      platform: platform,
+      verb: 'post',
+      actor: registeredActor[platform],
+      target: [{
+        address: target
+      }],
+      object: {
+        text: text
+      }
+    };
+    toOutbox(obj.platform, obj);
+  }
 
   function on(eventName, eventHandler) {
     if (!handlers[eventName]) {
@@ -351,6 +365,7 @@ meute = (function() {
     join: join,
     leave: leave,
     send: send,
+    post: post,
     toOutbox: toOutbox,
     bootstrap: bootstrap,
     on: on
