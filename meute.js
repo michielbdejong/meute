@@ -116,11 +116,22 @@ meute = (function() {
       delete attendance[msg.platform][msg.target[0].address][msg.actor.address];
     }
   }
+  function sendOutboxItem(obj, promise) {
+    sockethubClient.sendObject(obj).then(function(res) {
+      if (promise) {
+        promise.fulfill(res);
+      }
+    }, function(err) {
+      if (promise) {
+        promise.reject(err);
+      }
+    });
+  }
   function flushOutbox(which) {
     debug('flushing outbox', which, outbox);
     if (configDone[which] && configDone['sockethub'] && Array.isArray(outbox[which])) {
       for (var i=0; i<outbox[which].length; i++) {
-        sockethubClient.sendObject(outbox[which][i]);
+        sendOutboxItem(outbox[which][i].object, outbox[which][i].promise);
       }
       delete outbox[which];
     }
@@ -269,7 +280,7 @@ meute = (function() {
       remoteStorage[which].setConfig(masterPwd, thisConfig);
     }
   }
-  function toOutbox(platform, obj) {
+  function toOutbox(platform, obj, promise) {
     if (configDone[platform] && configDone['sockethub']) {
       debug('sending directly', JSON.stringify(obj));
       sockethubClient.sendObject(obj);
@@ -278,7 +289,10 @@ meute = (function() {
       if (!Array.isArray(outbox[platform])) {
         outbox[platform] = [];
       }
-      outbox[platform].push(obj);
+      outbox[platform].push({
+        object: obj,
+        promise: promise
+      });
     }
   }
   function join(platform, channels, leave) {
@@ -323,32 +337,57 @@ meute = (function() {
     join(platform, channels, true);
   }
   function send(platform, target, text) {
-    var obj = {
-      platform: platform,
-      verb: 'send',
-      actor: registeredActor[platform],
-      target: [{
-        address: target
-      }],
-      object: {
-        text: text
-      }
-    };
-    toOutbox(obj.platform, obj);
+    var promise = promising(),
+      obj = {
+        platform: platform,
+        verb: 'send',
+        actor: registeredActor[platform],
+        target: [{
+          address: target
+        }],
+        object: {
+          text: text
+        }
+      };
+    toOutbox(obj.platform, obj, promise);
+    return promise;
   }
-  function post(platform, target, text) {
-    var obj = {
-      platform: platform,
-      verb: 'post',
-      actor: registeredActor[platform],
-      target: [{
-        address: target
-      }],
-      object: {
-        text: text
-      }
-    };
-    toOutbox(obj.platform, obj);
+  function post(platform, target, text, inReplyTo) {
+    var promise = promising(),
+      obj = {
+        platform: platform,
+        verb: 'post',
+        actor: registeredActor[platform],
+        target: [{
+          address: target
+        }],
+        object: {
+          text: text
+        }
+      };
+    if (inReplyTo) {
+      obj.object.in_reply_to_status_id_str = inReplyTo;
+    }
+    toOutbox(obj.platform, obj, promise);
+    return promise;
+  }
+  function retweet(platform, id) {
+    var promise = promising(),
+      obj = {
+        platform: 'twitter',
+        actor: registeredActor[platform],
+        verb: 'post',
+        object: {
+          retweet: id,
+          text: 'this text is only here to get past the sockethub schema and should not get tweeted!'
+        },
+        target: []
+      };
+    if (inReplyTo) {
+      obj.object.in_reply_to_status_id_str = inReplyTo;
+    }
+    toOutbox(obj.platform, obj, promise);
+    return promise;
   }
 
   function on(eventName, eventHandler) {
@@ -366,6 +405,7 @@ meute = (function() {
     leave: leave,
     send: send,
     post: post,
+    retweet: retweet,
     toOutbox: toOutbox,
     bootstrap: bootstrap,
     on: on

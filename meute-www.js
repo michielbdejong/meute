@@ -188,13 +188,13 @@ meute.www = (function() {
       retweeting = extractTwitterId(likeUrl);
       if (retweeting) {
         console.log('retweeting', retweeting);
-        retweet(retweeting, function(obj) {
+        meute.retweet(retweeting).then(function(obj) {
           publish(obj.text, false, retweeting);//link to original tweet, not to my retweet which would be obj.id_str
         });
       } else {
         tweetReply = extractTwitterId(inReplyTo);
         console.log('tweeting', inReplyTo, tweetReply);
-        tweet(tweetStr+backlink, tweetReply, function(tweetId) {
+        meute.post('twitter', 'me', tweetStr+backlink, tweetReply).then(function(tweetId) {
           publish(str, false, tweetId, likeUrl, inReplyTo);
         });
       }
