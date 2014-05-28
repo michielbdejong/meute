@@ -263,11 +263,7 @@
                 promise.fulfill(response.status, result, mimeType, revision);
               });
             } else {
-              if (mimeType && mimeType.match(/^application\/json/)) {
-                body = JSON.parse(response.responseText);
-              } else {
-                body = response.responseText;
-              }
+              body = response.responseText;
               RemoteStorage.log('[WireClient] Successful request', revision);
               promise.fulfill(response.status, body, mimeType, revision);
             }
@@ -339,6 +335,13 @@
         return promise.then(function(status, body, contentType, revision) {
           var itemsMap = {};
 
+          if (typeof(body) !== 'undefined') {
+            try {
+              body = JSON.parse(body);
+            } catch (e) {
+              throw 'Folder description at ' + this.href + cleanPath(path) + ' is not JSON';
+            }
+          }
           // New folder listing received
           if (status === 200 && typeof(body) === 'object') {
             // Empty folder listing of any spec
@@ -461,8 +464,6 @@
       }
       else if (body instanceof ArrayBuffer) {
         body = new Uint8Array(body);
-      } else {
-        body = JSON.stringify(body);
       }
     }
     xhr.send(body);
