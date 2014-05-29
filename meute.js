@@ -116,12 +116,17 @@ meute = (function() {
       delete attendance[msg.platform][msg.target[0].address][msg.actor.address];
     }
   }
-  function sendOutboxItem(obj, promise) {
+  function sendOutboxItem(platform, obj, promise) {
+    if (!obj.actor) {
+      obj.actor = registeredActor[platform];
+    }
     sockethubClient.sendObject(obj).then(function(res) {
+      debug('sendOutboxItem success', res);
       if (promise) {
         promise.fulfill(res);
       }
     }, function(err) {
+      debug('sendOutboxItem failure', err);
       if (promise) {
         promise.reject(err);
       }
@@ -131,7 +136,7 @@ meute = (function() {
     debug('flushing outbox', which, outbox);
     if (configDone[which] && configDone['sockethub'] && Array.isArray(outbox[which])) {
       for (var i=0; i<outbox[which].length; i++) {
-        sendOutboxItem(outbox[which][i].object, outbox[which][i].promise);
+        sendOutboxItem(which, outbox[which][i].object, outbox[which][i].promise);
       }
       delete outbox[which];
     }
@@ -285,13 +290,7 @@ meute = (function() {
   function toOutbox(platform, obj, promise) {
     if (configDone[platform] && configDone['sockethub']) {
       debug('sending directly', JSON.stringify(obj));
-      sockethubClient.sendObject(obj).then(function(directSuccess) {
-        debug('direct success', directSuccess);
-        promise.fulfill(directSuccess);
-      }, function(directFailure) {
-        debug('direct failure', directFailure);
-        promise.fulfill(directFailure);
-      });
+      sendOutboxItem(platform, obj, promise);
     } else {
       debug('queueing', JSON.stringify(obj));
       if (!Array.isArray(outbox[platform])) {
@@ -329,14 +328,13 @@ meute = (function() {
         roomJoins[platform][channels[i]] = true;
       }
     }
-    obj.actor = registeredActor[platform];
 
     //only sending this if the platform is online now, otherwise
     //the rooms will be joined once the platform is configured
     //and joinRooms is called for it:
     if (configDone[platform] && configDone['sockethub']) {
       debug('sending directly', JSON.stringify(obj));
-      return sockethubClient.sendObject(obj);
+      return sendOutboxItem(platform, obj);
     }
 
     //roomJoins will also be called again after each sockethub reconnect
@@ -349,7 +347,6 @@ meute = (function() {
       obj = {
         platform: platform,
         verb: 'send',
-        actor: registeredActor[platform],
         target: [{
           address: target
         }],
@@ -365,7 +362,6 @@ meute = (function() {
       obj = {
         platform: platform,
         verb: 'post',
-        actor: registeredActor[platform],
         target: [{
           address: target
         }],
@@ -383,7 +379,6 @@ meute = (function() {
     var promise = promising(),
       obj = {
         platform: 'twitter',
-        actor: registeredActor[platform],
         verb: 'post',
         object: {
           retweet: id,
