@@ -94,10 +94,18 @@
 
     //instantiate:
     remoteStorage = new RemoteStorage();
-    remoteStorage.displayWidget();
+    remoteStorage.displayWidget({encryption: true});
     var remoteStorageReady = false;
     remoteStorage.on('ready', function() {
       remoteStorageReady = true;
+      remoteStorage.widget.view.on('secret-entered', function(secret) {
+        console.log('secret-entered', secret);
+        meute.setMasterPassword(secret);
+      });
+      remoteStorage.widget.view.on('secret-cancelled', function() {
+        console.log('secret-cancelled');
+        meute.setMasterPassword(undefined);
+      });
     });
     RemoteStorage.enableChangeEvents = {
       local: false,
