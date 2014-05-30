@@ -605,7 +605,7 @@
         return promising().fulfill(changedNodes);
       }
 
-      this.local.getNodes(paths).then(function(nodes) {
+      return this.local.getNodes(paths).then(function(nodes) {
         var subPaths = {};
 
         collectSubPaths = function(folder, path) {
