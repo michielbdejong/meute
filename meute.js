@@ -152,6 +152,16 @@ meute = (function() {
     }
     return meute.join(platform, channels);
   }
+  function storeContact(contact) {
+    if (remoteStorage.contacts) {
+      remoteStorage.contacts.add({
+        fn: contact.name,
+        emails: [{
+          value: contact.address
+        }]
+      });
+    }
+  }
   function bootstrap() {
     var modulesToTry = {
       sockethub: true,
@@ -169,6 +179,35 @@ meute = (function() {
       //getTemplate('homepage.html');
       //getTemplate('blogpost.html');
       //loadPosts();
+    }
+    if (remoteStorage.messages && registeredActor['email']) {
+      remoteStorage.messages.account('mailto:'+registeredActor['email'].address).then(function(account) {
+        on('message', function(msg) {
+          account.store(msg);
+          console.log('msg stored');
+          if (Array.isArray(msg.actor)) {
+            msg.actor.forEach(storeContact);
+          }
+          if (Array.isArray(msg.target.to)) {
+            msg.target.to.forEach(storeContact);
+          }
+          if (Array.isArray(msg.target.cc)) {
+            msg.target.cc.forEach(storeContact);
+          }
+          if (Array.isArray(msg.target.bcc)) {
+            msg.target.bcc.forEach(storeContact);
+          }
+        });
+        setInterval(function() {
+          if (configDone['email'] && meute.email) {
+            meute.email.fetch(0, 10);
+            console.log('fetching and storing newest 10 emails');
+          }
+        }, 1000*60*10);
+        console.log('will poll and store email for '+registeredActor['email'].address+' every 10 minutes');
+      }, function(err) {
+        console.log('failure calling remoteStorage.messages.account', err);
+      });
     }
   }
   function loadAccount(which) {
