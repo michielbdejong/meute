@@ -156,9 +156,7 @@ meute = (function() {
     if (remoteStorage.contacts) {
       remoteStorage.contacts.add({
         fn: contact.name,
-        emails: [{
-          value: contact.address
-        }]
+        hasEmail: 'mailto:' + contact.address
       });
     }
   }
