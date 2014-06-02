@@ -82,6 +82,7 @@ RemoteStorage.enableChangeEvents = {
   remote: true,
   conflict: true
 };
+remoteStorage.setSyncInterval(1000000);
 ['contacts', 'documents', 'email', 'facebook', 'irc', 'messages', 'pgp', 'pictures', 'sockethub', 'twitter', 'www']
     .forEach(function(moduleName) {
   remoteStorage.access.claim(moduleName, 'rw');

@@ -55,93 +55,13 @@
   <script src="upstream/remotestorage.js/src/googledrive.js"></script>
   <script src="upstream/remotestorage.js/src/dropbox.js"></script>
 
-  <script>
-    //for debugging:
-    var messageLogs = [],
-      debugLogs = [];
-
-    function d(p) {
-      p.then(
-        function(a) { console.log('success', a, JSON.stringify(a)); },
-        function(a) { console.log('fail', a, JSON.stringify(a)); });
-    }
-    RemoteStorage._log = true;
-    RemoteStorage.reset = function() {
-      indexedDB.deleteDatabase('remotestorage');
-      localStorage.clear();
-    }
-    function evalScript(path) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', path+'?refresh='+new Date().getTime(), true);
-      xhr.onload = function() {
-        eval(xhr.responseText);
-        console.log('reloaded '+path);
-      };
-      xhr.send();
-    }
-    function reload() {
-      evalScript('meute.js');
-      setTimeout(function() {
-        evalScript('meute-email.js');
-        evalScript('meute-www.js');
-      }, 1000);
-      setTimeout(function() {
-        meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
-        meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
-        meute.bootstrap();
-      }, 2000);
-    }
-
-    //instantiate:
-    remoteStorage = new RemoteStorage();
-    remoteStorage.displayWidget({encryption: true});
-    var remoteStorageReady = false;
-    remoteStorage.on('ready', function() {
-      remoteStorageReady = true;
-      remoteStorage.widget.view.on('secret-entered', function(secret) {
-        console.log('secret-entered', secret);
-        meute.setMasterPassword(secret);
-      });
-      remoteStorage.widget.view.on('secret-cancelled', function() {
-        console.log('secret-cancelled');
-        meute.setMasterPassword(undefined);
-      });
-    });
-    RemoteStorage.enableChangeEvents = {
-      local: false,
-      window: false,
-      remote: true,
-      conflict: true
-    };
-    ['contacts', 'documents', 'email', 'facebook', 'irc', 'messages', 'pgp', 'pictures', 'sockethub', 'twitter', 'www']
-        .forEach(function(moduleName) {
-      remoteStorage.access.claim(moduleName, 'rw');
-    });
-    remoteStorage.scope('/public/www/').cache('', 'ALL');
-    function fireInitial() {
-      var i=0;
-      RemoteStorage.enableChangeEvents.local = true;
-      remoteStorage.scope('/').on('change', function() {
-        i++;
-        if(i%1000===0) {
-          console.log('change events... '+i);
-        }
-      });
-      if (remoteStorageReady) {
-        console.log('Calling fireInitial...');
-        remoteStorage.fireInitial();
-      } else {
-        console.log('fireInitial will be called from the remoteStorage ready event...');
-      }
-    }
-  </script>
-
-
+  <!-- module utils: -->
   <script src="upstream/remotestorage-modules/utils/credentialsstore.js"> </script>
   <script src="upstream/remotestorage-modules/utils/prefixtree.js"> </script>
   <script src="upstream/remotestorage-modules/utils/syncedmap.js"> </script>
   <script src="upstream/remotestorage-modules/utils/syncedvar.js"> </script>
 
+  <!-- modules: -->
   <script src="upstream/remotestorage-modules/sockethub-credentials.js"> </script>
   <script src="upstream/remotestorage-modules/messages.js"> </script>
   <script src="upstream/remotestorage-modules/email-credentials.js"> </script>
@@ -153,17 +73,13 @@
   <script src="upstream/remotestorage-modules/pgp.js"> </script>
   <script src="upstream/remotestorage-modules/pictures.js"> </script>
 
+  <!-- meute: -->
   <script src="meute.js"> </script>
   <script src="meute-email.js"> </script>
   <script src="meute-www.js"> </script>
-  <script>
-    meute.on('message', function(obj) { messageLogs.push(obj); console.log('meute message', obj); });
-    meute.on('debug', function(obj) { debugLogs.push(obj); console.log('meute debug', obj); });
-    meute.bootstrap();
+  <script src= "meute-instantiate.js"></script>
 
-    meute.www.getTemplate('homepage.html');
-    meute.www.loadPosts();
-    
+  <script>
     function post(syndicate) {
       meute.www.publish(document.getElementById('textToPost').value, syndicate);
     }
