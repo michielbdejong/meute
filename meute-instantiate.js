@@ -110,16 +110,3 @@ meute.bootstrap();
 
 meute.www.getTemplate('homepage.html');
 meute.www.loadPosts();
-
-var account;
-remoteStorage.messages.account('mailto:anything@michielbdejong.com').then(function(a) {
-  console.log('success', a);
-  account = a;
-}, function(a) {
-  console.log('failure', a);
-});
-
-meute.on('message', function(msg) {
-  account.store(msg);
-  console.log('msg stored');
-});

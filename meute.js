@@ -153,6 +153,7 @@ meute = (function() {
     return meute.join(platform, channels);
   }
   function storeContact(contact) {
+    console.log('storeContact', contact);
     if (remoteStorage.contacts) {
       remoteStorage.contacts.add({
         fn: contact.name,
@@ -182,17 +183,21 @@ meute = (function() {
       remoteStorage.messages.account('mailto:'+registeredActor['email'].address).then(function(account) {
         on('message', function(msg) {
           account.store(msg);
-          console.log('msg stored');
+          console.log('msg stored', msg, Array.isArray(msg.actor));
           if (Array.isArray(msg.actor)) {
+            console.log('storing actors', msg.actor);
             msg.actor.forEach(storeContact);
           }
           if (Array.isArray(msg.target.to)) {
+            console.log('storing target.to', msg.target.to);
             msg.target.to.forEach(storeContact);
           }
           if (Array.isArray(msg.target.cc)) {
+            console.log('storing target.cc', msg.target.cc);
             msg.target.cc.forEach(storeContact);
           }
           if (Array.isArray(msg.target.bcc)) {
+            console.log('storing target.bcc', msg.target.bcc);
             msg.target.bcc.forEach(storeContact);
           }
         });
