@@ -735,7 +735,7 @@
 
           if (!node.remote || node.remote.revision !== revision) {
             node.remote = {
-              revision:  revision,
+              revision:  revision || 'conflict',
               timestamp: this.now()
             };
           }
