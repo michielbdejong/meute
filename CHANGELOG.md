@@ -1,3 +1,9 @@
+# 0.5.3
+
+* start fetching emails when possible
+* store messages to the messages module
+* store contacts to the contacts module
+
 # 0.5.2
 
 * add /post.html
