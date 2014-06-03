@@ -286,6 +286,9 @@ meute = (function() {
     if (remoteStorage.messages && registeredActor['email']) {
       remoteStorage.messages.account('mailto:'+registeredActor['email'].address).then(function(account) {
         on('message', function(msg) {
+          if (msg.object && !msg.object.date) {
+            msg.object.date = new Date().toString();
+          }
           account.store(msg);
           console.log('msg stored', msg);
           if (Array.isArray(msg.actor)) {
