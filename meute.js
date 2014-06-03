@@ -286,7 +286,17 @@ meute = (function() {
     if (remoteStorage.messages && registeredActor['email']) {
       remoteStorage.messages.account('mailto:'+registeredActor['email'].address).then(function(account) {
         on('message', function(msg) {
-          if (msg.object && !msg.object.date) {
+          if (msg.platform === 'irc') {
+            msg.actor = [{
+              address: 'irc:' + msg.actor.address,
+              name: msg.actor.address + ' (irc)'
+            }];
+            msg.target = {
+              to: [{
+                address: 'irc:' + msg.target[0].address,
+                name: msg.target[0].address + ' (irc)'
+              }]
+            };
             msg.object.date = new Date().toString();
           }
           account.store(msg);
