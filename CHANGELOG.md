@@ -1,3 +1,9 @@
+# 0.5.4
+
+* switch commit cache back on
+* fix automatic storing of irc contacts
+* a few small fixes
+
 # 0.5.3
 
 * start fetching emails when possible
