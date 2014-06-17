@@ -95,9 +95,20 @@
     }
   }
 
-  function isOutdated(node, maxAge) {
-    return !node || !node.timestamp ||
-           ((new Date().getTime()) - node.timestamp > maxAge);
+  function isOutdated(nodes, maxAge) {
+    var path, node;
+    for (path in nodes) {
+      if (nodes[path] && nodes[path].remote) {
+        return true;
+      }
+      node = getLatest(nodes[path]);
+      if (node && node.timestamp && (new Date().getTime()) - node.timestamp <= maxAge) {
+        return false;
+      } else if (!node) {
+        return true;
+      }
+    }
+    return true;
   }
 
   function pathsFromRoot(path) {
@@ -146,19 +157,39 @@
     get: function(path, maxAge) {
       var promise = promising();
 
-      this.getNodes([path]).then(function(objs) {
-        var node = getLatest(objs[path]);
-        if ((typeof(maxAge) === 'number') && isOutdated(node, maxAge)) {
-          remoteStorage.sync.queueGetRequest(path, promise);
-        } else if (node) {
-          promise.fulfill(200, node.body || node.itemsMap, node.contentType);
-        } else {
-          promise.fulfill(404);
-        }
-      }.bind(this), function(err) {
-        promise.reject(err);
-      }.bind(this));
-
+      if (typeof(maxAge) === 'number') {
+        this.getNodes(pathsFromRoot(path)).then(function(objs) {
+          var node = getLatest(objs[path]);
+          if (isOutdated(objs, maxAge)) {
+            remoteStorage.sync.queueGetRequest(path, promise);
+          } else if (node) {
+            promise.fulfill(200, node.body || node.itemsMap, node.contentType);
+          } else {
+            promise.fulfill(404);
+          }
+        }.bind(this), function(err) {
+          promise.reject(err);
+        });
+      } else {
+        this.getNodes([path]).then(function(objs) {
+          var node = getLatest(objs[path]);
+          if (node) {
+            if (isFolder(path)) {
+              for (var i in node.itemsMap) {
+                // the hasOwnProperty check here is only because our jshint settings require it:
+                if (node.itemsMap.hasOwnProperty(i) && node.itemsMap[i] === false) {
+                  delete node.itemsMap[i];
+                }
+              }
+            }
+            promise.fulfill(200, node.body || node.itemsMap, node.contentType);
+          } else {
+            promise.fulfill(404);
+          }
+        }.bind(this), function(err) {
+          promise.reject(err);
+        });
+      }
       return promise;
     },
 
@@ -290,6 +321,8 @@
             });
           }
         }
+      }.bind(this)).then(function () {
+        this._emit('local-events-done');
       }.bind(this));
     },
 

@@ -138,7 +138,8 @@
     RS.eventHandling(this, 'change', 'connected', 'wire-busy', 'wire-done', 'not-connected');
 
     onErrorCb = function(error){
-      if (error instanceof RemoteStorage.Unauthorized) {
+      if (error instanceof RemoteStorage.Unauthorized ||
+          error instanceof RemoteStorage.SyncError) {
         this.configure(undefined, undefined, undefined, null);
       }
     }.bind(this);
@@ -209,7 +210,9 @@
       var reqType;
       var self = this;
 
-      headers['Authorization'] = 'Bearer ' + token;
+      if (token !== RemoteStorage.Authorize.IMPLIED_FAKE_TOKEN) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
 
       this._emit('wire-busy', {
         method: method,

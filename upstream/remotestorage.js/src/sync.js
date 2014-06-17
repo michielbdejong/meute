@@ -451,8 +451,10 @@
           path:           node.path,
           oldValue:       node.local.body,
           newValue:       node.remote.body,
+          lastCommonValue: node.common.body,
           oldContentType: node.local.contentType,
-          newContentType: node.remote.contentType
+          newContentType: node.remote.contentType,
+          lastCommonContentType: node.common.contentType
         });
 
         node.common = node.remote;
@@ -470,7 +472,7 @@
           } else {
             return this.autoMergeDocument(node);
           }
-        } else { // remotely created node
+        } else { // no local changes
           if (isFolder(node.path)) {
             if (node.remote.itemsMap !== undefined) {
               node.common = node.remote;
@@ -501,6 +503,15 @@
         return undefined;
       }
       return node;
+    },
+
+    updateCommonTimestamp: function(path, revision) {
+      return this.local.getNodes([path]).then(function(nodes) {
+        if (nodes[path] && nodes[path].common && nodes[path].common.revision === revision) {
+          nodes[path].common.timestamp = this.now();
+        }
+        return this.local.setNodes(this.flush(nodes));
+      }.bind(this));
     },
 
     markChildren: function(path, itemsMap, changedNodes, missingChildren) {
@@ -651,11 +662,11 @@
       var parentPath;
       var pathsFromRoot = this.local._getInternals().pathsFromRoot(path);
 
-      if (!isFolder(path)) {
+      if (isFolder(path)) {
+        paths = [path];
+      } else {
         parentPath = pathsFromRoot[1];
         paths = [path, parentPath];
-      } else {
-        paths = [path];
       }
 
       var promise = this.local.getNodes(paths).then(function(nodes) {
@@ -738,6 +749,7 @@
               revision:  revision || 'conflict',
               timestamp: this.now()
             };
+            delete node.push;
           }
 
           nodes[path] = this.autoMerge(node);
@@ -794,7 +806,8 @@
       return {
         successful: (series === 2 || statusCode === 304 || statusCode === 412 || statusCode === 404),
         conflict:   (statusCode === 412),
-        unAuth:     (statusCode === 401 || statusCode === 402 ||statusCode === 403),
+        unAuth:     ((statusCode === 401 && this.remote.token !== RemoteStorage.Authorize.IMPLIED_FAKE_TOKEN) ||
+                     statusCode === 402 || statusCode === 403),
         notFound:   (statusCode === 404),
         changed:    (statusCode !== 304)
       };
@@ -827,7 +840,9 @@
           }
         }.bind(this));
       } else {
-        return promising().fulfill(true);
+        return this.updateCommonTimestamp(path, revision).then(function() {
+          return true;
+        });
       }
     },
 

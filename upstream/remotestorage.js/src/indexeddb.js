@@ -55,30 +55,53 @@
     }
 
     RS.cachingLayer(this);
-    RS.eventHandling(this, 'change');
+    RS.eventHandling(this, 'change', 'local-events-done');
 
     this.getsRunning = 0;
     this.putsRunning = 0;
-    //both these caches store path -> the uncommitted node, or false for a deletion:
-    this.commitQueued = {};
-    this.commitRunning = {};
+
+    /**
+     * Property: changesQueued
+     *
+     * Given a node for which uncommitted changes exist, this cache
+     * stores either the entire uncommitted node, or false for a deletion.
+     * The node's path is used as the key.
+     *
+     * changesQueued stores changes for which no IndexedDB transaction has
+     * been started yet.
+     */
+    this.changesQueued = {};
+
+    /**
+     * Property: changesRunning
+     *
+     * Given a node for which uncommitted changes exist, this cache
+     * stores either the entire uncommitted node, or false for a deletion.
+     * The node's path is used as the key.
+     *
+     * At any time there is at most one IndexedDB transaction running.
+     * changesRunning stores the changes that are included in that currently
+     * running IndexedDB transaction, or if none is running, of the last one
+     * that ran.
+     */
+    this.changesRunning = {};
   };
 
   RS.IndexedDB.prototype = {
     getNodes: function(paths) {
-      var i ,misses = [], fromCache = {};
-      for (i=0; i<paths.length; i++) {
-        if (this.commitQueued[paths[i]] !== undefined) {
-          fromCache[paths[i]] = this._getInternals().deepClone(this.commitQueued[paths[i]] || undefined);
-        } else if(this.commitRunning[paths[i]] !== undefined) {
-           fromCache[paths[i]] = this._getInternals().deepClone(this.commitRunning[paths[i]] || undefined);
+      var misses = [], fromCache = {};
+      for (var i=0; i<paths.length; i++) {
+        if (this.changesQueued[paths[i]] !== undefined) {
+          fromCache[paths[i]] = this._getInternals().deepClone(this.changesQueued[paths[i]] || undefined);
+        } else if(this.changesRunning[paths[i]] !== undefined) {
+          fromCache[paths[i]] = this._getInternals().deepClone(this.changesRunning[paths[i]] || undefined);
         } else {
           misses.push(paths[i]);
         }
       }
       if (misses.length > 0) {
         return this.getNodesFromDb(misses).then(function(nodes) {
-          for (i in fromCache) {
+          for (var i in fromCache) {
             nodes[i] = fromCache[i];
           }
           return nodes;
@@ -89,27 +112,41 @@
         return promise;
       }
     },
+
     setNodes: function(nodes) {
       var promise = promising();
       for (var i in nodes) {
-        this.commitQueued[i] = nodes[i] || false;
+        this.changesQueued[i] = nodes[i] || false;
       }
       this.maybeFlush();
       promise.fulfill();
       return promise;
     },
+
     maybeFlush: function() {
       if (this.putsRunning === 0) {
-        this.flushcommitQueued();
+        this.flushChangesQueued();
+      } else {
+        if (!this.commitSlownessWarning) {
+          this.commitSlownessWarning = setInterval(function() {
+            console.log('WARNING: waited more than 10 seconds for previous commit to finish');
+          }, 10000);
+        }
       }
     },
-    flushcommitQueued: function() {
-      if (Object.keys(this.commitQueued).length > 0) {
-        this.commitRunning = this.commitQueued;
-        this.commitQueued = {};
-        this.setNodesToDb(this.commitRunning).then(this.flushcommitQueued.bind(this));
+
+    flushChangesQueued: function() {
+      if (this.commitSlownessWarning) {
+        clearInterval(this.commitSlownessWarning);
+        this.commitSlownessWarning = null;
+      }
+      if (Object.keys(this.changesQueued).length > 0) {
+        this.changesRunning = this.changesQueued;
+        this.changesQueued = {};
+        this.setNodesInDb(this.changesRunning).then(this.flushChangesQueued.bind(this));
       }
     },
+
     getNodesFromDb: function(paths) {
       var promise = promising();
       var transaction = this.db.transaction(['nodes'], 'readonly');
@@ -141,7 +178,7 @@
       return promise;
     },
 
-    setNodesToDb: function(nodes) {
+    setNodesInDb: function(nodes) {
       var promise = promising();
       var transaction = this.db.transaction(['nodes'], 'readwrite');
       var nodesStore = transaction.objectStore('nodes');
