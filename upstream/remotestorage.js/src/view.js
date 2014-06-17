@@ -193,13 +193,8 @@
       // Handle connectButton state
       this.form = element.querySelector('form.remotestorage-initial');
       var el = this.form.userAddress;
-      el.addEventListener('keyup', function(event) {
-        if (event.target.value) {
-          connectButton.removeAttribute('disabled');
-        } else {
-          connectButton.setAttribute('disabled','disabled');
-        }
-      });
+      el.addEventListener('load', handleButtonState);
+      el.addEventListener('keyup', handleButtonState);
       if (this.userAddress) {
         el.value = this.userAddress;
       }
@@ -211,13 +206,10 @@
         var cipherButton = setupButton(element, 'rs-cipher', 'cipherIcon', this.events['secret-entered']);
 
         // Handle cipherButton state
-        element.querySelector('form.remotestorage-cipher-form').userSecretKey.addEventListener('keyup', function(event) {
-          if (event.target.value) {
-            cipherButton.removeAttribute('disabled');
-          } else {
-            cipherButton.setAttribute('disabled','disabled');
-          }
-        });
+        element.querySelector('form.remotestorage-cipher-form').userSecretKey
+          .addEventListener('load', handleButtonState);
+        element.querySelector('form.remotestorage-cipher-form').userSecretKey
+          .addEventListener('keyup', handleButtonState);
 
         // No cipher button
         setupButton(element, 'rs-nocipher', 'nocipherIcon', this.events['secret-cancelled']);
@@ -363,9 +355,6 @@
       busy: function() {
         this.div.className = "remotestorage-state-busy";
         addClass(this.cube, 'remotestorage-loading');
-        if (!this.cipher) {
-          this.hideBubble();
-        }
       },
 
       offline: function() {
@@ -415,7 +404,6 @@
      * Emitted when the cipher button is clicked
      **/
       'secret-entered': function(event) {
-        console.log('view.js, line 418');
         stopPropagation(event);
         event.preventDefault();
         this._emit('secret-entered', this.div.querySelector('form.remotestorage-cipher-form').userSecretKey.value);
@@ -427,7 +415,6 @@
      * Emitted when the nocipher button is clicked
      **/
       'secret-cancelled': function(event) {
-        console.log('view.js, line 430');
         stopPropagation(event);
         event.preventDefault();
         this._emit('secret-cancelled');
@@ -526,5 +513,13 @@
     }
     element.addEventListener('click', eventListener);
     return element;
+  }
+
+  function handleButtonState(event) {
+    if (event.target.value) {
+      event.target.nextElementSibling.removeAttribute('disabled');
+    } else {
+      event.target.nextElementSibling.setAttribute('disabled','disabled');
+    }
   }
 })(typeof(window) !== 'undefined' ? window : global);

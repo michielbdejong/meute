@@ -86,7 +86,6 @@
       if (! this.view) {
         this.setView(new RemoteStorage.Widget.View(this.rs));
       }
-      console.log('calling view.display with options', options);
       this.view.display(options);
       return this;
     },

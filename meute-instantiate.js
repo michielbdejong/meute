@@ -74,6 +74,7 @@ remoteStorage = new RemoteStorage();
 remoteStorage.displayWidget();
 var remoteStorageReady = false;
 remoteStorage.on('ready', function() {
+  console.log('ready firererered!');
   remoteStorageReady = true;
 });
 RemoteStorage.enableChangeEvents = {

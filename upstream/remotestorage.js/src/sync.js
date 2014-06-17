@@ -432,9 +432,6 @@
 
     autoMergeDocument: function(node) {
       hasNoRemoteChanges = function(node) {
-        if (node.remote && node.remote.revision !== node.common.revision) {
-          return false;
-        }
         return (node.common.body === undefined && node.remote.body === false) ||
                (node.remote.body === node.common.body &&
                 node.remote.contentType === node.common.contentType);
@@ -605,7 +602,7 @@
         return promising().fulfill(changedNodes);
       }
 
-      return this.local.getNodes(paths).then(function(nodes) {
+      this.local.getNodes(paths).then(function(nodes) {
         var subPaths = {};
 
         collectSubPaths = function(folder, path) {
@@ -735,7 +732,7 @@
 
           if (!node.remote || node.remote.revision !== revision) {
             node.remote = {
-              revision:  revision || 'conflict',
+              revision:  revision,
               timestamp: this.now()
             };
           }
@@ -794,7 +791,8 @@
       return {
         successful: (series === 2 || statusCode === 304 || statusCode === 412 || statusCode === 404),
         conflict:   (statusCode === 412),
-        unAuth:     (statusCode === 401 || statusCode === 402 ||statusCode === 403),
+        unAuth:     ((statusCode === 401 && remote.token !== RemoteStorage.Authorize.IMPLIED_FAKE_TOKEN)
+            || statusCode === 402 ||statusCode === 403),
         notFound:   (statusCode === 404),
         changed:    (statusCode !== 304)
       };
