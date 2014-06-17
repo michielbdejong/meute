@@ -72,8 +72,6 @@ meute.email = (function() {
     });
   }
   function fetch1(arr) {
-    console.log('meute.email.fetch1 is broken, use meute.email.fetch instead!');
-    return;
     var i;
     for(i=0; i<arr.length; i++) {
       fetchEmailsFromTo(arr[i], arr[i], true);
