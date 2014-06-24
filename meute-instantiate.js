@@ -70,7 +70,6 @@ function benchmark(num, interval) {
 }
 
 //instantiate:
-remoteStorage = new RemoteStorage();
 remoteStorage.displayWidget();
 var remoteStorageReady = false;
 remoteStorage.on('ready', function() {
