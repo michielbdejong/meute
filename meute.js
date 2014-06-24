@@ -1,5 +1,5 @@
 meute = (function() {
-  var masterPwd, sockethubClient, config = {}, configuring = {}, configDone = {}, outbox = {},
+  var sockethubClient, config = {}, configuring = {}, configDone = {}, outbox = {},
     sockethubRegistered, roomJoins = {}, registeredActor = {}, handlers = {},
     attendance = {}, topic = {};
 
@@ -17,7 +17,6 @@ meute = (function() {
 
   function debugState() {
     return {
-      masterPwd: masterPwd,
       sockethubClient: sockethubClient,
       config: config,
       configDone: configDone,
@@ -178,8 +177,8 @@ meute = (function() {
     }
   }
   function loadAccount(which) {
-    remoteStorage[which].getConfig(masterPwd).then(function(config) {
-      console.log('config for', which, masterPwd, config);
+    remoteStorage[which].getConfig().then(function(config) {
+      console.log('config for', which, config);
       if (typeof(config) === 'object') {
         try {
           doAddAccount(which, config, false);
@@ -194,16 +193,7 @@ meute = (function() {
       debug('no config found for '+which+': '+err);
     });
   }
-   
-  function setMasterPassword(pwd) {
-    //save loaded configs with the new pwd:
-    for (var i in config) {
-      console.log('changing master password for', i);
-      remoteStorage[i].setConfig(pwd, config[i]);
-    }
-    masterPwd = pwd;
-    bootstrap();
-  }
+
   function addAccount(platform, server, id, pwd, name) {
     var parts, parts2, obj;
     if (platform === 'sockethub') {
@@ -338,7 +328,7 @@ meute = (function() {
     config[which] = thisConfig;
     connectFurther();
     if (save !== false && remoteStorage[which] && remoteStorage[which].setConfig) {
-      remoteStorage[which].setConfig(masterPwd, thisConfig);
+      remoteStorage[which].setConfig(undefined, thisConfig);
     }
     if (which === 'email') {
       startFetchingEmail();
@@ -459,7 +449,6 @@ meute = (function() {
 
   return {
     debugState: debugState,
-    setMasterPassword: setMasterPassword,
     addAccount: addAccount,
     join: join,
     leave: leave,

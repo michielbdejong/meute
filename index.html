@@ -58,27 +58,24 @@
 
   <script id="exampleCode1">
     function step1() {
-      meute.setMasterPassword('master');
-    }
-    function step2() {
       meute.addAccount('sockethub', 'wss://michielbdejong.com:10550/', '1234567890');
     }
-    function step3() {
+    function step2() {
       meute.addAccount('irc', 'irc.freenode.net', 'nick12345');
     }
-    function step4() {
+    function step3() {
       meute.join('irc', ['#meute']); //meute.join('irc', '#meute'); is also allowed when joining only one channel
     }
-    function step5() {
+    function step4() {
       meute.send('irc', '#meute', 'hi');
     }
-    function step6() {
+    function step5() {
       meute.leave('irc', ['#meute']); //meute.leave('irc', '#meute'); is also allowed when leaving only one channel
     }
-    function step7() {
+    function step6() {
       meute.email.fetch(0, 50);
     }
-    function step8() {
+    function step7() {
       var str = '';
       for (i=0; i<messageLogs.length; i++) {
         str += '' + i + ': ' + msgs[i].actor[0].address + '-' + msgs[i].object.subject + '\n';

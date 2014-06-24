@@ -16,7 +16,6 @@ the v0.4.* API:
 * `meute.debugState()`: returns all internal state, namely:
   *  config: all configs (currently sockethub, irc and email are supported),
   *  configDone: which configs have been sent to sockethub successfully,
-  *  masterPwd: the current master password (see `meute.setMasterPassword`),
   *  outbox: commands that have been queued up until they can be sent,
   *  registeredActor: the name and id used for sending email and appearingn on irc,
   *  roomJoins: which irc rooms you have joined (or are in the process of joining),
@@ -24,15 +23,6 @@ the v0.4.* API:
   *  sockethubRegistered: whether sockethub register command has been sent successfully,
   *  topic: irc room topics,
   *  attendance: irc room members
-
-* `meute.setMasterPassword(x)` where `x` is either undefined or a string: Set a
-  client-side password with which to encrypt credentials when storing to remoteStorage,
-  and with which to decrypt them when retrieving them. Should be a string, or undefined
-  for no encryption. When credentials have been stored encrypted, nothing will work
-  after a page (re-)load until you call this function with the right password. If you
-  call it while credentials were unencrypted, or when they were already decrypted in a
-  previous call, all credentials will be overwritten in remoteStorage, encrypted with
-  the new password.
 
 * `meute.addAccount(platform, server, x[, y, z])`, where:
   * string `platform` is 'sockethub', 'irc', or 'email'
