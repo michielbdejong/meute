@@ -9,6 +9,11 @@
     <input type="text" id="textToPost"/>
     <input type="submit" value="www" onclick= "post(false);"/>
     <input type="submit" value="tweet" onclick= "post(true);"/>
+    <p>Connect to a <a href="https://github.com/michielbdejong/resite">resite</a> server, and then run:
+    <pre>
+      meute.addAccount('sockethub', 'wss://michielbdejong.com:10550/', 'secret');
+      meute.addAccount('twitter', 'api-key', 'api-secret', 'access-token', 'access-token-secret');
+    </pre>
   </body>
   <script src="upstream/sjcl.js"> </script>
   <script src="upstream/sockethub-client.js"></script>

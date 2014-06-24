@@ -209,11 +209,13 @@ meute.www = (function() {
           likeUrl: likeUrl,
           inReplyTo: inReplyTo
         };
+        console.log('pushing post', postObj);
         meute.www.posts.push(postObj);
         if (meute.www.posts.length != id+1) {
           console.log('new note is not the last post - race condition?');
           return;
         }
+        console.log('calling publishNode', id);
         publishNote(id);
       }
       page = generateHomePage();
