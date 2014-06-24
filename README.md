@@ -1,14 +1,8 @@
 meute: JS lib for social unhosted web apps
 ======
 
-To use, adapt the index.html page. It shows which files to include.
-I'm not building and minifying these early versions yet, but if you
-host your unhosted web app at [5apps](https://5apps.com/) then you
-can enable the setting to minify during deployment, and bundling is
-no longer needed, because 5apps apps are served over SPDY. You may
-still concatenate all the files into one of course if you want to.
-
-The index.html page includes a short example of how to use the `meute`
+To use, adapt the index.html page. It shows which files to include,
+and includes a short example of how to use the `meute`
 object to enter an irc channel, say something, and leave. Here is a
 reference documentation of all the functions the library exposes in
 the v0.4.* API:

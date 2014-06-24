@@ -1,3 +1,9 @@
+# 0.6.0
+
+* remove `meute.setMasterPassword`
+* switch to rs.js head build, which has the encryption widget
+* fix a few www/Twitter-related issues
+
 # 0.5.4
 
 * switch commit cache back on
