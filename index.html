@@ -11,7 +11,7 @@
       <a href="http://sockethub.org/">sockethub v0.2</a> for relaying messages from the browser to the outside world.
       The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
     <p style="width:30em" ><strong>NOTE:</strong> You need version 0.2 of sockethub, version 0.1 will not work!</p>
-    <p style="width:30em" >This page includes a build from source; view the page source to see which JavaScript files it includes.
+    <p style="width:30em" >
       You can try out meute by opening your web console now, and typing 'meute.' to see which commands are available.
       The full 0.6 API is described in the <a href="https://github.com/michielbdejong/meute">readme</a>, but here is an example:</p>
     <pre id="pre1">(loading...)</pre>
@@ -22,6 +22,7 @@
       in the respective remotestorage modules.</p>
   </body>
   <script src="upstream/sjcl.js"> </script>
+  <script src="upstream/promising.js"> </script><!-- used by upstream/sockethub-client.js as well as by meute.js -->
   <script src="upstream/sockethub-client.js"></script>
   <script src="upstream/asrender.js"> </script>
 

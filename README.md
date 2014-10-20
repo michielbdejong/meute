@@ -5,7 +5,7 @@ To use, adapt the index.html page. It shows which files to include,
 and includes a short example of how to use the `meute`
 object to enter an irc channel, say something, and leave. Here is a
 reference documentation of all the functions the library exposes in
-the v0.4.* API:
+the v0.6.* API:
 
 * `meute.debugState()`: returns all internal state, namely:
   *  config: all configs (currently sockethub, irc and email are supported),

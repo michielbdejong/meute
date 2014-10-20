@@ -162,11 +162,11 @@ meute = (function() {
   }
   function bootstrap() {
     var modulesToTry = {
-      sockethub: true,
-      irc: true,
-      twitter: true,
-      facebook: true,
-      email: true
+      'sockethub-credentials': true,
+      'irc-credentials': true,
+      'twitter': true,
+      'facebook': true,
+      'email': true
     };
     if (remoteStorage) {
       for (var i in modulesToTry) {
@@ -177,6 +177,7 @@ meute = (function() {
     }
   }
   function loadAccount(which) {
+    console.log('loadAccount', which, !!remoteStorage[which]);
     remoteStorage[which].getConfig().then(function(config) {
       console.log('config for', which, config);
       if (typeof(config) === 'object') {
