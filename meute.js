@@ -451,8 +451,8 @@ meute = (function() {
   function getButlerConfig() {
     console.log('please save as ./butler-config.js');
     return '\n//run meute.getButlerConfig(); in your browser console to get your current token:'
-        + '\nexport.userAddress = \'' + remoteStorage.remote.userAddress + '\';'
-        + '\nexport.token = \'' + remoteStorage.remote.token + '\';\n';
+        + '\nexports.userAddress = \'' + remoteStorage.remote.userAddress + '\';'
+        + '\nexports.token = \'' + remoteStorage.remote.token + '\';\n';
   }
 
   return {
