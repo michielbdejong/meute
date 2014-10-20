@@ -58,6 +58,8 @@ RemoteStorage.defineModule('pgp', function(privateClient) {
       },
 
       getKeypair: function(keyid) {
+        // FIXME: promising is no longer available from rs.js 0.10.3,
+        // hage to change this to bluebird:
         return promising(function(p) {
           var i = 0;
           var result = {};
