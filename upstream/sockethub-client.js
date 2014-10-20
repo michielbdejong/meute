@@ -641,9 +641,8 @@ define('sockethub/event_handling',[], function () {
 
 define('sockethub/client',[
   './extend',
-  '../vendor/promising',
   './event_handling'
-], function (extend, promising, eventHandling) {
+], function (extend, eventHandling) {
 
   /**
    * Class: SockethubClient

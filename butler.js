@@ -1,11 +1,14 @@
 // initialize remoteStorage
 global.WebFinger = require('webfinger.js');
-global.md5 = require('md5');
 var RemoteStorage = require('remotestoragejs');
 var remoteStorage = new RemoteStorage({
     logging: true  // optinally enable debug logs (defaults to false)
 });
 global.remoteStorage = remoteStorage;
+
+require('./upstream/promising');
+require('./upstream/sockethub-client');
+global.meute = require('./meute');
 
 remoteStorage.on('ready', beginApp);
 
@@ -30,16 +33,24 @@ remoteStorage.on('not-connected', function() {
 require('../modules/src/feeds.js');
 remoteStorage.access.claim('feeds', 'rw');
 
-remoteStorage.feeds.on('change', function (event) {
+remoteStorage.feeds.rssAtom.on('change', function (event) {
     console.log('- received change event: ', event);
 });
 
 function beginApp() {
-  // retrieve all feeds
-  remoteStorage.feeds.getAll()
-  .then(function (feeds) {
-      console.log('- all feeds', feeds);
-  }, function (error) {
-      console.log('*** error fetching all feeds', error);
-  });
+    // create a feed record
+    remoteStorage.feeds.rssAtom.create({
+        url: 'testurl',
+        title: 'this is a test'
+    })
+    .then(function (feed) {
+        console.log('- feed created ', feed);
+        // retrieve all feeds
+        remoteStorage.feeds.rssAtom.getAll()
+        .then(function (feeds) {
+            console.log('- all feeds', feeds);
+        }, function (error) {
+            console.log('*** error fetching all feeds', error);
+        });
+    });
 }
