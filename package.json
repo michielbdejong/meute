@@ -11,9 +11,6 @@
   },
   "homepage": "https://meute.5apps.com/",
   "dependencies": {
-    "bluebird": "^2.3.2",
-    "tv4": "^1.1.4",
-    "webfinger.js": "^2.0.2",
-    "xhr2": "0.0.7"
+    "websocket": "*"
   }
 }

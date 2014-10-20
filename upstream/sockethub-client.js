@@ -1394,6 +1394,9 @@ define('sockethub-client',[
 
   SockethubClient.prototype.connectStorage = connectRemoteStorage;
 
+  if (global) {
+    global.SockethubClient = SockethubClient;
+  }
   return SockethubClient;
 
 });

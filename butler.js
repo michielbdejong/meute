@@ -7,8 +7,9 @@ var remoteStorage = new RemoteStorage({
 global.remoteStorage = remoteStorage;
 
 require('./upstream/promising');
+global.WebSocket = require('websocket').client;
 require('./upstream/sockethub-client');
-global.meute = require('./meute');
+require('./meute');
 
 remoteStorage.on('ready', beginApp);
 
@@ -38,6 +39,11 @@ remoteStorage.feeds.rssAtom.on('change', function (event) {
 });
 
 function beginApp() {
+  meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
+  meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
+  meute.join('irc', '#meute');
+  meute.send('irc', '#meute', 'The butler did it!');
+  meute.leave('irc', '#meute');
     // create a feed record
     remoteStorage.feeds.rssAtom.create({
         url: 'testurl',

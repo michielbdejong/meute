@@ -468,4 +468,8 @@ meute = (function() {
     on: on,
     getButlerConfig: getButlerConfig
   };
-})(); 
+})();
+
+if (global) {
+  global.meute = meute;
+}
