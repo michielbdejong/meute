@@ -448,6 +448,13 @@ meute = (function() {
     handlers[eventName].push(eventHandler);
   }
 
+  function getButlerConfig() {
+    console.log('please save as ./butler-config.js');
+    return '\n//run meute.getButlerConfig(); in your browser console to get your current token:'
+        + '\nexport.userAddress = \'' + remoteStorage.remote.userAddress + '\';'
+        + '\nexport.token = \'' + remoteStorage.remote.token + '\';\n';
+  }
+
   return {
     debugState: debugState,
     addAccount: addAccount,
@@ -458,6 +465,7 @@ meute = (function() {
     retweet: retweet,
     toOutbox: toOutbox,
     bootstrap: bootstrap,
-    on: on
+    on: on,
+    getButlerConfig: getButlerConfig
   };
 })(); 

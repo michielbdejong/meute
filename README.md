@@ -81,3 +81,7 @@ the v0.6.* API:
 
 * `remoteStorage.contacts.find(searchString)` where string `searchString` is a substring of the name or address of the contact:
   Returns an object full of addressbook entries that match the search (filled automatically from incoming email messages).
+
+# Butler
+
+* to use the butler service server-side, run `meute.getRsToken();` in the browser console while connected to your remoteStorage-account
