@@ -1,5 +1,13 @@
 # TODO:
 
+## for push notifications:
+
+* add sockethub-client and sockethub+irc modules to butler and join a channel
+* save messages to messages module
+* send simple-push to Firefox OS device
+
+## backlog:
+
 * use localhost as an example
 * add example of how to add an email account
 * check email docs
