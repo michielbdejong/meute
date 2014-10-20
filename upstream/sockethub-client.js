@@ -555,6 +555,7 @@ define('sockethub/event_handling',[], function () {
     },
 
     _emit: function (eventName) {
+      console.log('sockethub-client emits', eventName);
       this._validateEvent(eventName);
       var args = Array.prototype.slice.call(arguments, 1);
       this._handlers[eventName].forEach(function (handler) {
@@ -1003,15 +1004,8 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
                   console.log("Received: '" + message.utf8Data + "'");
               }
           });
-          this.socket.onclose = function(handler) {
-            this.socket.on('close', handler);
-          };
-          this.socket.onmessage = function(handler) {
-            this.socket.on('message', handler);
-          };
           // start listening.
-          this._listen();
-          this.socket.onopen();
+          this._listen(true);
         }.bind(this));        
         
         wsc.connect(this.uri, this.protocol);
@@ -1038,7 +1032,7 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
     },
 
     // Start listening on socket
-    _listen: function () {
+    _listen: function (isNode) {
       this.socket.onmessage = this._processMessageEvent.bind(this);
       this.connected = false;
       var _this = this;
@@ -1079,11 +1073,21 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
           this._emit('failed');
         }
       }.bind(this);
+      if (isNode) {
+        this.socket.on('message', this.socket.onmessage);
+        this.socket.on('close', this.socket.onclose);
+        this.socket.onopen();
+      }
     },
 
     // Emit "message" event
     _processMessageEvent: function (event) {
-      this._emit('message', JSON.parse(event.data));
+      console.log('_processMessageEvent', event);
+      if (event.data) {
+        this._emit('message', JSON.parse(event.data));
+      } else {
+        this._emit('message', JSON.parse(event.utf8Data));
+      }
     }
 
   };
@@ -1351,6 +1355,7 @@ define('verbs/core',[], function () {
             }, 0);
             throw "registration failed: " + response.message;
           }
+          console.log('registration response', response);
           setTimeout(function () { client._emit('registered'); }, 0);
           return response;
         });
