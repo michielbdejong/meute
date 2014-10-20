@@ -977,17 +977,20 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
     wsConnect: function () {
       this.socket = null;
       delete this.socket;
-      console.log('instantiationg WebSocket', this.uri, this.protocol);
-      var ws;
+      console.log('instantiating WebSocket', this.uri, this.protocol);
       if (typeof WebSocketClient === 'undefined') {
-        ws = new WebSocket(this.uri, this.protocol);
+        this.socket = new WebSocket(this.uri, this.protocol);
+        // start listening.
+        this._listen();
       } else {
-        ws = new WebSocketClient();
-        ws.on('connectFailed', function(error) {
+        wsc = new WebSocketClient();
+        wsc.on('connectFailed', function(error) {
           console.log('Connect Error: ' + error.toString());
         });
 
-        ws.on('connect', function(connection) {
+        wsc.on('connect', function(connection) {
+          console.log('wsc.on connect!');
+          this.socket = connection;
           console.log('WebSocket client connected');
           connection.on('error', function(error) {
               console.log("Connection Error: " + error.toString());
@@ -1000,22 +1003,20 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
                   console.log("Received: '" + message.utf8Data + "'");
               }
           });
-
-          function sendNumber() {
-              if (connection.connected) {
-                  var number = Math.round(Math.random() * 0xFFFFFF);
-                  connection.sendUTF(number.toString());
-                  setTimeout(sendNumber, 1000);
-              }
-          }
-          sendNumber();
-        });        
+          this.socket.onclose = function(handler) {
+            this.socket.on('close', handler);
+          };
+          this.socket.onmessage = function(handler) {
+            this.socket.on('message', handler);
+          };
+          // start listening.
+          this._listen();
+          this.socket.onopen();
+        }.bind(this));        
         
-        ws.connect(this.uri, this.protocol);
+        wsc.connect(this.uri, this.protocol);
+        console.log('wsc.connect called...');
       }
-      this.socket = ws;
-      // start listening.
-      this._listen();
     },
 
     /**
