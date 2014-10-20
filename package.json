@@ -1,0 +1,19 @@
+{
+  "name": "meute",
+  "desc": "",
+  "version": "0.6.0",
+  "private": false,
+  "license": "MIT",
+  "main": "./butler.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/michielbdejong/meute.git"
+  },
+  "homepage": "https://meute.5apps.com/",
+  "dependencies": {
+    "bluebird": "^2.3.2",
+    "tv4": "^1.1.4",
+    "webfinger.js": "^2.0.2",
+    "xhr2": "0.0.7"
+  }
+}
