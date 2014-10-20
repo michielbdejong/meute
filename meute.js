@@ -37,6 +37,7 @@ meute = (function() {
     if (!configDone.sockethub && !configuring.sockethub) {
       debug('configuring sockethub', config.sockethub);
       sockethubClient = SockethubClient.connect(config.sockethub);
+      console.log('SockethubClient.connect called, waiting for registered event');
       sockethubClient.on('registered', function() {
         sockethubRegistered = true;
         debug('registered! resending all platform configs');

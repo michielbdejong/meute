@@ -7,7 +7,7 @@ var remoteStorage = new RemoteStorage({
 global.remoteStorage = remoteStorage;
 
 require('./upstream/promising');
-global.WebSocket = require('websocket').client;
+global.WebSocketClient = require('websocket').client;
 require('./upstream/sockethub-client');
 require('./meute');
 
@@ -30,33 +30,30 @@ remoteStorage.on('not-connected', function() {
   console.log('- not connected to remote (changes are local-only)');
 });
 
-// initialize module
-require('../modules/src/feeds.js');
-remoteStorage.access.claim('feeds', 'rw');
-
-remoteStorage.feeds.rssAtom.on('change', function (event) {
-    console.log('- received change event: ', event);
-});
-
+// initialize modules
+require('./upstream/remotestorage-modules/sockethub-credentials.js');
+remoteStorage.access.claim('sockethub-credentials', 'rw');
+require('./upstream/remotestorage-modules/irc-credentials.js');
+remoteStorage.access.claim('irc-credentials', 'rw');
 function beginApp() {
+  console.log('setting up meute event handlers');
+  meute.on('message', function(msg) {
+    console.log('meute message', msg);
+  });
+  meute.on('debug', function(msg) {
+    console.log('meute debug', msg);
+  });
+  console.log('connecting to sockethub:');
   meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
+  console.log('connecting to irc:');
   meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
+  console.log('joining #meute:');
   meute.join('irc', '#meute');
+  console.log('saying hi:');
   meute.send('irc', '#meute', 'The butler did it!');
+  console.log('leaving room:');
   meute.leave('irc', '#meute');
-    // create a feed record
-    remoteStorage.feeds.rssAtom.create({
-        url: 'testurl',
-        title: 'this is a test'
-    })
-    .then(function (feed) {
-        console.log('- feed created ', feed);
-        // retrieve all feeds
-        remoteStorage.feeds.rssAtom.getAll()
-        .then(function (feeds) {
-            console.log('- all feeds', feeds);
-        }, function (error) {
-            console.log('*** error fetching all feeds', error);
-        });
-    });
+  setTimeout(function() {
+    console.log('waited for 10 seconds');
+  }, 10000);
 }

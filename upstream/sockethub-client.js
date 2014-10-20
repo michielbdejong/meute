@@ -977,7 +977,42 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
     wsConnect: function () {
       this.socket = null;
       delete this.socket;
-      var ws = new WebSocket(this.uri, this.protocol);
+      console.log('instantiationg WebSocket', this.uri, this.protocol);
+      var ws;
+      if (typeof WebSocketClient === 'undefined') {
+        ws = new WebSocket(this.uri, this.protocol);
+      } else {
+        ws = new WebSocketClient();
+        ws.on('connectFailed', function(error) {
+          console.log('Connect Error: ' + error.toString());
+        });
+
+        ws.on('connect', function(connection) {
+          console.log('WebSocket client connected');
+          connection.on('error', function(error) {
+              console.log("Connection Error: " + error.toString());
+          });
+          connection.on('close', function() {
+              console.log('echo-protocol Connection Closed');
+          });
+          connection.on('message', function(message) {
+              if (message.type === 'utf8') {
+                  console.log("Received: '" + message.utf8Data + "'");
+              }
+          });
+
+          function sendNumber() {
+              if (connection.connected) {
+                  var number = Math.round(Math.random() * 0xFFFFFF);
+                  connection.sendUTF(number.toString());
+                  setTimeout(sendNumber, 1000);
+              }
+          }
+          sendNumber();
+        });        
+        
+        ws.connect(this.uri, this.protocol);
+      }
       this.socket = ws;
       // start listening.
       this._listen();
@@ -1008,6 +1043,7 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
       var _this = this;
 
       this.socket.onopen = function () {
+        console.log('socket open!');
         this.connected = true;
         if (this.reconnecting) {
           this._emit('reconnected');
@@ -1018,6 +1054,7 @@ define('sockethub/json_client',['./event_handling'], function (eventHandling) {
       }.bind(this);
 
       this.socket.onclose = function () {
+        console.log('socket closed!');
         if ((this.connected) &&
             (!this.reconnect)) {
           console.log('sockethub-client disconnected, not reconnecting...');

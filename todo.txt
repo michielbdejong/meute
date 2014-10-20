@@ -2,7 +2,8 @@
 
 ## for push notifications:
 
-* add sockethub-client and sockethub+irc modules to butler and join a channel
+* fix sockethub-client for WebSocketClient
+* test saying something on irc
 * save messages to messages module
 * send simple-push to Firefox OS device
 
