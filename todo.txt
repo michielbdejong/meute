@@ -1,0 +1,6 @@
+# TODO:
+
+* use localhost as an example
+* add example of how to add an email account
+* check email docs
+* check www docs (update them for web-authoring!)
