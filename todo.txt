@@ -4,3 +4,4 @@
 * add example of how to add an email account
 * check email docs
 * check www docs (update them for web-authoring!)
+* see https://github.com/michielbdejong/meute/issues
