@@ -55,6 +55,14 @@ meute = (function() {
         } else {
           emit('message', msg);
         }
+
+        if (remoteStorage.messages) {
+          msg.object.date = new Date();
+          console.log('storing message!', JSON.stringify(msg));
+          remoteStorage.messages.account('irc:meute-test').then(function(account) {
+            account.store(msg);
+          });
+        }
       });
       configuring.sockethub = true;
     } else if (sockethubRegistered) {
@@ -464,6 +472,12 @@ meute = (function() {
         + '\nexports.token = \'' + remoteStorage.remote.token + '\';\n';
   }
 
+  function readBackLog(accountURI, yyyy, mm, dd) {
+    return remoteStorage.messages.account(accountURI).then(function(account) {
+      return account.getAll('pool/' + yyyy + '/' + mm + '/' + dd + '/');
+    });
+  }
+
   return {
     debugState: debugState,
     addAccount: addAccount,
@@ -475,7 +489,8 @@ meute = (function() {
     toOutbox: toOutbox,
     bootstrap: bootstrap,
     on: on,
-    getButlerConfig: getButlerConfig
+    getButlerConfig: getButlerConfig,
+    readBackLog: readBackLog
   };
 })();
 

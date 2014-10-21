@@ -56,10 +56,10 @@
 
   <script id="exampleCode1">
     function step1() {
-      meute.addAccount('sockethub', 'wss://michielbdejong.com:10550/', '1234567890');
+      meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
     }
     function step2() {
-      meute.addAccount('irc', 'irc.freenode.net', 'nick12345');
+      meute.addAccount('irc', 'irc.freenode.net', 'meute-test');
     }
     function step3() {
       meute.join('irc', ['#meute']); //meute.join('irc', '#meute'); is also allowed when joining only one channel
@@ -68,37 +68,9 @@
       meute.send('irc', '#meute', 'hi');
     }
     function step5() {
-      meute.leave('irc', ['#meute']); //meute.leave('irc', '#meute'); is also allowed when leaving only one channel
-    }
-    function step6() {
-      meute.email.fetch(0, 50);
-    }
-    function step7() {
-      var str = '';
-      for (i=0; i<messageLogs.length; i++) {
-        str += '' + i + ': ' + msgs[i].actor[0].address + '-' + msgs[i].object.subject + '\n';
-      }
-      return str;
+      d(meute.readBackLog('irc:meute-test', '2014', '10', '21'));
     }
 
     document.getElementById('pre1').innerHTML = document.getElementById('exampleCode1').innerHTML.replace('<', '&gt;');
-  </script>
-  <script id="exampleCode2">
-    function indieWebExampleStep1(fbToken) {
-      meute.addAccount('facebook', fbToken);
-    }
-    function indieWebExampleStep2(twitterAccessToken, twitterAccessTokenKey, twitterConsumerSecret, twitterConsumerKey) {
-      meute.addAccount('twitter', twitterAccessToken, twitterAccessTokenKey, twitterConsumerSecret, twitterConsumerKey);
-    }
-    //...wait for the requests to complete...
-    function indieWebExampleStep3() {
-      meute.www.publish('Posting from an unhosted meute instance');
-    }
-    
-    function indieWebExampleStep4() {
-      meute.email.fetchEmailsFromTo(19000, 19000);
-    }
-    
-    document.getElementById('pre2').innerHTML = document.getElementById('exampleCode2').innerHTML.replace('<', '&gt;');
   </script>
 </html>
