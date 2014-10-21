@@ -82,7 +82,7 @@ RemoteStorage.enableChangeEvents = {
   conflict: true
 };
 remoteStorage.setSyncInterval(1000000);
-['contacts', 'documents', 'email', 'facebook', 'irc', 'messages', 'pgp', 'pictures', 'sockethub', 'twitter', 'www']
+['contacts', 'documents', 'email', 'facebook', 'irc-credentials', 'messages', 'pgp', 'pictures', 'sockethub-credentials', 'twitter', 'www']
     .forEach(function(moduleName) {
   remoteStorage.access.claim(moduleName, 'rw');
 });
