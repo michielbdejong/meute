@@ -33,9 +33,10 @@ meute = (function() {
   function connectFurther() {
     debug('connectFurther called');
     if (!config.sockethub) {
-      //nothing to do without a sockethub config
+      console.log('nothing to do without a sockethub config');
       return;
     }
+    console.log('sockethub status', config.sockethub, configDone.sockethub, configuring.sockethub);
     if (!configDone.sockethub && !configuring.sockethub) {
       debug('configuring sockethub', config.sockethub);
       sockethubClient = SockethubClient.connect(config.sockethub);
@@ -173,8 +174,8 @@ meute = (function() {
   }
   function bootstrap() {
     var modulesToTry = {
-      'sockethub-credentials': true,
-      'irc-credentials': true,
+      'sockethub': true,
+      'irc': true,
       'twitter': true,
       'facebook': true,
       'email': true

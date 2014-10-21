@@ -55,4 +55,7 @@ function beginApp() {
   // if all configurations are available, this will connect to sockethub,
   // join some irc channels, and start logging to remoteStorage.messages:
   meute.bootstrap();
+  setTimeout(function() {
+    meute.bootstrap();
+  }, 10000);
 }

@@ -150,7 +150,7 @@ CredentialsStore.prototype.onceConfig = function(pwd) {
       this.onceConfig(pwd).then(function(data) {
         pending.resolve(data);
       });
-    });
+    }.bind(this));
     return pending.promise;
   }.bind(this));
 }
