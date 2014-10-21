@@ -185,6 +185,48 @@ meute = (function() {
       }
     }
   }
+
+  //compatibility wrappers, yay! :)
+  function transformToSchema(obj, moduleName) {
+    if (moduleName === 'sockethub' || moduleName === 'sockethub-credentials') {
+      obj.secret = obj.register.secret;
+      delete obj.register;
+      delete obj.ssl;
+      delete obj['@context'];
+    } else if (moduleName === 'irc' || moduleName === 'irc-credentials') {
+      obj.uri = 'irc:' + obj.object.nick + '@' + obj.object.server;
+      obj.nick = obj.object.nick;
+      obj.password = obj.object.password;
+      obj.server = 'irc:' + obj.object.server;
+      delete obj.actor;
+      delete obj.object;
+      delete obj['@context'];
+    }
+    return obj;
+  }
+  function transformFromSchema(obj, moduleName) {
+    if (moduleName === 'sockethub' || moduleName === 'sockethub-credentials') {
+      obj.register = { secret: obj.secret };
+      obj.ssl = obj.tls;
+      delete obj.secret;
+    } else if (moduleName === 'irc' || moduleName === 'irc-credentials') {
+      obj.actor = {
+        address: obj.nick,
+        name: obj.nick
+      };
+      obj.object = {
+        nick: obj.nick,
+        objectType: 'credentials',
+        server: obj.server.substring('irc:'.length),
+        password: obj.password
+      };
+      delete obj.uri;
+      delete obj.nick;
+      delete obj.server;
+      delete obj.password;
+    }
+    return obj;
+  }
   function loadAccount(which) {
     var moduleName = which;
     if (moduleName === 'sockethub' || moduleName === 'irc') {
@@ -192,6 +234,7 @@ meute = (function() {
     }
     console.log('loadAccount', which, !!remoteStorage[moduleName]);
     remoteStorage[moduleName].getConfig().then(function(config) {
+      config = transformFromSchema(config, moduleName);
       console.log('config for', which, config);
       if (typeof(config) === 'object') {
         try {
@@ -346,7 +389,7 @@ meute = (function() {
       moduleName += '-credentials';
     }
     if (save !== false && remoteStorage[moduleName] && remoteStorage[moduleName].setConfig) {
-      remoteStorage[moduleName].setConfig(undefined, thisConfig);
+      remoteStorage[moduleName].setConfig(undefined, transformToSchema(thisConfig, moduleName));
     }
     if (which === 'email') {
       startFetchingEmail();

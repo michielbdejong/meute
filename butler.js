@@ -54,23 +54,23 @@ function beginApp() {
   setTimeout(function() {
     console.log('connecting to sockethub:');
     meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
-  }, 10);
+  }, 1000);
 
   setTimeout(function() {
     console.log('connecting to irc:');
     meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
-  }, 30);
+  }, 3000);
 
   setTimeout(function() {
     console.log('joining #meute:');
     meute.join('irc', '#meute');
-  }, 130);
+  }, 13000);
   setTimeout(function() {
     console.log('saying hi:');
     meute.send('irc', '#meute', 'The butler did it!');
-  }, 230);
+  }, 23000);
   setTimeout(function() {
     console.log('leaving room:');
     meute.leave('irc', '#meute');
-  }, 250);
+  }, 25000);
 }

@@ -54,6 +54,8 @@ function CredentialsStore(moduleName, privClient) {
  *   'Please follow the config schema - (followed by the schema from your declareType)'
  */
 CredentialsStore.prototype.setConfig = function(pwd, config) {
+  console.log('setConfig', this.moduleName, pwd, config, JSON.stringify(config));
+
   if (typeof(config) !== 'object') {
     throw 'config should be an object';
   }
