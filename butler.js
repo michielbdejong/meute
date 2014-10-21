@@ -30,10 +30,17 @@ remoteStorage.on('not-connected', function() {
 });
 
 // initialize modules
+require('./upstream/remotestorage-modules/utils/credentialsstore.js');
+
 require('./upstream/remotestorage-modules/sockethub-credentials.js');
 remoteStorage.access.claim('sockethub-credentials', 'rw');
+
 require('./upstream/remotestorage-modules/irc-credentials.js');
 remoteStorage.access.claim('irc-credentials', 'rw');
+
+require('./upstream/remotestorage-modules/messages.js');
+remoteStorage.access.claim('messages', 'rw');
+
 function beginApp() {
   console.log('setting up meute event handlers');
   meute.on('message', function(msg) {
