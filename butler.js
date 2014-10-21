@@ -39,20 +39,31 @@ function beginApp() {
   meute.on('message', function(msg) {
     console.log('meute message', msg);
   });
+
   meute.on('debug', function(msg) {
     console.log('meute debug', msg);
   });
-  console.log('connecting to sockethub:');
-  meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
-  console.log('connecting to irc:');
-  meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
-  console.log('joining #meute:');
-  meute.join('irc', '#meute');
-  console.log('saying hi:');
-  meute.send('irc', '#meute', 'The butler did it!');
-  console.log('leaving room:');
-  meute.leave('irc', '#meute');
+
   setTimeout(function() {
-    console.log('waited for 10 seconds');
-  }, 10000);
+    console.log('connecting to sockethub:');
+    meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
+  }, 1000);
+
+  setTimeout(function() {
+    console.log('connecting to irc:');
+    meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
+  }, 3000);
+
+  setTimeout(function() {
+    console.log('joining #meute:');
+    meute.join('irc', '#meute');
+  }, 13000);
+  setTimeout(function() {
+    console.log('saying hi:');
+    meute.send('irc', '#meute', 'The butler did it!');
+  }, 23000);
+  setTimeout(function() {
+    console.log('leaving room:');
+    meute.leave('irc', '#meute');
+  }, 25000);
 }

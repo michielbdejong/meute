@@ -824,6 +824,8 @@ define('sockethub/client',[
       object = extend(object, { rid: rid });
       console.log('SEND', object);
       // non-dectructively add 'rid' and send!
+
+      console.log('this.jsonClient.send', JSON.stringify(object));
       this.jsonClient.send(object);
       return promise;
     },
@@ -1437,7 +1439,7 @@ define('sockethub-client',[
 
   SockethubClient.prototype.connectStorage = connectRemoteStorage;
 
-  if (global) {
+  if (typeof global !== 'undefined') {
     global.SockethubClient = SockethubClient;
   }
   return SockethubClient;
