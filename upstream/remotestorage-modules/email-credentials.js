@@ -7,6 +7,7 @@
  */
 
 RemoteStorage.defineModule('email', function(privClient, pubClient) {
+
   if(!CredentialsStore) {
     throw new Error('please include utils/credentialsstore.js');
   }

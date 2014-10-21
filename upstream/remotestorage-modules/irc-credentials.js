@@ -6,6 +6,8 @@
  *
  */
 RemoteStorage.defineModule('irc-credentials', function(privClient, pubClient) {
+  privClient.cache('', 'ALL');
+
   if(!CredentialsStore) {
     throw new Error('please include utils/credentialsstore.js');
   }

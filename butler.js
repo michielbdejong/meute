@@ -38,39 +38,21 @@ remoteStorage.access.claim('sockethub-credentials', 'rw');
 require('./upstream/remotestorage-modules/irc-credentials.js');
 remoteStorage.access.claim('irc-credentials', 'rw');
 
+require('./upstream/remotestorage-modules/twitter-credentials.js');
+remoteStorage.access.claim('twitter', 'rw');
+
+require('./upstream/remotestorage-modules/facebook-credentials.js');
+remoteStorage.access.claim('facebook', 'rw');
+
+require('./upstream/remotestorage-modules/email-credentials.js');
+remoteStorage.access.claim('email', 'rw');
+
 require('./upstream/remotestorage-modules/messages.js');
 remoteStorage.access.claim('messages', 'rw');
 
 function beginApp() {
-  console.log('setting up meute event handlers');
-  meute.on('message', function(msg) {
-    console.log('meute message', msg);
-  });
-
-  meute.on('debug', function(msg) {
-    console.log('meute debug', msg);
-  });
-
-  setTimeout(function() {
-    console.log('connecting to sockethub:');
-    meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
-  }, 1000);
-
-  setTimeout(function() {
-    console.log('connecting to irc:');
-    meute.addAccount('irc', 'irc.freenode.net', 'meute-butler');
-  }, 3000);
-
-  setTimeout(function() {
-    console.log('joining #meute:');
-    meute.join('irc', '#meute');
-  }, 13000);
-  setTimeout(function() {
-    console.log('saying hi:');
-    meute.send('irc', '#meute', 'The butler did it!');
-  }, 23000);
-  setTimeout(function() {
-    console.log('leaving room:');
-    meute.leave('irc', '#meute');
-  }, 25000);
+  console.log('remoteStorage connected; bootstrapping meute');
+  // if all configurations are available, this will connect to sockethub,
+  // join some irc channels, and start logging to remoteStorage.messages:
+  meute.bootstrap();
 }

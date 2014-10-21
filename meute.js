@@ -4,10 +4,12 @@ meute = (function() {
     attendance = {}, topic = {};
 
   function emit(eventName, obj) {
-    if (Array.isArray(handlers[eventName])) {
+    if (Array.isArray(handlers[eventName]) && handlers[eventName].length > 0) {
       for (var i=0; i<handlers[eventName].length; i++) {
         handlers[eventName][i](obj);
       }
+    } else {
+      console.log('meute '+eventName, obj);
     }
   }
 
@@ -233,7 +235,7 @@ meute = (function() {
       moduleName += '-credentials';
     }
     console.log('loadAccount', which, !!remoteStorage[moduleName]);
-    remoteStorage[moduleName].getConfig().then(function(config) {
+    remoteStorage[moduleName].onceConfig().then(function(config) {
       config = transformFromSchema(config, moduleName);
       console.log('config for', which, config);
       if (typeof(config) === 'object') {
