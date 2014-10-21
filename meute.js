@@ -329,6 +329,10 @@ meute = (function() {
     }
     config[which] = thisConfig;
     connectFurther();
+    var moduleName = which;
+    if (moduleName === 'sockethub' || moduleName === 'irc') {
+      moduleName += '-credentials';
+    }
     if (save !== false && remoteStorage[which] && remoteStorage[which].setConfig) {
       remoteStorage[which].setConfig(undefined, thisConfig);
     }
