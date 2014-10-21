@@ -2,7 +2,6 @@
 
 ## for push notifications:
 
-* fix https://github.com/sockethub/sockethub/issues/183
 * save messages to messages module
 * send simple-push to Firefox OS device
 
