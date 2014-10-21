@@ -11,6 +11,7 @@
   },
   "homepage": "https://meute.5apps.com/",
   "dependencies": {
-    "websocket": "*"
+    "websocket": "*",
+    "remotestoragejs": "0.11.0"
   }
 }

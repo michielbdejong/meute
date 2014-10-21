@@ -1,5 +1,4 @@
 // initialize remoteStorage
-global.WebFinger = require('webfinger.js');
 var RemoteStorage = require('remotestoragejs');
 var remoteStorage = new RemoteStorage({
     logging: true  // optinally enable debug logs (defaults to false)
