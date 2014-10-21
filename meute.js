@@ -178,8 +178,12 @@ meute = (function() {
     }
   }
   function loadAccount(which) {
-    console.log('loadAccount', which, !!remoteStorage[which]);
-    remoteStorage[which].getConfig().then(function(config) {
+    var moduleName = which;
+    if (moduleName === 'sockethub' || moduleName === 'irc') {
+      moduleName += '-credentials';
+    }
+    console.log('loadAccount', which, !!remoteStorage[moduleName]);
+    remoteStorage[moduleName].getConfig().then(function(config) {
       console.log('config for', which, config);
       if (typeof(config) === 'object') {
         try {
@@ -333,8 +337,8 @@ meute = (function() {
     if (moduleName === 'sockethub' || moduleName === 'irc') {
       moduleName += '-credentials';
     }
-    if (save !== false && remoteStorage[which] && remoteStorage[which].setConfig) {
-      remoteStorage[which].setConfig(undefined, thisConfig);
+    if (save !== false && remoteStorage[moduleName] && remoteStorage[moduleName].setConfig) {
+      remoteStorage[moduleName].setConfig(undefined, thisConfig);
     }
     if (which === 'email') {
       startFetchingEmail();
