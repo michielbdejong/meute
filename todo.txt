@@ -1,5 +1,13 @@
 # TODO:
 
+## for multi-backend:
+
+* addAccount for 'remotestorage', 'googledrive', 'dropbox'
+  * call current setBackend and configure from rs.js
+  * use this in butler and remove getButlerConfig
+* meute.private(moduleName), meute.public(moduleName)
+* meute.setPermission({}) -> DataStore format
+
 ## for push notifications:
 
 * save messages to messages module

@@ -254,8 +254,36 @@ meute = (function() {
     });
   }
 
+  function setStorage(backend, userAddressOrApiKey, token) {
+    console.log('setStorage', backend, userAddressOrApiKey, token);
+    if (backend === 'remotestorage') {
+      console.log('RemoteStorage.Discover', userAddressOrApiKey);
+      RemoteStorage.Discover(userAddressOrApiKey, function(storageURL, storageAPI) {
+        console.log('RemoteStorage.Discover', userAddressOrApiKey, storageURL, storageAPI);
+        remoteStorage.remote.configure(userAddressOrApiKey, storageURL, storageAPI, token);
+      });
+      remoteStorage.on('connected', function() {
+        console.log('- connected to remote (syncing will take place)');
+      });
+      
+      remoteStorage.on('not-connected', function() {
+        console.log('- not connected to remote (changes are local-only)');
+      });
+    } else {
+      console.log('FIXME: not implemented yet');
+    }
+  }
+  function private_(moduleName) {
+    return remoteStorage.scope('/' + moduleName + '/');
+  }
+  function public_(moduleName) {
+    return remoteStorage.scope('/public/' + moduleName + '/');
+  }
   function addAccount(platform, server, id, pwd, name) {
-    var parts, parts2, obj;
+    var parts, parts2, obj, storagePlatforms = ['remotestorage', 'dropbox', 'googledrive'];
+    if (storagePlatforms.indexOf(platform) !== -1) {
+      return setStorage(platform, server, id);
+    }
     if (platform === 'sockethub') {
       parts = server.split('/');
       parts2 = parts[2].split(':');
@@ -536,7 +564,9 @@ meute = (function() {
     bootstrap: bootstrap,
     on: on,
     getButlerConfig: getButlerConfig,
-    readBackLog: readBackLog
+    readBackLog: readBackLog,
+    'private': private_,
+    'public': public_
   };
 })();
 
