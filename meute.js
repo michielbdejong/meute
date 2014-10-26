@@ -258,10 +258,18 @@ meute = (function() {
     console.log('setStorage', backend, userAddressOrApiKey, token);
     if (backend === 'remotestorage') {
       console.log('RemoteStorage.Discover', userAddressOrApiKey);
-      RemoteStorage.Discover(userAddressOrApiKey, function(storageURL, storageAPI) {
-        console.log('RemoteStorage.Discover', userAddressOrApiKey, storageURL, storageAPI);
-        remoteStorage.remote.configure(userAddressOrApiKey, storageURL, storageAPI, token);
+
+      RemoteStorage.Discover(userAddressOrApiKey).then(function (obj) {
+        console.log('- configuring remote', userAddressOrApiKey, obj.href, obj.storageType, obj);
+        remoteStorage.remote.configure({
+          userAddress: userAddressOrApiKey,
+          href: obj.href,
+          storageAPI: obj.storageType,
+          properties: obj.properties,
+          token: token
+        });
       });
+
       remoteStorage.on('connected', function() {
         console.log('- connected to remote (syncing will take place)');
       });
