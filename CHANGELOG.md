@@ -1,3 +1,8 @@
+# 0.7.0
+
+* add butler functionality (can act as a server-side irc bot)
+* add wrappers for directly accessing remotestorage.js functionality
+
 # 0.6.0
 
 * remove `meute.setMasterPassword`

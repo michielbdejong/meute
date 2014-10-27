@@ -5,7 +5,7 @@ To use, adapt the index.html page. It shows which files to include,
 and includes a short example of how to use the `meute`
 object to enter an irc channel, say something, and leave. Here is a
 reference documentation of all the functions the library exposes in
-the v0.6.* API:
+the v0.7.* API:
 
 * `meute.debugState()`: returns all internal state, namely:
   *  config: all configs (currently sockethub, irc and email are supported),
@@ -39,6 +39,20 @@ the v0.6.* API:
 * `meute.on(event, handler)` where event is 'message' or 'debug' and handler is a function:
   Will cause handler to be called with a string argument when a debug message is available in the case of 'debug',
   or with an ActivityStreams object representing an irc message or an incoming email message in the case of 'message'
+
+Some new proxies for remotestorage.js functionality:
+
+* `meute.private(moduleName)` - wrapper for `remoteStorage.scope('/'+moduleName+'/')`.
+* `meute.public(moduleName)` - wrapper for `remoteStorage.scope('/public/'+moduleName+'/')`.
+* `meute.displayWidget()` - wrapper for `remoteStorage.displayWidget()`
+* `meute.wire()` - returns `remoteStorage.remote`.
+
+* `meute.addAccount('remotestorage', userAddress)` - set rs.js userAddress.
+* `meute.addAccount('remotestorage', userAddress, token)` - same, but also sets token
+* `meute.addAccount(backend, apiKey)` - set rs.js backend and apiKey.
+* `meute.addAccount(backend, apiKey, token)` - same, but also sets token
+
+Email functionality (experimental):
 
 * `meute.email.sendEmail(recipient, subject, text, inReplyTo, preview)`, where:
   * recipient is either a string email address or an object containing one 'to' and one 'cc' field, both being single
@@ -84,4 +98,4 @@ the v0.6.* API:
 
 # Butler
 
-* to use the butler service server-side, run `meute.getRsToken();` in the browser console while connected to your remoteStorage-account
+* to use the butler service server-side, run `meute.getButlerConfig();` in the browser console while connected to your remoteStorage-account

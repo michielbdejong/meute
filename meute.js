@@ -560,6 +560,14 @@ meute = (function() {
     });
   }
 
+  function wire() {
+    return remoteStorage.remote;
+  }
+
+  function displayWidget() {
+    return remoteStorage.displayWidget();
+  }
+  
   return {
     debugState: debugState,
     addAccount: addAccount,
@@ -574,7 +582,9 @@ meute = (function() {
     getButlerConfig: getButlerConfig,
     readBackLog: readBackLog,
     'private': private_,
-    'public': public_
+    'public': public_,
+    wire: wire,
+    displayWidget: displayWidget
   };
 })();
 
