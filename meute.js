@@ -273,7 +273,7 @@ meute = (function() {
       remoteStorage.on('connected', function() {
         console.log('- connected to remote (syncing will take place)');
       });
-      
+
       remoteStorage.on('not-connected', function() {
         console.log('- not connected to remote (changes are local-only)');
       });
@@ -394,7 +394,7 @@ meute = (function() {
           if (Array.isArray(msg.target.to)) {
             console.log('storing target.to', msg.target.to);
             msg.target.to.forEach(storeContact);
-          } 
+          }
           if (Array.isArray(msg.target.cc)) {
             console.log('storing target.cc', msg.target.cc);
             msg.target.cc.forEach(storeContact);
@@ -567,7 +567,7 @@ meute = (function() {
   function displayWidget() {
     return remoteStorage.displayWidget();
   }
-  
+
   return {
     debugState: debugState,
     addAccount: addAccount,
