@@ -69,9 +69,19 @@ meute = (function() {
       });
       configuring.sockethub = true;
     } else if (sockethubRegistered) {
-      for (var i in config) {
+      var i, steps = [];
+      for (i in config) {
+        steps.push(i);
+      }
+      sendConfigs(steps);
+      function sendConfigs(steps) {
+        var i = steps.pop();
         if (i !== 'sockethub' && config[i].actor && config[i].object) {
-          sendConfig(i);
+          sendConfig(i).then(function() {
+            sendConfigs(steps);
+          });
+        } else {
+          sendConfigs(steps);
         }
       }
     }
