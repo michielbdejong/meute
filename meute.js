@@ -272,6 +272,7 @@ meute = (function() {
 
       remoteStorage.on('connected', function() {
         console.log('- connected to remote (syncing will take place)');
+        remoteStorage.sync.sync();//see https://github.com/remotestorage/remotestorage.js/issues/820
         remoteStorage['sockethub-credentials'].on('change', function(evt) {
           console.log('sockethub change', evt);
         });
