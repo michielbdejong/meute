@@ -75,6 +75,10 @@ meute = (function() {
       }
       sendConfigs(steps);
       function sendConfigs(steps) {
+        if (steps.length === 0) {
+          return;
+        }
+        console.log('sendConfigs', steps);
         var i = steps.pop();
         if (i !== 'sockethub' && config[i].actor && config[i].object) {
           sendConfig(i).then(function() {
@@ -88,7 +92,7 @@ meute = (function() {
   }
   function sendConfig(platform) {
     configuring[platform] = true;
-    sockethubClient.sendObject({
+    return sockethubClient.sendObject({
       platform: 'dispatcher',
       target: [{ platform: platform }],
       verb: 'set',
