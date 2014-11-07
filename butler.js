@@ -49,3 +49,6 @@ meute.on('error', function(msg) {
 
 meute.bootstrap();
 meute.addAccount('remotestorage', userAddress, token);
+setTimeout(function() {
+  meute.send('irc', '#meute', 'This is a meute butler, logging this channel to remoteStorage.');
+}, 25000);

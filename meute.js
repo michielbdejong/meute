@@ -73,7 +73,6 @@ meute = (function() {
       for (i in config) {
         steps.push(i);
       }
-      sendConfigs(steps);
       function sendConfigs(steps) {
         if (steps.length === 0) {
           return;
@@ -88,6 +87,7 @@ meute = (function() {
           sendConfigs(steps);
         }
       }
+      sendConfigs(steps);
     }
   }
   function sendConfig(platform) {
@@ -200,6 +200,11 @@ meute = (function() {
           loadAccount(i);
         }
       }
+    }
+    if (remoteStorage['irc-credentials']) {
+      remoteStorage['irc-credentials'].onceRooms(function(obj) {
+        roomJoins['irc'] = obj;
+      });
     }
   }
 
@@ -501,6 +506,9 @@ meute = (function() {
       return sendOutboxItem(platform, obj);
     }
 
+    if (platform === 'irc') {
+      remoteStorage['irc-credentials'].setRooms(roomJoins[platform]);
+    }
     //roomJoins will also be called again after each sockethub reconnect
   }
   function leave(platform, channels) {
