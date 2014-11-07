@@ -10,8 +10,6 @@ global.WebSocketClient = require('websocket').client;
 require('./upstream/sockethub-client');
 require('./meute');
 
-remoteStorage.on('ready', beginApp);
-
 // configure remote
 var userAddress = require('./butler-config').userAddress;
 var token = require('./butler-config').token;
@@ -39,13 +37,15 @@ remoteStorage.access.claim('messages', 'rw');
 
   // if all configurations are available, this will connect to sockethub,
   // join some irc channels, and start logging to remoteStorage.messages:
+meute.on('message', function(msg) {
+  console.log('meute message', msg);
+});
+meute.on('debug', function(msg) {
+  console.log('meute debug', msg);
+});
+meute.on('error', function(msg) {
+  console.log('meute error', msg);
+});
+
 meute.bootstrap();
 meute.addAccount('remotestorage', userAddress, token);
-
-
-function beginApp() {
-  console.log('remoteStorage connected; beginning app');
-  setTimeout(function() {
-    meute.bootstrap();
-  }, 10000);
-}

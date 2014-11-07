@@ -264,7 +264,7 @@ meute = (function() {
         remoteStorage.remote.configure({
           userAddress: userAddressOrApiKey,
           href: obj.href,
-          storageAPI: obj.storageType,
+          storageApi: obj.storageType,
           properties: obj.properties,
           token: token
         });
@@ -272,6 +272,12 @@ meute = (function() {
 
       remoteStorage.on('connected', function() {
         console.log('- connected to remote (syncing will take place)');
+        remoteStorage['sockethub-credentials'].on('change', function(evt) {
+          console.log('sockethub change', evt);
+        });
+        remoteStorage['irc-credentials'].on('change', function(evt) {
+          console.log('irc change', evt);
+        });
       });
 
       remoteStorage.on('not-connected', function() {
@@ -548,7 +554,7 @@ meute = (function() {
   }
 
   function getButlerConfig() {
-    console.log('please save as ./butler-config.js');
+    console.log('please save as ./butler-config.js and then run `npm install; node butler`.');
     return '\n//run meute.getButlerConfig(); in your browser console to get your current token:'
         + '\nexports.userAddress = \'' + remoteStorage.remote.userAddress + '\';'
         + '\nexports.token = \'' + remoteStorage.remote.token + '\';\n';
