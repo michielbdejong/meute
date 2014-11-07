@@ -279,10 +279,6 @@ meute = (function() {
           console.log('irc change', evt);
         });
       });
-
-      remoteStorage.on('not-connected', function() {
-        console.log('- not connected to remote (changes are local-only)');
-      });
     } else {
       console.log('FIXME: not implemented yet');
     }
