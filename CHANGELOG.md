@@ -1,3 +1,8 @@
+# 0.7.1
+
+* several bugfixes in the butler service and sockethub timing
+* support for storing the irc rooms you joined in remoteStorage
+
 # 0.7.0
 
 * add butler functionality (can act as a server-side irc bot)
