@@ -44,18 +44,19 @@
   async function refreshChatList(chatsIndexUrl) {
     // Load the person's hosted chats into the store
     await fetcher.load(chatsIndexUrl);
-    console.log('fetcher loaded', fetcher, store);
     const chatsList = store.match(null, $rdf.Namespace("http://www.w3.org/ns/ldp#")("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
   }
   async function displayChat(chatUrl) {
     await fetcher.load(chatUrl);
-    const messages = store.match(null, $rdf.Namespace('http://rdfs.org/sioc/ns#')('content')).map(e => e.object.value);
-    console.log(chatUrl, messages);
+    const messageObjects = store.match(null, $rdf.Namespace('http://rdfs.org/sioc/ns#')('content'), null, $rdf.sym(chatUrl).doc());
     const c = document.createElement('li');
     c.appendChild(document.createTextNode(chatUrl));
-    messages.map(txt => {
+    messageObjects.map(obj => {
+      const sub = obj.subject;
+      const maker = store.match(sub, $rdf.Namespace('http://xmlns.com/foaf/0.1/')('maker'));
+      console.log(obj.object.value, 'made by', maker[0].object.value, store.match(maker[0].object.value));
       const p = document.createElement('p');
-      p.appendChild(document.createTextNode(txt));
+      p.appendChild(document.createTextNode(`[${maker[0].object.value}] ${obj.object.value}`));
       c.appendChild(p);
     });
     document.getElementById('chat-list').appendChild(c);
