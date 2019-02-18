@@ -10,8 +10,13 @@
     <div id="login-state"></div>
     <input type="submit" value="Log in" onclick="login();">
     <input type="submit" value="Log out" onclick="logout();">
+    <h1>Chats</h2>
+    <input type="submit" value="Refresh" onclick="refreshChatList();">
+    <ul id="chat-list"></ul>
   </body>
+  <script src="scripts/jquery.js"></script>
   <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
+  <script src="https://linkeddata.github.io/rdflib.js/dist/rdflib.min.js"></script>
   <script>
   solid.auth.trackSession(session => {
     if (!session) {
@@ -32,6 +37,21 @@
     if (!session)
       session = await solid.auth.popupLogin({ popupUri });
     alert(`Logged in as ${session.webId}`);
+  }
+  async function refreshChatList() {
+    const ldp = $rdf.Namespace('http://www.w3.org/ns/ldp#');
+    const store = $rdf.graph();
+    const fetcher = new $rdf.Fetcher(store);
+
+    // Load the person's hosted chats into the store
+    const chats = 'https://michielbdejong.inrupt.net/chats/';
+    await fetcher.load(chats);
+    console.log('fetcher loaded', fetcher, store);
+    const chatsList = store.match(null, $rdf.Namespace("http://www.w3.org/ns/ldp#")("contains")).map(e => {
+      const c =  document.createElement('LI');
+      c.appendChild(document.createTextNode(e.object.value));
+      document.getElementById('chat-list').appendChild(c);
+    });
   }
   </script>
 </html>
