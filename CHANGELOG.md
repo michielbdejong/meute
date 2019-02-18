@@ -1,3 +1,7 @@
+# 0.8.0
+
+* complete pivot from Sockethub/remoteStorage to Solid
+
 # 0.7.1
 
 * several bugfixes in the butler service and sockethub timing
