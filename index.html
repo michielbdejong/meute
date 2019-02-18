@@ -2,71 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Meute - a foundation for unhosted social web apps</title>
+    <title>Meute - a Solid chat app</title>
   </head>
   <body>
-    <h1>v0.7.1</h1>
-    <p style="width:30em" >Meute is still very basic, but it can already help you build a
-      <a href="https://unhosted.org/">server-less web app</a> to which the user can connect their own backend at runtime.
-      The code is <a href="http://github.com/michielbdejong/meute">on github</a>.</p>
-    <p style="width:30em" ><strong>NOTE:</strong> You need version 0.2 of sockethub, version 0.1 will not work!</p>
-    <p style="width:30em" >
-      You can try out meute by opening your web console now, and typing 'meute.' to see which commands are available.
-      The full 0.7 API is described in the <a href="https://github.com/michielbdejong/meute">readme</a>, but here is an example:</p>
-    <pre id="pre1">(loading...)</pre>
-    <p style="width:30em" >To run a butler service, type `meute.getButlerConfig();` while connected to remoteStorage and to sockethub
-    and follow the instructions.</p>
+    <h1>v0.8</h1>
+    <p style="width:30em" >Meute is still very basic.</p>
+    <div id="login-state"></div>
+    <input type="submit" value="Log in" onclick="login();">
+    <input type="submit" value="Log out" onclick="logout();">
   </body>
-  <script src="upstream/sjcl.js"> </script>
-  <script src="upstream/promising.js"> </script><!-- used by upstream/sockethub-client.js as well as by meute.js -->
-  <script src="upstream/sockethub-client.js"></script>
-  <script src="upstream/asrender.js"> </script>
-
-  <!-- seems that hoodie has an undocumented dependency on jquery -->
-  <script src="upstream/jquery.js"> </script>
-  <script src="upstream/hoodie.js"> </script>
-
-  <!-- rs.js -->
-  <script src="upstream/remotestorage.js"></script>
-
-  <script src="upstream/remotestorage-modules/utils/credentialsstore.js"> </script>
-  <script src="upstream/remotestorage-modules/utils/prefixtree.js"> </script>
-  <script src="upstream/remotestorage-modules/utils/syncedmap.js"> </script>
-  <script src="upstream/remotestorage-modules/utils/syncedvar.js"> </script>
-
-  <script src="upstream/remotestorage-modules/sockethub-credentials.js"> </script>
-  <script src="upstream/remotestorage-modules/messages.js"> </script>
-  <script src="upstream/remotestorage-modules/email-credentials.js"> </script>
-  <script src="upstream/remotestorage-modules/irc-credentials.js"> </script>
-  <script src="upstream/remotestorage-modules/twitter-credentials.js"> </script>
-  <script src="upstream/remotestorage-modules/facebook-credentials.js"> </script>
-  <script src="upstream/remotestorage-modules/contacts.js"> </script>
-  <script src="upstream/remotestorage-modules/documents.js"> </script>
-  <script src="upstream/remotestorage-modules/pgp.js"> </script>
-  <script src="upstream/remotestorage-modules/pictures.js"> </script>
-
-  <script src="meute.js"> </script>
-  <script src="meute-email.js"> </script>
-  <script src="meute-www.js"> </script>
-  <script src= "meute-instantiate.js"></script>
-
-  <script id="exampleCode1">
-    function step1() {
-      meute.addAccount('sockethub', 'ws://localhost:10550/', '1234567890');
+  <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
+  <script>
+  solid.auth.trackSession(session => {
+    if (!session) {
+      console.log('The user is not logged in');
+      document.getElementById('login-state').innerHTML = 'Not logged in.';
+    } else {
+      console.log(`The user is ${session.webId}`);
+      document.getElementById('login-state').innerHTML = `Logged in as ${session.webId}.`;
     }
-    function step2() {
-      meute.addAccount('irc', 'irc.freenode.net', 'meute-test');
-    }
-    function step3() {
-      meute.join('irc', ['#meute']); //meute.join('irc', '#meute'); is also allowed when joining only one channel
-    }
-    function step4() {
-      meute.send('irc', '#meute', 'hi');
-    }
-    function step5() {
-      d(meute.readBackLog('irc:meute-test', '2014', '10', '21'));
-    }
-
-    document.getElementById('pre1').innerHTML = document.getElementById('exampleCode1').innerHTML.replace('<', '&gt;');
+  })
+  function logout() {
+    solid.auth.logout()
+      .then(() => alert('Goodbye!'));
+  }
+  async function login() {
+    let session = await solid.auth.currentSession();
+    let popupUri = 'https://solid.community/common/popup.html';
+    if (!session)
+      session = await solid.auth.popupLogin({ popupUri });
+    alert(`Logged in as ${session.webId}`);
+  }
   </script>
 </html>
