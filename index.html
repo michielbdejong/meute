@@ -11,25 +11,28 @@
     <input type="submit" value="Log in" onclick="login();">
     <input type="submit" value="Log out" onclick="logout();">
     <h1>Chats</h2>
-    <input type="submit" value="Refresh" onclick="refreshChatList();">
+    <input type="submit" value="Refresh" onclick="refreshChatList('https://michielbdejong.inrupt.net/chats/');"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
     <ul id="chat-list"></ul>
   </body>
   <script src="scripts/jquery.js"></script>
   <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
   <script src="https://linkeddata.github.io/rdflib.js/dist/rdflib.min.js"></script>
   <script>
+  const ldp = $rdf.Namespace('http://www.w3.org/ns/ldp#');
+  const store = $rdf.graph();
+  const fetcher = new $rdf.Fetcher(store);
+
+    window.store = store;
+
   solid.auth.trackSession(session => {
     if (!session) {
-      console.log('The user is not logged in');
       document.getElementById('login-state').innerHTML = 'Not logged in.';
     } else {
-      console.log(`The user is ${session.webId}`);
       document.getElementById('login-state').innerHTML = `Logged in as ${session.webId}.`;
     }
   })
   function logout() {
-    solid.auth.logout()
-      .then(() => alert('Goodbye!'));
+    solid.auth.logout();
   }
   async function login() {
     let session = await solid.auth.currentSession();
@@ -38,20 +41,24 @@
       session = await solid.auth.popupLogin({ popupUri });
     alert(`Logged in as ${session.webId}`);
   }
-  async function refreshChatList() {
-    const ldp = $rdf.Namespace('http://www.w3.org/ns/ldp#');
-    const store = $rdf.graph();
-    const fetcher = new $rdf.Fetcher(store);
-
+  async function refreshChatList(chatsIndexUrl) {
     // Load the person's hosted chats into the store
-    const chats = 'https://michielbdejong.inrupt.net/chats/';
-    await fetcher.load(chats);
+    await fetcher.load(chatsIndexUrl);
     console.log('fetcher loaded', fetcher, store);
-    const chatsList = store.match(null, $rdf.Namespace("http://www.w3.org/ns/ldp#")("contains")).map(e => {
-      const c =  document.createElement('LI');
-      c.appendChild(document.createTextNode(e.object.value));
-      document.getElementById('chat-list').appendChild(c);
+    const chatsList = store.match(null, $rdf.Namespace("http://www.w3.org/ns/ldp#")("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
+  }
+  async function displayChat(chatUrl) {
+    await fetcher.load(chatUrl);
+    const messages = store.match(null, $rdf.Namespace('http://rdfs.org/sioc/ns#')('content')).map(e => e.object.value);
+    console.log(chatUrl, messages);
+    const c = document.createElement('li');
+    c.appendChild(document.createTextNode(chatUrl));
+    messages.map(txt => {
+      const p = document.createElement('p');
+      p.appendChild(document.createTextNode(txt));
+      c.appendChild(p);
     });
+    document.getElementById('chat-list').appendChild(c);
   }
   </script>
 </html>
