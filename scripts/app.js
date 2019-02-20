@@ -2,6 +2,7 @@
  // Basics //
 ////////////
 const ns = {
+  acl: $rdf.Namespace('http://www.w3.org/ns/auth/acl#'),
   dct: $rdf.Namespace('http://purl.org/dc/terms/'),
   foaf: $rdf.Namespace('http://xmlns.com/foaf/0.1/'),
   ldp: $rdf.Namespace('http://www.w3.org/ns/ldp#'),
@@ -23,10 +24,16 @@ const app = new Vue({
   el: '#app',
   data: {
     chats: [],
-    newChatUrl: '',
+    myEmail:  '<mailto:michiel@unhosted.org>',
+    podBase:  'https://michielbdejong.inrupt.net',
+    newChatNick: 'asdf',
+    otherWebId: 'http://example.com/#someone',
     webId: '',
   }
 });
+function getChatFolderUrl () {
+  return app.podBase + '/chats/';
+}
 
   ///////////
  // WebId //
@@ -54,8 +61,85 @@ async function login() {
  // Create new chat conversation //
 //////////////////////////////////
 
+// in the /chats folder on the user's pod, this app will create one folder per
+// conversation, and that folder will contain an index.ttl as follows:
+// ----------------------------------------------------
+// @prefix : <#>.
+// @prefix mee: <http://www.w3.org/ns/pim/meeting#>.
+// @prefix terms: <http://purl.org/dc/terms/>.
+// @prefix XML: <http://www.w3.org/2001/XMLSchema#>.
+// @prefix n: <http://rdfs.org/sioc/ns#>.
+// @prefix n0: <http://xmlns.com/foaf/0.1/>.
+// @prefix c: </profile/card#>.
+// @prefix n1: <http://purl.org/dc/elements/1.1/>.
+// @prefix flow: <http://www.w3.org/2005/01/wf/flow#>.
+// 
+// :Msg1550498309871
+//     terms:created "2019-02-18T13:58:29Z"^^XML:dateTime;
+//     n:content "Hi Kjetil";
+//     n0:maker c:me.
+// :this
+//     a mee:Chat;
+//     n1:author c:me;
+//     n1:created "2019-02-18T13:55:33Z"^^XML:dateTime;
+//     n1:title "Chat";
+//     flow:message :Msg1550498309871.
+// ----------------------------------------------------
+//
+// and .acl document as follows:
+// ----------------------------------------------------
+// @prefix : <#>.
+// @prefix n0: <http://www.w3.org/ns/auth/acl#>.
+// @prefix kje: <./>.
+// @prefix c: <https://solid.kjernsmo.net/profile/card#>.
+// @prefix c0: </profile/card#>.
+// 
+// :AppendRead
+//     a n0:Authorization;
+//     n0:accessTo kje:;
+//     n0:agent c:me;
+//     n0:defaultForNew kje:;
+//     n0:mode n0:Append, n0:Read.
+// :ControlReadWrite
+//     a n0:Authorization;
+//     n0:accessTo kje:;
+//     n0:agent c0:me, <mailto:michiel@unhosted.org>;
+//     n0:defaultForNew kje:;
+//     n0:mode n0:Control, n0:Read, n0:Write.
+// ----------------------------------------------------
+function createAclFile(folderUrl, me, myEmail, otherWebId) {
+  var aclUrl = folderUrl + '.acl';
+  var aclMe = store.sym(aclUrl + '#ControlReadWrite');
+  var aclOther = store.sym(aclUrl + '#AppendRead');
+  var aclDoc =  aclMe.doc();
+  var thisFolder = $rdf.Namespace(folderUrl)('');
+  updater.put(aclDoc, [
+    new $rdf.Statement(aclMe, ns.rdf('type'), ns.acl('Authorization'), aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('accessTo'), thisFolder, aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('agent'), me, aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('agent'), myEmail, aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('defaultForNew'), thisFolder, aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('mode'), ns.acl('Control'), aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('mode'), ns.acl('Read'), aclDoc),
+    new $rdf.Statement(aclMe, ns.acl('mode'), ns.acl('Write'), aclDoc),
+    new $rdf.Statement(aclOther, ns.rdf('type'), ns.acl('Authorization'), aclDoc),
+    new $rdf.Statement(aclOther, ns.acl('accessTo'), thisFolder, aclDoc),
+    new $rdf.Statement(aclOther, ns.acl('agent'), otherWebId, aclDoc),
+    new $rdf.Statement(aclOther, ns.acl('defaultForNew'), thisFolder, aclDoc),
+    new $rdf.Statement(aclOther, ns.acl('mode'), ns.acl('Append'), aclDoc),
+    new $rdf.Statement(aclOther, ns.acl('mode'), ns.acl('Read'), aclDoc),
+  ], 'text/turtle', (uri, ok, message) => {
+    if (ok) {
+      console.log('Created ACL file', uri);
+    } else {
+      console.error(`FAILED to create new chat ACL file at ${uri} : ${message}`);
+    }
+  });
+}
+
 // See https://github.com/solid/solid-panes/blob/master/chat/chatPane.js#L53-L81
-function startConversation (chatUrl, me) {
+function startConversation (chatFolderUrl, me) {
+  const chatUrl = chatFolderUrl + 'index.ttl';
   var conversation = store.sym(chatUrl + '#this');
   var messageStore = conversation.doc();
   store.add(conversation, ns.rdf('type'), ns.mee('Chat'), messageStore)
@@ -65,16 +149,17 @@ function startConversation (chatUrl, me) {
   const sts = store.statementsMatching(undefined, undefined, undefined, messageStore);
   updater.put(messageStore, sts, 'text/turtle', (uri, ok, message) => {
     if (ok) {
-      console.log('Created', chatUrl);
+      console.log('Created', uri);
     } else {
       console.error(`FAILED to create new chat at ${uri} : ${message}`);
     }
   });
 }
 
-
 function newChatConversation(index) {
-  return startConversation(app.newChatUrl, app.webId);
+  const chatFolderUrl = getChatFolderUrl() + `${app.newChatNick}/`;
+  createAclFile(chatFolderUrl, app.webId, app.myEmail, app.otherWebId);
+  startConversation(chatFolderUrl, app.webId, app.myEmail, app.otherWebId);
 }
 
   ///////////////////////
@@ -112,8 +197,9 @@ function newChatMsg(index) {
   ////////////////////
  // Fetch chat log //
 ////////////////////
-async function refreshChatList(chatsIndexUrl) {
+async function refreshChatList() {
   // Load the person's hosted chats into the store
+  const chatsIndexUrl = getChatFolderUrl(); 
   await fetcher.load(chatsIndexUrl);
   const chatsList = store.match(null, ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
 }

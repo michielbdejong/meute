@@ -18,9 +18,11 @@
     <input type="submit" value="Log in" onclick="login();">
     <input type="submit" value="Log out" onclick="logout();">
     <h1>Chats</h2>
-    <input type="submit" value="Refresh" onclick="refreshChatList('https://michielbdejong.inrupt.net/chats/');"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
+    <input type="submit" value="Refresh" onclick="refreshChatList();"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
     <div id="app">
-      <input type="text" v-model="newChatUrl">
+      <label for="new-chat-url">New chat Nick:</label><input id="new-chat-url" type="text" v-model="newChatNick">
+      <label for="new-chat-url">My email:</label><input type="text" id="my-email" v-model="myEmail">
+      <label for="new-chat-url">Other WebId:</label><input type="text" id="other-web-id" v-model="otherWebId">
       <input type="submit" value="+" onclick="newChatConversation(this.value)" >
       <ul>
         <li v-for="(chat, index) in chats"><h2>{{ chat.url }}</h2>
