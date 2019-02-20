@@ -1,8 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <title>Meute - a Solid chat app</title>
+    <meta name="description" content="A Solid Chat app">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="scripts/bulma.min.css">
+    <script defer src="scripts/fontawesome.min.js"></script>
+    <style>
+      [v-cloak] { display: none; }
+    </style>
   </head>
   <body>
     <h1>v0.8</h1>
@@ -12,8 +19,19 @@
     <input type="submit" value="Log out" onclick="logout();">
     <h1>Chats</h2>
     <input type="submit" value="Refresh" onclick="refreshChatList('https://michielbdejong.inrupt.net/chats/');"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
-    <ul id="chat-list"></ul>
+    <div id="app">
+      <ul>
+        <li v-for="(chat, index) in chats"><h2>{{ chat.url }}</h2>
+          <table border="1">
+            <tr v-for="(message) in chat.messages">
+              <td>{{ message.maker }}</td><td>{{ message.text }}</td>
+            </tr>
+          </table>
+        </li>
+      </ul>
+    </div>
   </body>
+  <script src="scripts/vue.min.js"></script>
   <script src="scripts/jquery.js"></script>
   <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
   <script src="https://linkeddata.github.io/rdflib.js/dist/rdflib.min.js"></script>
@@ -21,7 +39,12 @@
   const ldp = $rdf.Namespace('http://www.w3.org/ns/ldp#');
   const store = $rdf.graph();
   const fetcher = new $rdf.Fetcher(store);
-
+  const app = new Vue({
+    el: '#app',
+    data: {
+      chats: []
+    }
+  });
     window.store = store;
 
   solid.auth.trackSession(session => {
@@ -48,18 +71,21 @@
   }
   async function displayChat(chatUrl) {
     await fetcher.load(chatUrl);
+    const chatObj  = {
+      url: chatUrl,
+      messages: []
+    };
     const messageObjects = store.match(null, $rdf.Namespace('http://rdfs.org/sioc/ns#')('content'), null, $rdf.sym(chatUrl).doc());
-    const c = document.createElement('li');
-    c.appendChild(document.createTextNode(chatUrl));
     messageObjects.map(obj => {
       const sub = obj.subject;
       const maker = store.match(sub, $rdf.Namespace('http://xmlns.com/foaf/0.1/')('maker'));
       console.log(obj.object.value, 'made by', maker[0].object.value, store.match(maker[0].object.value));
-      const p = document.createElement('p');
-      p.appendChild(document.createTextNode(`[${maker[0].object.value}] ${obj.object.value}`));
-      c.appendChild(p);
+      chatObj.messages.push({
+        maker: maker[0].object.value,
+        text: obj.object.value
+      });
     });
-    document.getElementById('chat-list').appendChild(c);
+    app.chats.push(chatObj);
   }
   </script>
 </html>
