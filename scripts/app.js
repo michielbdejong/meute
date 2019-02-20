@@ -23,10 +23,15 @@ window.store = store; // for live debugging
 const app = new Vue({
   el: '#app',
   data: {
+    contacts: [
+      { nick: 'kjetil', webId: 'https://solid.kjernsmo.net/profile/card#' },
+      { nick: 'megoth-community', webId: 'https://megoth.solid.community/profile/card#' },
+      { nick: 'megoth-inrupt', webId: 'https://megoth.inrupt.net/profile/card#' },
+    ],
     chats: [],
     myEmail:  '<mailto:michiel@unhosted.org>',
     podBase:  'https://michielbdejong.inrupt.net',
-    newChatNick: 'asdf',
+    newContactNick: 'asdf',
     otherWebId: 'http://example.com/#someone',
     webId: '',
   }
@@ -156,10 +161,18 @@ function startConversation (chatFolderUrl, me) {
   });
 }
 
-function newChatConversation(index) {
-  const chatFolderUrl = getChatFolderUrl() + `${app.newChatNick}/`;
-  createAclFile(chatFolderUrl, app.webId, app.myEmail, app.otherWebId);
-  startConversation(chatFolderUrl, app.webId, app.myEmail, app.otherWebId);
+function newContact() {
+  app.contacts.push({
+    nick: app.newContactNick,
+    webId: app.otherWebId,
+  });
+}
+
+function startChat(index) {
+  console.log('startChat', index);
+  const chatFolderUrl = getChatFolderUrl() + `${app.contacts[index].nick}/`;
+  createAclFile(chatFolderUrl, app.webId, app.myEmail, app.contacts[index].webId);
+  startConversation(chatFolderUrl, app.webId, app.myEmail, app.contacts[index].webId);
 }
 
   ///////////////////////

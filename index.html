@@ -17,13 +17,17 @@
     <div id="login-state"></div>
     <input type="submit" value="Log in" onclick="login();">
     <input type="submit" value="Log out" onclick="logout();">
-    <h1>Chats</h2>
-    <input type="submit" value="Refresh" onclick="refreshChatList();"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
     <div id="app">
-      <label for="new-chat-url">New chat Nick:</label><input id="new-chat-url" type="text" v-model="newChatNick">
-      <label for="new-chat-url">My email:</label><input type="text" id="my-email" v-model="myEmail">
-      <label for="new-chat-url">Other WebId:</label><input type="text" id="other-web-id" v-model="otherWebId">
-      <input type="submit" value="+" onclick="newChatConversation(this.value)" >
+      <label for="new-contact-url">My email:</label><input type="text" id="my-email" v-model="myEmail"> (will be used as account recovery when creating new chat ACLs)
+      <h2>Address book</h2>
+      <ul>
+        <li v-for="(contact, index) in contacts">{{ contact.nick }} ({{ contact.webId }}) <input type="submit" v-bind:index="index" value="Start chatting!" onclick="startChat(this.getAttribute('index'))">
+      </ul>
+      <label for="new-contact-url">New contact Nick:</label><input id="new-chat-url" type="text" v-model="newContactNick">
+      <label for="new-contact-url">Other WebId:</label><input type="text" id="other-web-id" v-model="otherWebId">
+      <input type="submit" value="+" onclick="newContact()" >
+      <h2>Chats</h2>
+      <input type="submit" value="Refresh" onclick="refreshChatList();"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
       <ul>
         <li v-for="(chat, index) in chats"><h2>{{ chat.url }}</h2>
           <table border="1">
@@ -32,7 +36,7 @@
             </tr>
           </table>
           <input type="text" v-model="chat.newMsg">
-          <input type="submit" value=">>" v-model="index" onclick="newChatMsg(this.value)" ><!--  FIXME: use something other than .value here -->
+          <input type="submit" value=">>" v-bind:index="index" onclick="newChatMsg(this.getAttribute('index'))" ><!--  FIXME: use something other than .value here -->
         </li>
       </ul>
     </div>
