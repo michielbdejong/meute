@@ -20,6 +20,8 @@
     <h1>Chats</h2>
     <input type="submit" value="Refresh" onclick="refreshChatList('https://michielbdejong.inrupt.net/chats/');"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
     <div id="app">
+      <input type="text" v-model="newChatUrl">
+      <input type="submit" value="+" onclick="newChatConversation(this.value)" >
       <ul>
         <li v-for="(chat, index) in chats"><h2>{{ chat.url }}</h2>
           <table border="1">

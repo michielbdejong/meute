@@ -5,6 +5,9 @@ const ns = {
   dct: $rdf.Namespace('http://purl.org/dc/terms/'),
   foaf: $rdf.Namespace('http://xmlns.com/foaf/0.1/'),
   ldp: $rdf.Namespace('http://www.w3.org/ns/ldp#'),
+  mee: $rdf.Namespace('http://www.w3.org/ns/pim/meeting#'),
+  dc: $rdf.Namespace('http://purl.org/dc/elements/1.1/'),
+  rdf: $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
   sioc: $rdf.Namespace('http://rdfs.org/sioc/ns#'),
   wf: $rdf.Namespace('http://www.w3.org/2005/01/wf/flow#'),
 };
@@ -20,6 +23,7 @@ const app = new Vue({
   el: '#app',
   data: {
     chats: [],
+    newChatUrl: '',
     webId: '',
   }
 });
@@ -44,6 +48,33 @@ async function login() {
   if (!session)
     session = await solid.auth.popupLogin({ popupUri });
   alert(`Logged in as ${session.webId}`);
+}
+
+  //////////////////////////////////
+ // Create new chat conversation //
+//////////////////////////////////
+
+// See https://github.com/solid/solid-panes/blob/master/chat/chatPane.js#L53-L81
+function startConversation (chatUrl, me) {
+  var conversation = store.sym(chatUrl + '#this');
+  var messageStore = conversation.doc();
+  store.add(conversation, ns.rdf('type'), ns.mee('Chat'), messageStore)
+  store.add(conversation, ns.dc('title'), 'Chat', messageStore)
+  store.add(conversation, ns.dc('created'), new Date(), messageStore)
+  store.add(conversation, ns.dc('author'), me, messageStore)
+  const sts = store.statementsMatching(undefined, undefined, undefined, messageStore);
+  updater.put(messageStore, sts, 'text/turtle', (uri, ok, message) => {
+    if (ok) {
+      console.log('Created', chatUrl);
+    } else {
+      console.error(`FAILED to create new chat at ${uri} : ${message}`);
+    }
+  });
+}
+
+
+function newChatConversation(index) {
+  return startConversation(app.newChatUrl, app.webId);
 }
 
   ///////////////////////
