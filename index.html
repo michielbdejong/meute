@@ -27,6 +27,8 @@
               <td>{{ message.maker }}</td><td>{{ message.text }}</td>
             </tr>
           </table>
+          <input type="text" v-model="chat.newMsg">
+          <input type="submit" value=">>" v-model="index" onclick="newChatMsg(this.value)" ><!--  FIXME: use something other than .value here -->
         </li>
       </ul>
     </div>
@@ -35,57 +37,5 @@
   <script src="scripts/jquery.js"></script>
   <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
   <script src="https://linkeddata.github.io/rdflib.js/dist/rdflib.min.js"></script>
-  <script>
-  const ldp = $rdf.Namespace('http://www.w3.org/ns/ldp#');
-  const store = $rdf.graph();
-  const fetcher = new $rdf.Fetcher(store);
-  const app = new Vue({
-    el: '#app',
-    data: {
-      chats: []
-    }
-  });
-    window.store = store;
-
-  solid.auth.trackSession(session => {
-    if (!session) {
-      document.getElementById('login-state').innerHTML = 'Not logged in.';
-    } else {
-      document.getElementById('login-state').innerHTML = `Logged in as ${session.webId}.`;
-    }
-  })
-  function logout() {
-    solid.auth.logout();
-  }
-  async function login() {
-    let session = await solid.auth.currentSession();
-    let popupUri = 'https://solid.community/common/popup.html';
-    if (!session)
-      session = await solid.auth.popupLogin({ popupUri });
-    alert(`Logged in as ${session.webId}`);
-  }
-  async function refreshChatList(chatsIndexUrl) {
-    // Load the person's hosted chats into the store
-    await fetcher.load(chatsIndexUrl);
-    const chatsList = store.match(null, $rdf.Namespace("http://www.w3.org/ns/ldp#")("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
-  }
-  async function displayChat(chatUrl) {
-    await fetcher.load(chatUrl);
-    const chatObj  = {
-      url: chatUrl,
-      messages: []
-    };
-    const messageObjects = store.match(null, $rdf.Namespace('http://rdfs.org/sioc/ns#')('content'), null, $rdf.sym(chatUrl).doc());
-    messageObjects.map(obj => {
-      const sub = obj.subject;
-      const maker = store.match(sub, $rdf.Namespace('http://xmlns.com/foaf/0.1/')('maker'));
-      console.log(obj.object.value, 'made by', maker[0].object.value, store.match(maker[0].object.value));
-      chatObj.messages.push({
-        maker: maker[0].object.value,
-        text: obj.object.value
-      });
-    });
-    app.chats.push(chatObj);
-  }
-  </script>
+  <script src="scripts/app.js"></script>
 </html>
