@@ -9,6 +9,7 @@ const ns = {
   mee: $rdf.Namespace('http://www.w3.org/ns/pim/meeting#'),
   dc: $rdf.Namespace('http://purl.org/dc/elements/1.1/'),
   rdf: $rdf.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
+  schema: $rdf.Namespace('http://schema.org/'),
   sioc: $rdf.Namespace('http://rdfs.org/sioc/ns#'),
   wf: $rdf.Namespace('http://www.w3.org/2005/01/wf/flow#'),
 };
@@ -24,9 +25,10 @@ const app = new Vue({
   el: '#app',
   data: {
     contacts: [
-      { nick: 'kjetil', webId: 'https://solid.kjernsmo.net/profile/card#' },
-      { nick: 'megoth-community', webId: 'https://megoth.solid.community/profile/card#' },
-      { nick: 'megoth-inrupt', webId: 'https://megoth.inrupt.net/profile/card#' },
+      { nick: 'kjetil', webId: 'https://solid.kjernsmo.net/profile/card#me' },
+      { nick: 'megoth-community', webId: 'https://megoth.solid.community/profile/card#me' },
+      { nick: 'megoth-inrupt', webId: 'https://megoth.inrupt.net/profile/card#me' },
+      { nick: 'me', webId: 'https://michielbdejong.inrupt.net/profile/card#me' },
     ],
     chats: [],
     myEmail:  '<mailto:michiel@unhosted.org>',
@@ -60,6 +62,25 @@ async function login() {
   if (!session)
     session = await solid.auth.popupLogin({ popupUri });
   alert(`Logged in as ${session.webId}`);
+}
+
+  /////////////////////
+ // Receive invites //
+/////////////////////
+
+async function fetchInvites() {
+  const myInboxUrl = await getInboxUrl(app.webId);
+  console.log('checking inbox', myInboxUrl);
+  await fetcher.load(store.sym(myInboxUrl).doc());
+  const notifsList = await store.match(store.sym(myInboxUrl), ns.ldp("contains")).map(e => e.object.value);
+  await Promise.all(notifsList.map(notifUrl => fetcher.load(store.sym(notifUrl).doc()).catch(e => console.error(e))));
+  const invitesList = await store.match(null, null, ns.schema('InviteAction')).map(e => e.subject.value);
+  await Promise.all(invitesList.map(inviteUrl => fetcher.load(store.sym(inviteUrl).doc()).catch(e => console.error(e))));
+  let invitedChats = [];
+  const invitesReceived = store.match(null, ns.schema('recipient'), store.sym(app.webId)).map(st  => st.subject.value);
+  invitesReceived.map(x => store.match(store.sym(x), ns.schema('event'))).map(sts => sts.map(st => invitedChats.push(st.object.value)));
+  console.log({ invitedChats });
+  invitedChats.map(x => store.sym(x).doc().value).map(displayChat)
 }
 
   //////////////////////////////////
@@ -143,8 +164,7 @@ function createAclFile(folderUrl, me, myEmail, otherWebId) {
 }
 
 // See https://github.com/solid/solid-panes/blob/master/chat/chatPane.js#L53-L81
-function startConversation (chatFolderUrl, me) {
-  const chatUrl = chatFolderUrl + 'index.ttl';
+function startConversation (chatUrl, me) {
   var conversation = store.sym(chatUrl + '#this');
   var messageStore = conversation.doc();
   store.add(conversation, ns.rdf('type'), ns.mee('Chat'), messageStore)
@@ -168,11 +188,61 @@ function newContact() {
   });
 }
 
+async function getInboxUrl(webId) {
+  await fetcher.load(store.sym(webId).doc());
+  const st = store.match(store.sym(webId), ns.ldp('inbox'));
+  // console.log(st);
+  if (st.length) {
+    return st[0].object.value;
+  }
+}
+
+async function sendInvite(webId, chatUrl) {
+  const chatUrn = store.sym(chatUrl + '#this');
+  const inboxUrl = await getInboxUrl(webId);
+  // add invite details in chat doc:
+  const inviteUrl = `${chatUrl}#invite-${encodeURIComponent(webId)}`;
+  console.log({ chatUrn, webId, chatUrl, inboxUrl, inviteUrl });
+  const messageStore = store.sym(chatUrl).doc();
+  console.log(new $rdf.Statement(store.sym(inviteUrl), ns.rdf('type'), ns.schema('InviteAction'), messageStore));
+  await new Promise((resolve, reject) => {
+    updater.update([], [
+      new $rdf.Statement(store.sym(inviteUrl), ns.rdf('type'), ns.schema('InviteAction'), messageStore),
+      new $rdf.Statement(store.sym(inviteUrl), ns.schema('event'), chatUrn, messageStore),
+      new $rdf.Statement(store.sym(inviteUrl), ns.schema('agent'), store.sym(app.webId), messageStore),
+      new $rdf.Statement(store.sym(inviteUrl), ns.schema('recipient'), store.sym(webId), messageStore),
+    ], (uri, success, body) => {
+      if (!success) {
+        console.log('Error creating invite: ' + body);
+        reject(new Error(body));
+      } else {
+        console.log('Invite created');
+        resolve();
+      }
+    });
+  });
+
+  // post a notif to it:
+  fetch(inboxUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/turtle',
+    },
+    body: `<${inviteUrl}> a <${ns.schema('InviteAction').value}>.`
+  }).then(res => {
+    console.log(res.text());
+  });
+}
+
 function startChat(index) {
   console.log('startChat', index);
+  const otherWebId = app.contacts[index].webId;
   const chatFolderUrl = getChatFolderUrl() + `${app.contacts[index].nick}/`;
-  createAclFile(chatFolderUrl, app.webId, app.myEmail, app.contacts[index].webId);
-  startConversation(chatFolderUrl, app.webId, app.myEmail, app.contacts[index].webId);
+  // createAclFile(chatFolderUrl, app.webId, app.myEmail, otherWebId);
+
+  const chatUrl = chatFolderUrl + 'index.ttl';
+  // startConversation(chatUrl, app.webId, app.myEmail, otherWebId);
+  sendInvite(otherWebId, chatUrl);
 }
 
   ///////////////////////
@@ -214,7 +284,7 @@ async function refreshChatList() {
   // Load the person's hosted chats into the store
   const chatsIndexUrl = getChatFolderUrl(); 
   await fetcher.load(chatsIndexUrl);
-  const chatsList = store.match(null, ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
+  const chatsList = store.match(store.sym(chatsIndexUrl), ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
 }
 async function displayChat(chatUrl) {
   await fetcher.load(chatUrl);
@@ -223,7 +293,7 @@ async function displayChat(chatUrl) {
     messages: [],
     newMsg: ''
   };
-  const messageObjects = store.match(null, ns.sioc('content'), null, $rdf.sym(chatUrl).doc());
+  const messageObjects = store.match(null, ns.sioc('content'), null, store.sym(chatUrl).doc());
   messageObjects.map(obj => {
     const sub = obj.subject;
     const maker = store.match(sub, $rdf.Namespace('http://xmlns.com/foaf/0.1/')('maker'));
