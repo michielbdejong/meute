@@ -24,13 +24,13 @@ window.store = store; // for live debugging
 const app = new Vue({
   el: '#app',
   data: {
-    contacts: [
-      { nick: 'kjetil', webId: 'https://solid.kjernsmo.net/profile/card#me' },
-      { nick: 'megoth-community', webId: 'https://megoth.solid.community/profile/card#me' },
-      { nick: 'megoth-inrupt', webId: 'https://megoth.inrupt.net/profile/card#me' },
-      { nick: 'me', webId: 'https://michielbdejong.inrupt.net/profile/card#me' },
-    ],
-    chats: [],
+    contacts: {
+      'https://solid.kjernsmo.net/profile/card#me': { nick: 'kjetil', webId: 'https://solid.kjernsmo.net/profile/card#me' },
+      'https://megoth.solid.community/profile/card#me': { nick: 'megoth-community', webId: 'https://megoth.solid.community/profile/card#me' },
+      'https://megoth.inrupt.net/profile/card#me': { nick: 'megoth-inrupt', webId: 'https://megoth.inrupt.net/profile/card#me' },
+      'https://michielbdejong.inrupt.net/profile/card#me': { nick: 'me', webId: 'https://michielbdejong.inrupt.net/profile/card#me' },
+    },
+    chats: {},
     myEmail:  '<mailto:michiel@unhosted.org>',
     podBase:  'https://michielbdejong.inrupt.net',
     newContactNick: 'asdf',
@@ -164,13 +164,15 @@ function createAclFile(folderUrl, me, myEmail, otherWebId) {
 }
 
 // See https://github.com/solid/solid-panes/blob/master/chat/chatPane.js#L53-L81
-function startConversation (chatUrl, me) {
+function startConversation (chatUrl, me, otherWebId) {
   var conversation = store.sym(chatUrl + '#this');
   var messageStore = conversation.doc();
-  store.add(conversation, ns.rdf('type'), ns.mee('Chat'), messageStore)
-  store.add(conversation, ns.dc('title'), 'Chat', messageStore)
-  store.add(conversation, ns.dc('created'), new Date(), messageStore)
-  store.add(conversation, ns.dc('author'), me, messageStore)
+  store.add(conversation, ns.rdf('type'), ns.mee('Chat'), messageStore);
+  store.add(conversation, ns.dc('title'), 'Chat', messageStore);
+  store.add(conversation, ns.dc('created'), new Date(), messageStore);
+  store.add(conversation, ns.dc('author'), me, messageStore);
+  store.add(conversation, ns.schema('recipient'), otherWebId, messageStore);
+
   const sts = store.statementsMatching(undefined, undefined, undefined, messageStore);
   updater.put(messageStore, sts, 'text/turtle', (uri, ok, message) => {
     if (ok) {
@@ -238,10 +240,10 @@ function startChat(index) {
   console.log('startChat', index);
   const otherWebId = app.contacts[index].webId;
   const chatFolderUrl = getChatFolderUrl() + `${app.contacts[index].nick}/`;
-  // createAclFile(chatFolderUrl, app.webId, app.myEmail, otherWebId);
+  createAclFile(chatFolderUrl, app.webId, app.myEmail, otherWebId);
 
   const chatUrl = chatFolderUrl + 'index.ttl';
-  // startConversation(chatUrl, app.webId, app.myEmail, otherWebId);
+  startConversation(chatUrl, app.webId, otherWebId);
   sendInvite(otherWebId, chatUrl);
 }
 
@@ -281,7 +283,7 @@ function newChatMsg(index) {
  // Fetch chat log //
 ////////////////////
 async function refreshChatList() {
-  app.chats = [];
+  app.chats = {};
   console.log('fetching invites');
   await fetchInvites();
   console.log('fetching me-hosted chats');
@@ -290,12 +292,34 @@ async function refreshChatList() {
   await fetcher.load(chatsIndexUrl);
   const chatsList = store.match(store.sym(chatsIndexUrl), ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
 }
+
+let running = Promise.resolve();
 async function displayChat(chatUrl) {
+  console.log('subscribing', chatUrl);
+  running.then(() => {
+    updater.addDownstreamChangeListener(store.sym(chatUrl), () => {
+      console.log('refreshing!', chatUrl);
+      updateChat(chatUrl);
+     });
+  });
+  running = running.then(() => new Promise(resolve => setTimeout(resolve, 1000)));
+  updateChat(chatUrl);
+}
+
+async function updateChat(chatUrl) {
   await fetcher.load(chatUrl);
+  // hide contacts already invited:
+  const recipients = store.match(store.sym(chatUrl + '#this'), ns.schema('recipient'))
+  const authors = store.match(store.sym(chatUrl + '#this'), ns.dc('author'));
+  console.log({ chatUrl, recipients, authors });
+  recipients.concat(authors).map(x => {
+    console.log('deleting contact', x.object.value);
+    delete app.contacts[x.object.value];
+  });
   const chatObj  = {
     url: chatUrl,
     messages: [],
-    newMsg: ''
+    newMsg: '',
   };
   const messageObjects = store.match(null, ns.sioc('content'), null, store.sym(chatUrl).doc());
   messageObjects.map(obj => {
@@ -307,7 +331,13 @@ async function displayChat(chatUrl) {
       text: obj.object.value
     });
   });
-  app.chats.push(chatObj);
+  app.chats[chatUrl] = chatObj;
+  // FIXME: not sure why Vue needs this, but it works:
+  let tmp = {};
+  for (k in app.chats) {
+    tmp[k] = app.chats[k];
+  }
+  app.chats = tmp;
 }
 
 // ...

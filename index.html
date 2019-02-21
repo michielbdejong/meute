@@ -29,9 +29,9 @@
       <h2>Chats</h2>
       <input type="submit" value="Refresh" onclick="refreshChatList();"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
       <ul>
-        <li v-for="(chat, index) in chats"><h2>{{ chat.url }}</h2>
+        <li v-for="(chat,  key, index) in chats"><h2>{{ chat.url }}</h2>
           <table border="1">
-            <tr v-for="(message) in chat.messages">
+            <tr v-for="(message, index) in chat.messages">
               <td>{{ message.maker }}</td><td>{{ message.text }}</td>
             </tr>
           </table>
