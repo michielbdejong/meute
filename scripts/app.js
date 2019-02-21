@@ -202,18 +202,17 @@ async function sendInvite(webId, chatUrl) {
       }
     });
   });
+
   // post a notif to it:
-  await new Promise((resolve, reject) => updater.post(inboxUrl, [
-    new $rdf.Statement(store.sym(inviteUrl), ns.rdf('type'), ns.schema('InviteAction'), inviteUrl),
-  ], 'text/turtle', (uri, success, body) => {
-    if (!success) {
-      console.log('Error posting invite notif: ' + body);
-      reject(new Error(body));
-    } else {
-      console.log('Invite created');
-      resolve();
-    }
-  }));
+  fetch(inboxUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/turtle',
+    },
+    body: `<${inviteUrl}> a <${ns.schema('InviteAction').value}>.`
+  }).then(res => {
+    console.log(res.text());
+  });
 }
 
 function startChat(index) {
