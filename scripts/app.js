@@ -281,6 +281,10 @@ function newChatMsg(index) {
  // Fetch chat log //
 ////////////////////
 async function refreshChatList() {
+  app.chats = [];
+  console.log('fetching invites');
+  await fetchInvites();
+  console.log('fetching me-hosted chats');
   // Load the person's hosted chats into the store
   const chatsIndexUrl = getChatFolderUrl(); 
   await fetcher.load(chatsIndexUrl);
@@ -305,3 +309,6 @@ async function displayChat(chatUrl) {
   });
   app.chats.push(chatObj);
 }
+
+// ...
+setTimeout(refreshChatList, 100);

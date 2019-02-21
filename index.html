@@ -19,7 +19,6 @@
     <input type="submit" value="Log out" onclick="logout();">
     <div id="app">
       <label for="my-email">My email:</label><input type="text" id="my-email" v-model="myEmail"> (will be used as account recovery when creating new chat ACLs)
-      <input type="submit" value="Fetch invites" onclick="fetchInvites()" >
       <h2>Address book</h2>
       <ul>
         <li v-for="(contact, index) in contacts">{{ contact.nick }} ({{ contact.webId }}) <input type="submit" v-bind:index="index" value="Start chatting!" onclick="startChat(this.getAttribute('index'))">
