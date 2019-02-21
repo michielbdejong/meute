@@ -64,6 +64,25 @@ async function login() {
   alert(`Logged in as ${session.webId}`);
 }
 
+  /////////////////////
+ // Receive invites //
+/////////////////////
+
+async function fetchInvites() {
+  const myInboxUrl = await getInboxUrl(app.webId);
+  console.log('checking inbox', myInboxUrl);
+  await fetcher.load(store.sym(myInboxUrl).doc());
+  const notifsList = await store.match(store.sym(myInboxUrl), ns.ldp("contains")).map(e => e.object.value);
+  await Promise.all(notifsList.map(notifUrl => fetcher.load(store.sym(notifUrl).doc()).catch(e => console.error(e))));
+  const invitesList = await store.match(null, null, ns.schema('InviteAction')).map(e => e.subject.value);
+  await Promise.all(invitesList.map(inviteUrl => fetcher.load(store.sym(inviteUrl).doc()).catch(e => console.error(e))));
+  let invitedChats = [];
+  const invitesReceived = store.match(null, ns.schema('recipient'), store.sym(app.webId)).map(st  => st.subject.value);
+  invitesReceived.map(x => store.match(store.sym(x), ns.schema('event'))).map(sts => sts.map(st => invitedChats.push(st.object.value)));
+  console.log({ invitedChats });
+  invitedChats.map(x => store.sym(x).doc().value).map(displayChat)
+}
+
   //////////////////////////////////
  // Create new chat conversation //
 //////////////////////////////////
@@ -265,7 +284,7 @@ async function refreshChatList() {
   // Load the person's hosted chats into the store
   const chatsIndexUrl = getChatFolderUrl(); 
   await fetcher.load(chatsIndexUrl);
-  const chatsList = store.match(null, ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
+  const chatsList = store.match(store.sym(chatsIndexUrl), ns.ldp("contains")).map(e => e.object.value + 'index.ttl').map(displayChat);
 }
 async function displayChat(chatUrl) {
   await fetcher.load(chatUrl);
