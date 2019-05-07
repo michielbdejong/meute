@@ -1,6 +1,8 @@
 meute: JS lib for social unhosted web apps
 ======
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/michielbdejong/meute.svg)](https://greenkeeper.io/)
+
 To use, adapt the index.html page. It shows which files to include,
 and includes a short example of how to use the `meute`
 object to enter an irc channel, say something, and leave. Here is a
