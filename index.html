@@ -1,49 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8">
-    <title>Meute - a Solid chat app</title>
-    <meta name="description" content="A Solid Chat app">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="scripts/bulma.min.css">
-    <script defer src="scripts/fontawesome.min.js"></script>
-    <style>
-      [v-cloak] { display: none; }
-    </style>
+    <title>Solid Notify</title>
   </head>
   <body>
-    <h1>v0.8</h1>
-    <p style="width:30em" >Meute is still very basic.</p>
-    <div id="login-state"></div>
-    <input type="submit" value="Log in" onclick="login();">
-    <input type="submit" value="Log out" onclick="logout();">
-    <div id="app">
-      <label for="my-email">My email:</label><input type="text" id="my-email" v-model="myEmail"> (will be used as account recovery when creating new chat ACLs)
-      <h2>Address book</h2>
-      <ul>
-        <li v-for="(contact, index) in contacts">{{ contact.nick }} ({{ contact.webId }}) <input type="submit" v-bind:index="index" value="Start chatting!" onclick="startChat(this.getAttribute('index'))">
-      </ul>
-      <label for="new-contact-url">New contact Nick:</label><input id="new-contact-url" type="text" v-model="newContactNick">
-      <label for="other-web-id">Other WebId:</label><input type="text" id="other-web-id" v-model="otherWebId">
-      <input type="submit" value="+" onclick="newContact()" >
-      <h2>Chats</h2>
-      <input type="submit" value="Refresh" onclick="refreshChatList();"> <!-- TODO: https://github.com/michielbdejong/meute/issues/28 -->
-      <ul>
-        <li v-for="(chat,  key, index) in chats"><h2>{{ chat.url }}</h2>
-          <table border="1">
-            <tr v-for="(message, index) in chat.messages">
-              <td>{{ message.maker }}</td><td>{{ message.text }}</td>
-            </tr>
-          </table>
-          <input type="text" v-model="chat.newMsg">
-          <input type="submit" value=">>" v-bind:index="index" onclick="newChatMsg(this.getAttribute('index'))" ><!--  FIXME: use something other than .value here -->
-        </li>
-      </ul>
+    <div id="loginBanner"></div>
+    <div id="ui" style="display:none">
+      <label for="url">URL:</label><input id="url" size="100" placeholder="https://yourname.pod.provider/inbox/"><br>
+      <button onclick="notifyMe()">Notify me!</button>
+      <ul id="list"></ul>
     </div>
   </body>
-  <script src="scripts/vue.min.js"></script>
-  <script src="scripts/jquery.js"></script>
   <script src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
-  <script src="https://linkeddata.github.io/rdflib.js/dist/rdflib.min.js"></script>
-  <script src="scripts/app.js"></script>
+  <script>
+    window.onload = () => {
+      console.log('document ready')
+      solid.auth.trackSession(session => {
+        if (!session) {
+          console.log('The user is not logged in')
+          document.getElementById('loginBanner').innerHTML = `<button onclick="popupLogin()">Log in</button>`;
+          document.getElementById('ui').style.display = 'none';
+        } else {
+          console.log(`Logged in as ${session.webId}`)
+          document.getElementById('url').value = new URL(session.webId).origin + '/inbox/';
+
+          document.getElementById('loginBanner').innerHTML = `Logged in as ${session.webId} <button onclick="solid.auth.logout()">Log out</button>`;
+          document.getElementById('ui').style.display = 'block';
+        }
+      })
+    }
+    async function popupLogin() {
+      let session = await solid.auth.currentSession();
+      let popupUri = 'https://solid.community/common/popup.html';
+      if (!session) {
+        session = await solid.auth.popupLogin({ popupUri });
+      }
+    }
+    
+    const KEY_PREFIX = 'resource='
+    if (window.location.hash.length > 2) {
+      pairs = window.location.hash.substring(1).split('&')
+      pairs.map(pair => {
+        console.log(pair, pair.substring(0, KEY_PREFIX.length), KEY_PREFIX)
+        if (pair.substring(0, KEY_PREFIX.length) === KEY_PREFIX) {
+          console.log(pair.substring(KEY_PREFIX.length))
+          document.getElementById('url').value = pair.substring(KEY_PREFIX.length)
+        }
+      })
+    }
+    
+    function subscribe(url, wssObj) {
+      const msg = 'sub ' + document.getElementById('url').value
+      console.log(msg)
+      wssObj.send(msg)
+    }
+    
+    const webSocketClients = {}
+    function setupWebSocketClient(wssUrl) {
+      if (webSocketClients[wssUrl]) {
+        return Promise.resolve(webSocketClients[wssUrl])
+      }
+      return new Promise((resolve) => {
+        const wssObj = new WebSocket(wssUrl)
+        wssObj.onmessage = (msg) => {
+          console.log(msg.data)
+          if (msg.data.substring(0, 4) === 'ack ') {
+            document.getElementById('list').innerHTML += '<li>' + msg.data.substring(4) + '</li>'
+            var notification = new Notification('subscribed to ' + msg.data.substring(4));
+          } else {
+            var notification = new Notification(msg.data.substring(4) + ' changed');
+          }
+        }
+        wssObj.onopen = () => {
+          webSocketClients[wssUrl] = wssObj
+          resolve(wssObj)
+        }
+      })
+    }
+
+    async function discoverAndSubscribe() {
+      const url = document.getElementById('url').value;
+      console.log('discovering Updates-Via for:', url);
+      const response = await solid.auth.fetch(url);
+      const wssUrl = response.headers.get('Updates-Via')
+      if (wssUrl === null) {
+        const session = await solid.auth.currentSession();
+        if (!session) {
+          window.alert('Please log in to access ' + wssUrl)
+        } else {
+          window.alert(session.webId + ' has no access to ' + url)
+        }
+        return
+      }
+      console.log('setting up WebSocket', wssUrl)
+      const wssObj = await setupWebSocketClient(wssUrl)
+      subscribe(url, wssObj)
+    }
+
+    function notifyMe() {
+      // Let's check if the browser supports notifications
+      if (!("Notification" in window)) {
+        alert("This browser does not support desktop notification");
+      }
+    
+      // Let's check whether notification permissions have already been granted
+      else if (Notification.permission === "granted") {
+        discoverAndSubscribe()
+      }
+    
+      // Otherwise, we need to ask the user for permission
+      else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(function (permission) {
+          // If the user accepts, let's create a notification
+          if (permission === "granted") {
+            discoverAndSubscribe()
+          }
+        });
+      }
+    
+      // At last, if the user has denied notifications, and you 
+      // want to be respectful there is no need to bother them any more.
+    }
+  </script>
 </html>
